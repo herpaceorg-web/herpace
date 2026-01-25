@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \".specify/scripts/powershell/create-new-feature.ps1\" -Json -Number 1 -ShortName \"hormone-aware-training\" \"I am building a web app that will eventually be mobile apps. It''s a fitness app for women where they enter in a race they are aiming for and put in some health information and it tailors a fitness plan utilizing gen AI API call that can be updated throughout the training plan. They will have workouts suggested but can interact and skip. It uses information about their cycles to suggest optimized plans and give them personalized suggestions.\")"
+    ]
+  }
+}
