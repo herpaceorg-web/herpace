@@ -1,50 +1,146 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report - Constitution v1.0.0
+
+Version Change: Initial → 1.0.0
+Rationale: Initial constitution establishment for HerPace project
+
+Modified Principles: N/A (initial creation)
+Added Sections:
+  - Core Principles (3): User-Centric Development, Accessibility-First Design, Iterative Excellence
+  - Accessibility Standards
+  - Development Workflow
+  - Governance
+
+Templates Requiring Updates:
+  ✅ plan-template.md - reviewed, constitution check section compatible
+  ✅ spec-template.md - reviewed, user scenarios align with user-centric principle
+  ✅ tasks-template.md - reviewed, incremental delivery aligns with iterative principle
+  ✅ All command files - reviewed, no agent-specific references (Claude/etc) found
+
+Follow-up TODOs: None
+-->
+
+# HerPace Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. User-Centric Development
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Every feature MUST be driven by user scenarios and acceptance criteria.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rules**:
+- User stories with Given-When-Then scenarios are mandatory before implementation
+- Features MUST be independently testable from a user perspective
+- Success criteria MUST be measurable and user-observable
+- Edge cases MUST be documented and handled
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: Web applications exist to serve users. By anchoring all development in user scenarios, we ensure that technical decisions deliver real value and can be validated through user testing.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Accessibility-First Design
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+All user interfaces MUST meet WCAG 2.1 Level AA accessibility standards.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+**Rules**:
+- Semantic HTML MUST be used for all content structure
+- Interactive elements MUST be keyboard navigable
+- Color MUST NOT be the only means of conveying information
+- Text alternatives MUST be provided for non-text content
+- Accessibility review MUST be completed before marking features complete
+- Testing with assistive technologies (screen readers, keyboard-only) is mandatory
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Digital accessibility is a fundamental right. Building accessibility in from the start is more efficient and effective than retrofitting, and ensures HerPace serves all users regardless of ability.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Iterative Excellence
+
+Development MUST follow rapid iteration cycles with continuous improvement.
+
+**Rules**:
+- Ship MVP (Minimum Viable Product) versions early and often
+- Each iteration MUST deliver independently valuable functionality
+- Gather user feedback after each iteration before planning next
+- Refactor and optimize ONLY when user pain points or metrics justify it
+- Documentation evolves with the product - clarity over perfection
+- Tests are OPTIONAL in early iterations; mandatory when stability is required
+
+**Rationale**: In rapid prototyping environments, speed to feedback is critical. By shipping early and iterating based on real user input, we avoid over-engineering and ensure we're solving actual problems.
+
+## Accessibility Standards
+
+**WCAG 2.1 Level AA Compliance** is non-negotiable for all user-facing features.
+
+### Required Practices
+
+- **Perceivable**: Information presented in multiple modalities (text + visual + audio where applicable)
+- **Operable**: All functionality available via keyboard, sufficient time for interactions, no seizure-inducing content
+- **Understandable**: Clear language, predictable navigation, input assistance and error prevention
+- **Robust**: Compatible with current and future assistive technologies
+
+### Review Process
+
+Before any feature is marked complete:
+1. Automated accessibility scan (e.g., axe, Lighthouse) MUST pass with zero violations
+2. Manual keyboard navigation test MUST be performed
+3. Screen reader test (NVDA/JAWS/VoiceOver) MUST verify content is understandable
+4. Color contrast ratios MUST meet 4.5:1 for normal text, 3:1 for large text
+
+## Development Workflow
+
+### Feature Development Lifecycle
+
+1. **Specify**: User scenarios → acceptance criteria → functional requirements
+2. **Plan**: Research → technical context → structure decision → tasks
+3. **Implement**: MVP first → iterate → gather feedback → refine
+4. **Validate**: User acceptance → accessibility review → performance check
+5. **Ship**: Deploy → monitor → document learnings
+
+### Iteration Strategy
+
+- **First iteration**: Core user journey, basic functionality, accessibility fundamentals
+- **Second iteration**: Edge cases, error handling, accessibility refinements based on testing
+- **Later iterations**: Performance optimization, advanced features, polish
+
+### Testing Philosophy
+
+- **Early stage**: Manual testing focused on user flows and accessibility
+- **Stability stage**: Automated tests for critical paths and regressions
+- **Scale stage**: Comprehensive test coverage, performance benchmarks, security audits
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Process
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+This constitution can be amended when:
+1. User feedback reveals misalignment between principles and needs
+2. Team retrospectives identify persistent friction points
+3. Technology or platform changes require new guidance
+
+**Amendment procedure**:
+- Document proposed change with rationale and impact analysis
+- Review against current user needs and project goals
+- Update constitution with version bump (see Versioning Policy below)
+- Update all dependent templates and documentation
+- Communicate changes to all contributors
+
+### Versioning Policy
+
+**Format**: MAJOR.MINOR.PATCH
+
+- **MAJOR**: Backward-incompatible changes (e.g., removing principles, changing core development approach)
+- **MINOR**: New principles or sections added, materially expanded guidance
+- **PATCH**: Clarifications, wording improvements, typo fixes, non-semantic refinements
+
+### Compliance Review
+
+- All feature specifications MUST reference relevant constitutional principles
+- Implementation plans MUST include Constitution Check section validating alignment
+- Pull requests MUST verify adherence to accessibility standards and user-centric design
+- Complexity and deviations MUST be explicitly justified with user/business rationale
+
+### Principle Conflicts
+
+When principles conflict (e.g., accessibility requirements vs. rapid iteration speed):
+1. **User-Centric Development** and **Accessibility-First Design** take precedence over speed
+2. Find creative solutions that satisfy both (e.g., ship accessible MVP, iterate on features)
+3. Document the trade-off and revisit in next iteration if needed
+
+**Version**: 1.0.0 | **Ratified**: 2026-01-24 | **Last Amended**: 2026-01-24

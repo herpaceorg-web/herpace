@@ -1,0 +1,177 @@
+[
+  {
+    "id": "training-plan",
+    "name": "TRAINING PLAN",
+    "description": "The overarching program that guides a user's running journey, adapting to their cycle and race goals.",
+    "relationships": [],
+    "guide": {
+      "about": {
+        "definition": "A structured schedule of workouts tailored to a specific race goal and user physiology.",
+        "purpose": "To provide a roadmap for the user to achieve their race goal while respecting their hormonal health.",
+        "ownership": "User (Runner)",
+        "dependencySummary": "Depends on User Profile and Race Date. Contains multiple Cycle Phases and Sessions.",
+        "otherLabels": "Program, Schedule, Roadmap",
+        "objectRelativeRoles": "Coach (Creator), User (Executor)"
+      },
+      "instances": {
+        "exampleInstances": "Spring Marathon Training 2026, 5K Couch to 5K, Post-Partum Return to Run",
+        "estimatedCount": "1-3 per user per year",
+        "instanceSources": "User created via onboarding wizard"
+      },
+      "privacy": {
+        "rolesWithPermission": "User (Read/Write), Admin (Read)",
+        "privacy": "Private to user by default"
+      },
+      "sortFilter": {
+        "mainListLabel": "My Plans",
+        "defaultSort": "Start Date (Descending)",
+        "defaultFilter": "Status: Active"
+      },
+      "businessStrategy": {
+        "phase": "Phase 1 (MVP)",
+        "successMetrics": "Plan Completion Rate > 80%, Injury Rate < 5%",
+        "contentStrategy": "Educational tips on phase transitions"
+      }
+    }
+  },
+  {
+    "id": "cycle-phase",
+    "name": "CYCLE PHASE",
+    "description": "A distinct period within the menstrual cycle characterized by specific hormonal profiles and physiological capabilities.",
+    "relationships": [],
+    "guide": {
+      "about": {
+        "definition": "A biological time window (Follicular, Ovulatory, Luteal, Menstrual) dictating training readiness.",
+        "purpose": "To contextualize training intensity and recovery needs based on biology.",
+        "ownership": "System (Predicted) / User (Confirmed)",
+        "dependencySummary": "Part of a Cycle. Influences Training Sessions.",
+        "otherLabels": "Season, Window, Hormone State",
+        "objectRelativeRoles": "System (Predictor), User (Subject)"
+      },
+      "instances": {
+        "exampleInstances": "Follicular Phase (Days 1-13), Ovulation (Day 14), Luteal Phase (Days 15-28)",
+        "estimatedCount": "4 per cycle, ~52 per year",
+        "instanceSources": "Algorithm prediction or manual log"
+      },
+      "privacy": {
+        "rolesWithPermission": "User (Read/Write)",
+        "privacy": "Highly Sensitive (Health Data)"
+      },
+      "sortFilter": {
+        "mainListLabel": "Cycle History",
+        "defaultSort": "Date (Descending)",
+        "defaultFilter": "Current Cycle"
+      },
+      "businessStrategy": {
+        "phase": "Phase 1 (MVP)",
+        "successMetrics": "Prediction Accuracy > 90%",
+        "contentStrategy": "Health insights per phase"
+      }
+    }
+  },
+  {
+    "id": "runner",
+    "name": "RUNNER",
+    "description": "The user profile containing physiological data, preferences, and training history.",
+    "relationships": [],
+    "guide": {
+      "about": {
+        "definition": "The central entity representing the human user of the application.",
+        "purpose": "To store persistent physiological data and preferences that drive the personalization algorithms.",
+        "ownership": "User",
+        "dependencySummary": "Parent to all Plans and Cycles. Independent entity.",
+        "otherLabels": "Athlete, User, Profile",
+        "objectRelativeRoles": "User (Self), System (Observer)"
+      },
+      "instances": {
+        "exampleInstances": "Jane Doe, Elite Marathoner, Post-Partum Mom",
+        "estimatedCount": "1 per account",
+        "instanceSources": "Sign-up flow"
+      },
+      "privacy": {
+        "rolesWithPermission": "User (Read/Write)",
+        "privacy": "Strictly Private"
+      },
+      "sortFilter": {
+        "mainListLabel": "Profile",
+        "defaultSort": "None",
+        "defaultFilter": "None"
+      },
+      "businessStrategy": {
+        "phase": "Phase 1 (MVP)",
+        "successMetrics": "Retention Rate",
+        "contentStrategy": "Personalized greeting"
+      }
+    }
+  },
+  {
+    "id": "training-session",
+    "name": "TRAINING SESSION",
+    "description": "A single unit of physical activity prescribed within a plan.",
+    "relationships": [],
+    "guide": {
+      "about": {
+        "definition": "An individual workout event with specific duration, intensity, and type.",
+        "purpose": "To prescribe specific training stimuli and track execution.",
+        "ownership": "System (Prescribed) / User (Executed)",
+        "dependencySummary": "Belongs to a Training Plan. Influenced by Cycle Phase (Hydration/Intensity).",
+        "otherLabels": "Workout, Run, Activity",
+        "objectRelativeRoles": "Coach (Prescriber), User (Doer)"
+      },
+      "instances": {
+        "exampleInstances": "Long Run 16k, Interval Session 8x400m, Rest Day",
+        "estimatedCount": "5-7 per week",
+        "instanceSources": "Plan generation or manual entry"
+      },
+      "privacy": {
+        "rolesWithPermission": "User (Read/Write)",
+        "privacy": "Private"
+      },
+      "sortFilter": {
+        "mainListLabel": "Schedule",
+        "defaultSort": "Date (Ascending)",
+        "defaultFilter": "This Week"
+      },
+      "businessStrategy": {
+        "phase": "Phase 1 (MVP)",
+        "successMetrics": "Compliance Rate > 75%",
+        "contentStrategy": "Encouraging feedback on completion"
+      }
+    }
+  },
+  {
+    "id": "race",
+    "name": "RACE",
+    "description": "A specific event or goal that a training plan targets.",
+    "relationships": [],
+    "guide": {
+      "about": {
+        "definition": "A competitive or personal running event with a fixed date and distance.",
+        "purpose": "To provide the anchor and motivation for a Training Plan.",
+        "ownership": "User",
+        "dependencySummary": "Anchors a Training Plan. Independent of Cycle (but performance is affected by it).",
+        "otherLabels": "Event, Goal, Competition",
+        "objectRelativeRoles": "Organizer (Host), User (Participant)"
+      },
+      "instances": {
+        "exampleInstances": "London Marathon 2026, Local 5K, Virtual 10K",
+        "estimatedCount": "1-5 per year",
+        "instanceSources": "User entry or Event API"
+      },
+      "privacy": {
+        "rolesWithPermission": "User (Read/Write)",
+        "privacy": "Public/Private toggle"
+      },
+      "sortFilter": {
+        "mainListLabel": "Races",
+        "defaultSort": "Date (Ascending)",
+        "defaultFilter": "Upcoming"
+      },
+      "businessStrategy": {
+        "phase": "Phase 1 (MVP)",
+        "successMetrics": "Race Completion Rate",
+        "contentStrategy": "Race day tips"
+      }
+    }
+  }
+]
