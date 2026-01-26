@@ -103,11 +103,11 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 
 ### AI Integration (Gemini Abstraction)
 
-- [ ] T020 Create IAIPlanGenerator interface in HerPace.Core/Interfaces/IAIPlanGenerator.cs with GeneratePlanAsync method signature
-- [ ] T021 [P] Create GeminiPlanGenerator in HerPace.Infrastructure/AI/GeminiPlanGenerator.cs implementing IAIPlanGenerator using Google.Cloud.AIPlatform.V1
-- [ ] T022 [P] Create FallbackPlanGenerator in HerPace.Infrastructure/AI/FallbackPlanGenerator.cs implementing IAIPlanGenerator (template-based for FR-015)
-- [ ] T023 [P] Configure AI provider dependency injection in HerPace.API/Program.cs using appsettings AI:Provider switch (Gemini/Fallback)
-- [ ] T024 [P] Create service account for Vertex AI and download JSON key, configure GOOGLE_APPLICATION_CREDENTIALS environment variable
+- [X] T020 Create IAIPlanGenerator interface in HerPace.Core/Interfaces/IAIPlanGenerator.cs with GeneratePlanAsync method signature
+- [X] T021 [P] Create GeminiPlanGenerator in HerPace.Infrastructure/AI/GeminiPlanGenerator.cs implementing IAIPlanGenerator using Gemini REST API
+- [X] T022 [P] Create FallbackPlanGenerator in HerPace.Infrastructure/AI/FallbackPlanGenerator.cs implementing IAIPlanGenerator (template-based for FR-015)
+- [X] T023 [P] Configure AI provider dependency injection in HerPace.API/Program.cs using appsettings AI:Provider switch (Gemini/Fallback)
+- [X] T024 [P] Configure Gemini API key authentication (using REST API instead of Vertex AI service account)
 
 ### Frontend Foundation (Blazor + MudBlazor)
 

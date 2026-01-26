@@ -1,6 +1,7 @@
 using System.Text;
 using HerPace.Core.Entities;
 using HerPace.Core.Interfaces;
+using HerPace.Infrastructure.AI;
 using HerPace.Infrastructure.Data;
 using HerPace.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -77,6 +78,22 @@ builder.Services.AddAuthentication(options =>
 
 // Register application services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+// Configure AI Provider (Gemini or Fallback)
+var aiProvider = builder.Configuration["AI:Provider"] ?? "Gemini";
+builder.Services.AddHttpClient<GeminiPlanGenerator>(); // Register HttpClient for Gemini API
+
+builder.Services.AddScoped<IAIPlanGenerator>(sp =>
+{
+    var logger = sp.GetRequiredService<ILoggerFactory>();
+
+    return aiProvider.ToLower() switch
+    {
+        "gemini" => sp.GetRequiredService<GeminiPlanGenerator>(),
+        "fallback" => new FallbackPlanGenerator(logger.CreateLogger<FallbackPlanGenerator>()),
+        _ => new FallbackPlanGenerator(logger.CreateLogger<FallbackPlanGenerator>())
+    };
+});
 
 // Add Controllers
 builder.Services.AddControllers();
