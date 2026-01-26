@@ -111,10 +111,10 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 
 ### Frontend Foundation (Blazor + MudBlazor)
 
-- [ ] T025 Configure MudBlazor in HerPace.Client/Program.cs (AddMudServices) and wwwroot/index.html (MudBlazor CSS/JS)
-- [ ] T026 [P] Create MainLayout.razor in HerPace.Client/Shared/ with MudLayout, MudAppBar, MudDrawer (accessible navigation)
-- [ ] T027 [P] Create API client service in HerPace.Client/Services/ApiClient.cs using HttpClient with JWT bearer token handling
-- [ ] T028 [P] Set up routing in HerPace.Client/App.razor with routes for auth, onboarding, dashboard, plan, settings
+- [X] T025 Configure MudBlazor in HerPace.Client/Program.cs (AddMudServices) and wwwroot/index.html (MudBlazor CSS/JS)
+- [X] T026 [P] Create MainLayout.razor in HerPace.Client/Shared/ with MudLayout, MudAppBar, MudDrawer (accessible navigation)
+- [X] T027 [P] Create API client service in HerPace.Client/Services/ApiClient.cs using HttpClient with JWT bearer token handling
+- [X] T028 [P] Set up routing in HerPace.Client/App.razor with routes for auth, onboarding, dashboard, plan, settings
 
 **Completion Criteria**:
 - ✅ Database migrations applied successfully
