@@ -142,10 +142,10 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 
 ### Backend: Domain Entities (Data Model)
 
-- [ ] T029 [P] [US1] Create Runner entity in HerPace.Core/Entities/Runner.cs with FitnessLevel enum, CycleLength, LastPeriodStart, TypicalCycleRegularity enum, RecentRaceTime, TypicalWeeklyMileage, DistanceUnit enum
-- [ ] T030 [P] [US1] Create Race entity in HerPace.Core/Entities/Race.cs with RaceName, RaceDate, Distance, DistanceType enum, GoalTime, IsPublic
-- [ ] T031 [P] [US1] Create TrainingPlan entity in HerPace.Core/Entities/TrainingPlan.cs with Status enum (Active/Archived/Completed), GenerationSource enum (AI/Fallback), AiModel, AiRationale, StartDate, EndDate
-- [ ] T032 [P] [US1] Create TrainingSession entity in HerPace.Core/Entities/TrainingSession.cs with WorkoutType enum (Easy/Long/Tempo/Interval/Rest), DurationMinutes, Distance, IntensityLevel enum, CyclePhase enum, PhaseGuidance, ScheduledDate
+- [X] T029 [P] [US1] Create Runner entity in HerPace.Core/Entities/Runner.cs with FitnessLevel enum, CycleLength, LastPeriodStart, TypicalCycleRegularity enum, RecentRaceTime, TypicalWeeklyMileage, DistanceUnit enum
+- [X] T030 [P] [US1] Create Race entity in HerPace.Core/Entities/Race.cs with RaceName, RaceDate, Distance, DistanceType enum, GoalTime, IsPublic
+- [X] T031 [P] [US1] Create TrainingPlan entity in HerPace.Core/Entities/TrainingPlan.cs with Status enum (Active/Archived/Completed), GenerationSource enum (AI/Fallback), AiModel, AiRationale, StartDate, EndDate
+- [X] T032 [P] [US1] Create TrainingSession entity in HerPace.Core/Entities/TrainingSession.cs with WorkoutType enum (Easy/Long/Tempo/Interval/Rest), DurationMinutes, Distance, IntensityLevel enum, CyclePhase enum, PhaseGuidance, ScheduledDate
 - [ ] T033 [US1] Configure EF Core relationships in HerPaceDbContext.OnModelCreating (User 1:1 Runner, Runner 1:* Race, Race 1:0..1 TrainingPlan Active per FR-017, TrainingPlan 1:* TrainingSession)
 - [ ] T034 [US1] Add unique partial index for single active plan constraint in HerPaceDbContext (HasIndex on RunnerId + Status with filter Status = 'Active' per FR-017)
 - [ ] T035 [US1] Create EF Core migration for US1 entities (dotnet ef migrations add UserStory1Entities)
