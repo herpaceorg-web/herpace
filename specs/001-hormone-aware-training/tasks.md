@@ -96,10 +96,10 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 
 ### Authentication & Authorization
 
-- [ ] T016 Implement JWT token generation service in HerPace.Infrastructure/Services/JwtTokenService.cs using appsettings Jwt:Secret
-- [ ] T017 [P] Configure JWT authentication in HerPace.API/Program.cs (AddAuthentication with JwtBearerDefaults)
-- [ ] T018 [P] Create AuthController in HerPace.API/Controllers/AuthController.cs with signup and login endpoints
-- [ ] T019 [P] Create authentication middleware in HerPace.API/Middleware/AuthMiddleware.cs for JWT validation
+- [X] T016 Implement JWT token generation service in HerPace.Infrastructure/Services/JwtTokenService.cs using appsettings Jwt:Secret
+- [X] T017 [P] Configure JWT authentication in HerPace.API/Program.cs (AddAuthentication with JwtBearerDefaults)
+- [X] T018 [P] Create AuthController in HerPace.API/Controllers/AuthController.cs with signup and login endpoints
+- [X] T019 [P] Create authentication middleware in HerPace.API/Middleware/AuthMiddleware.cs for JWT validation
 
 ### AI Integration (Gemini Abstraction)
 

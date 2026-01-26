@@ -1,7 +1,12 @@
+using System.Text;
 using HerPace.Core.Entities;
+using HerPace.Core.Interfaces;
 using HerPace.Infrastructure.Data;
+using HerPace.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +44,39 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 })
 .AddEntityFrameworkStores<HerPaceDbContext>()
 .AddDefaultTokenProviders();
+
+// Configure JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("JWT Secret is not configured in appsettings.json");
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "HerPace.API";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "HerPace.Client";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = false; // Set to true in production
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        ClockSkew = TimeSpan.Zero // Remove default 5 minute tolerance
+    };
+});
+
+// Register application services
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 // Add Controllers
 builder.Services.AddControllers();
