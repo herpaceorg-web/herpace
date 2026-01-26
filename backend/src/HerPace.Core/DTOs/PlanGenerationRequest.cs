@@ -1,3 +1,5 @@
+using HerPace.Core.Enums;
+
 namespace HerPace.Core.DTOs;
 
 /// <summary>
@@ -5,18 +7,29 @@ namespace HerPace.Core.DTOs;
 /// </summary>
 public class PlanGenerationRequest
 {
-    // Runner information
-    public string FitnessLevel { get; set; } = string.Empty;
+    // Runner identification
+    public Guid RunnerId { get; set; }
+
+    // Runner fitness information
+    public FitnessLevel FitnessLevel { get; set; }
     public decimal? TypicalWeeklyMileage { get; set; }
-    public string? RecentRaceTime { get; set; }
-    public string DistanceUnit { get; set; } = "km";
 
     // Race information
     public string RaceName { get; set; } = string.Empty;
     public DateTime RaceDate { get; set; }
-    public decimal RaceDistance { get; set; }
+    public decimal Distance { get; set; }
+    public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; }
 
-    // Cycle phase predictions
-    public List<CyclePhaseDto> CyclePhases { get; set; } = new();
+    // Cycle information
+    public int? CycleLength { get; set; }
+    public DateTime? LastPeriodStart { get; set; }
+    public CycleRegularity TypicalCycleRegularity { get; set; }
+
+    // Plan date range
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+
+    // Cycle phase predictions (calculated by CyclePhaseCalculator)
+    public Dictionary<DateTime, CyclePhase>? CyclePhases { get; set; }
 }

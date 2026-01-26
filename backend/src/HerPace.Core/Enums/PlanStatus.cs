@@ -6,6 +6,7 @@ namespace HerPace.Core.Enums;
 public enum PlanStatus
 {
     Active,     // Currently being followed
+    Paused,     // Temporarily paused by user
     Archived,   // Replaced by a new plan
     Completed   // Race completed
 }

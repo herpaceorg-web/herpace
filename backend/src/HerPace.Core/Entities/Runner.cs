@@ -11,11 +11,20 @@ public class Runner
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
 
+    // Personal Information
+    public string Name { get; set; } = string.Empty; // Display name
+    public DateTime? DateOfBirth { get; set; } // For age grading
+
     // Fitness & Training Information
     public FitnessLevel FitnessLevel { get; set; }
     public decimal? TypicalWeeklyMileage { get; set; }
-    public string? RecentRaceTime { get; set; } // e.g., "3:45:30" or "45:23"
     public DistanceUnit DistanceUnit { get; set; } = DistanceUnit.Kilometers;
+
+    // Personal Records (structured by distance)
+    public TimeSpan? FiveKPR { get; set; } // 5K personal record
+    public TimeSpan? TenKPR { get; set; } // 10K personal record
+    public TimeSpan? HalfMarathonPR { get; set; } // Half marathon personal record
+    public TimeSpan? MarathonPR { get; set; } // Marathon personal record
 
     // Menstrual Cycle Information
     public int? CycleLength { get; set; } // 21-45 days, nullable if DoNotTrack

@@ -12,8 +12,20 @@ public class TrainingPlan
     public Guid RaceId { get; set; }
     public Guid RunnerId { get; set; }
 
-    // Plan Status
+    // Plan Status & Details
     public PlanStatus Status { get; set; } = PlanStatus.Active;
+    public string PlanName { get; set; } = string.Empty; // e.g., "Marathon Training Plan"
+
+    // Schedule Configuration
+    public int TrainingDaysPerWeek { get; set; } = 4; // 1-7 days, default 4
+    public DayOfWeek LongRunDay { get; set; } = DayOfWeek.Sunday; // Key scheduling anchor
+
+    // Cycle-Aware Adjustments (FR-003: Menstrual cycle phase awareness)
+    public int DaysBeforePeriodToReduceIntensity { get; set; } = 3; // 0-7 days, default 3
+    public int DaysAfterPeriodToReduceIntensity { get; set; } = 2; // 0-7 days, default 2
+
+    // Plan Goals
+    public string? PlanCompletionGoal { get; set; } // Qualitative goal text
 
     // Generation Information
     public GenerationSource GenerationSource { get; set; }

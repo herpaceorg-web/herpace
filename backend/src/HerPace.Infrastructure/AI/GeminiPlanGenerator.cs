@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using HerPace.Core.DTOs;
+using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -130,57 +131,123 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
     private string BuildPlanPrompt(PlanGenerationRequest request)
     {
-        var cyclePhases = string.Join("\n", request.CyclePhases.Select(p =>
-            $"- {p.Date:yyyy-MM-dd}: {p.Phase} (Day {p.DayInCycle})"));
+        var totalDays = (request.EndDate - request.StartDate).Days + 1;
+        var totalWeeks = (int)Math.Ceiling(totalDays / 7.0);
 
-        return $@"Create a personalized running training plan in JSON format.
+        // Build cycle phase overview if available
+        var cycleInfo = "";
+        if (request.CyclePhases != null && request.CyclePhases.Any())
+        {
+            var phaseCounts = request.CyclePhases
+                .GroupBy(p => p.Value)
+                .Select(g => $"{g.Key}: {g.Count()} days")
+                .ToList();
 
-**User Profile**:
+            cycleInfo = $@"
+**Cycle Phase Distribution** (optimize workouts based on these predicted phases):
+{string.Join("\n", phaseCounts)}
+
+**Cycle-Aware Training Guidelines**:
+- Menstrual Phase (Days 1-5): Low energy, prioritize recovery → Easy runs & Rest days
+- Follicular Phase (Days 6-13): Rising energy, muscle building window → Interval & Tempo workouts
+- Ovulatory Phase (Days 14-15): Peak performance window → Quality hard workouts
+- Luteal Phase (Days 16-28): Declining energy, increased recovery needs → More Easy runs, reduced intensity
+
+**Cycle Regularity**: {request.TypicalCycleRegularity} (adjust plan flexibility accordingly)";
+        }
+        else
+        {
+            cycleInfo = "\n**Cycle Tracking**: Not enabled for this runner (generate plan without cycle phase optimization)";
+        }
+
+        var distanceTypeStr = request.DistanceType switch
+        {
+            DistanceType.FiveK => "5K",
+            DistanceType.TenK => "10K",
+            DistanceType.HalfMarathon => "Half Marathon",
+            DistanceType.Marathon => "Marathon",
+            _ => request.Distance.ToString("F1") + " km"
+        };
+
+        return $@"Create a personalized hormone-aware running training plan in JSON format for a woman runner.
+
+**Runner Profile**:
 - Fitness Level: {request.FitnessLevel}
-- Typical Weekly Mileage: {request.TypicalWeeklyMileage ?? 0} {request.DistanceUnit}
-- Recent Race Performance: {request.RecentRaceTime ?? "Not provided"}
+- Typical Weekly Mileage: {request.TypicalWeeklyMileage ?? 0:F1} km
+- Cycle Length: {request.CycleLength ?? 28} days
+{cycleInfo}
 
 **Race Goal**:
-- Race: {request.RaceName}
-- Date: {request.RaceDate:yyyy-MM-dd}
-- Distance: {request.RaceDistance} {request.DistanceUnit}
-- Goal Time: {request.GoalTime ?? "Not specified"}
+- Race Name: {request.RaceName}
+- Race Date: {request.RaceDate:yyyy-MM-dd} ({totalDays} days from start, ~{totalWeeks} weeks)
+- Distance: {distanceTypeStr} ({request.Distance:F1} km)
+- Goal Time: {request.GoalTime ?? "Not specified - focus on completion"}
 
-**Cycle Phases** (optimize workouts based on these):
-{cyclePhases}
+**Training Plan Requirements**:
+1. Plan Duration: {request.StartDate:yyyy-MM-dd} to {request.RaceDate:yyyy-MM-dd} ({totalWeeks} weeks)
+2. Training Days: 4-5 days per week (include rest days)
+3. Long Run Day: Sunday (or specify another day)
+4. Progressive Overload: Gradual weekly mileage increases (≤10% per week)
+5. Taper Period: Final 2 weeks should reduce volume by 30-50%
 
-**Workout Types** (use ONLY these):
-- Easy: Low intensity, conversational pace
-- Long: Extended duration, endurance building
-- Tempo: Moderate-hard, sustained effort
-- Interval: High intensity intervals with recovery
-- Rest: Complete rest day
+**Workout Types** (use ONLY these enum values):
+- Easy: Low intensity, conversational pace (foundation building)
+- Long: Extended duration run, steady effort (endurance)
+- Tempo: Moderate-hard, sustained threshold effort (lactate threshold)
+- Interval: High intensity intervals with recovery (VO2 max)
+- Rest: Complete rest or active recovery (essential for adaptation)
 
-**Cycle-Aware Guidelines**:
-- Follicular Phase (Days 6-13): High energy period → Schedule Interval & Tempo workouts (muscle building)
-- Ovulatory Phase (Days 14-15): Peak performance window → Quality hard work
-- Luteal Phase (Days 16-28): Reduce intensity → More Easy runs, focus on volume
-- Menstrual Phase (Days 1-5): Recovery focus → Easy & Rest emphasis
+**Intensity Levels**:
+- Low: Easy, conversational effort (recovery/base building)
+- Moderate: Comfortably hard, sustainable (tempo work)
+- High: Hard effort, challenging pace (intervals/races)
 
-**Response Format** (JSON):
+**Session Details Required**:
+- sessionName: Descriptive name (e.g., ""Easy Recovery Run"", ""Long Run"", ""Interval Training"")
+- warmUp: Brief warm-up instructions (e.g., ""10 min easy jog + dynamic stretches"")
+- sessionDescription: Detailed workout description (e.g., ""8x400m @ 5K pace with 90s recovery"")
+- hrZones: Heart rate zones if applicable (e.g., ""Zone 2-3"", ""Zone 4-5"")
+- durationMinutes: Estimated workout duration (null for Rest days)
+- distance: Planned distance in km (null for Rest days)
+- cyclePhase: The menstrual cycle phase for this date (Menstrual, Follicular, Ovulatory, Luteal)
+- phaseGuidance: Brief cycle-specific tip (e.g., ""Follicular phase - great day for speed work!"")
+
+**Response Format** (JSON - return ONLY this JSON, no markdown, no extra text):
 {{
-  ""metadata"": {{
-    ""totalWeeks"": <number>,
-    ""weeklyMileageRange"": ""<low>-<high> {request.DistanceUnit}""
-  }},
+  ""planName"": ""{distanceTypeStr} Training Plan"",
+  ""trainingDaysPerWeek"": 4,
+  ""longRunDay"": ""Sunday"",
+  ""daysBeforePeriodToReduceIntensity"": 3,
+  ""daysAfterPeriodToReduceIntensity"": 2,
+  ""planCompletionGoal"": ""Complete {distanceTypeStr} strong and injury-free"",
   ""sessions"": [
     {{
-      ""scheduledDate"": ""YYYY-MM-DD"",
-      ""workoutType"": ""Easy|Long|Tempo|Interval|Rest"",
-      ""durationMinutes"": <number or null for Rest>,
-      ""distance"": <number or null for Rest>,
-      ""intensityLevel"": ""Low|Moderate|High"",
-      ""cyclePhase"": ""Follicular|Ovulatory|Luteal|Menstrual"",
-      ""phaseGuidance"": ""Brief tip for this workout given the cycle phase""
+      ""sessionName"": ""Easy Recovery Run"",
+      ""scheduledDate"": ""2026-01-27"",
+      ""workoutType"": 0,
+      ""warmUp"": ""5-10 min easy jog"",
+      ""sessionDescription"": ""Relaxed pace, focus on form and recovery"",
+      ""durationMinutes"": 30,
+      ""distance"": 5.0,
+      ""intensityLevel"": 0,
+      ""hrZones"": ""Zone 2"",
+      ""cyclePhase"": 1,
+      ""phaseGuidance"": ""Follicular phase - rising energy, good day for base building""
     }}
   ]
 }}
 
-Generate a complete training plan from today through race day, optimizing workout intensity based on predicted cycle phases. Return ONLY valid JSON, no additional text.";
+**Enum Value Mappings**:
+- workoutType: Easy=0, Long=1, Tempo=2, Interval=3, Rest=4
+- intensityLevel: Low=0, Moderate=1, High=2
+- cyclePhase: Menstrual=0, Follicular=1, Ovulatory=2, Luteal=3
+
+**CRITICAL**:
+- Return ONLY valid JSON (no markdown code fences, no explanatory text)
+- Include ALL sessions from {request.StartDate:yyyy-MM-dd} to {request.RaceDate:yyyy-MM-dd}
+- Use numeric enum values (0, 1, 2, 3) for workoutType, intensityLevel, and cyclePhase
+- Align workouts with cycle phases when provided
+- Include proper taper in final 2 weeks
+- Generate complete, detailed, actionable training plan";
     }
 }
