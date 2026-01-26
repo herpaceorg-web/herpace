@@ -88,9 +88,9 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 
 ### Database & Data Access
 
-- [ ] T011 Create User entity extending IdentityUser<Guid> in HerPace.Core/Entities/User.cs with CreatedAt, DeletedAt (soft delete)
-- [ ] T012 [P] Create HerPaceDbContext extending IdentityDbContext in HerPace.Infrastructure/Data/HerPaceDbContext.cs with DbSets for all entities
-- [ ] T013 [P] Configure ASP.NET Core Identity in HerPace.API/Program.cs (AddIdentity, AddEntityFrameworkStores with HerPaceDbContext)
+- [X] T011 Create User entity extending IdentityUser<Guid> in HerPace.Core/Entities/User.cs with CreatedAt, DeletedAt (soft delete)
+- [X] T012 [P] Create HerPaceDbContext extending IdentityDbContext in HerPace.Infrastructure/Data/HerPaceDbContext.cs with DbSets for all entities
+- [X] T013 [P] Configure ASP.NET Core Identity in HerPace.API/Program.cs (AddIdentity, AddEntityFrameworkStores with HerPaceDbContext)
 - [ ] T014 [P] Create EF Core migration for Identity tables in HerPace.Infrastructure (dotnet ef migrations add IdentitySetup)
 - [ ] T015 Apply EF Core migration to local PostgreSQL database (dotnet ef database update)
 

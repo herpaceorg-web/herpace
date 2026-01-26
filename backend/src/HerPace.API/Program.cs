@@ -1,13 +1,74 @@
+using HerPace.Core.Entities;
+using HerPace.Infrastructure.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Configure Database Connection
+var useCloudSql = builder.Configuration.GetValue<bool>("UseCloudSql");
+var connectionString = useCloudSql
+    ? builder.Configuration.GetConnectionString("CloudSqlConnection")
+    : builder.Configuration.GetConnectionString("HerPaceDb");
+
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Database connection string is not configured.");
+}
+
+// Add Entity Framework Core with PostgreSQL
+builder.Services.AddDbContext<HerPaceDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Configure ASP.NET Core Identity
+builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
+{
+    // Password settings (development - will be strengthened for production)
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+
+    // User settings
+    options.User.RequireUniqueEmail = true;
+
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+})
+.AddEntityFrameworkStores<HerPaceDbContext>()
+.AddDefaultTokenProviders();
+
+// Add Controllers
+builder.Services.AddControllers();
+
+// Add API Explorer and Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "HerPace API", Version = "v1" });
+});
+
+// Configure CORS for Blazor Client
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowBlazorClient", policy =>
+    {
+        policy.WithOrigins(
+            "https://localhost:5001",
+            "http://localhost:5000",
+            "https://herpace-app-frontend.storage.googleapis.com" // Cloud Storage URL
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -16,29 +77,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// Enable CORS
+app.UseCors("AllowBlazorClient");
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+// Authentication & Authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map controllers
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
