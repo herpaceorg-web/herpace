@@ -68,7 +68,7 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 - [X] T007 [P] Set up project references (API → Core + Infrastructure, Infrastructure → Core, Tests → all)
 - [X] T008 [P] Create Dockerfile for HerPace.API (multi-stage build with .NET 8 SDK and aspnet runtime)
 - [X] T009 [P] Create .gitignore for .NET projects (bin/, obj/, appsettings.Development.json, *.user)
-- [ ] T010 Initialize Git repository, create initial commit on branch 001-hormone-aware-training
+- [X] T010 Initialize Git repository, create initial commit on branch 001-hormone-aware-training
 
 **Completion Criteria**:
 - ✅ Google Cloud project created with enabled APIs
