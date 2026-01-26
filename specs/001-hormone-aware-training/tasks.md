@@ -59,15 +59,15 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 
 ### Tasks
 
-- [ ] T001 Create Google Cloud project and enable required APIs (Cloud Run, Cloud SQL, Vertex AI, Secret Manager) via gcloud CLI
-- [ ] T002 Create .NET solution structure (HerPace.sln, HerPace.API, HerPace.Core, HerPace.Infrastructure, HerPace.Tests) per plan.md
-- [ ] T003 [P] Install backend NuGet packages (Microsoft.AspNetCore.Identity.EntityFrameworkCore, Npgsql.EntityFrameworkCore.PostgreSQL, Google.Cloud.AIPlatform.V1) in HerPace.API/Infrastructure
-- [ ] T004 [P] Create Google Cloud SQL PostgreSQL instance (db-f1-micro, us-central1) and database via gcloud sql commands
-- [ ] T005 [P] Configure connection string in HerPace.API/appsettings.Development.json for local PostgreSQL and Cloud SQL
-- [ ] T006 Create Blazor WebAssembly project (HerPace.Client) and add MudBlazor NuGet package
-- [ ] T007 [P] Set up project references (API → Core + Infrastructure, Infrastructure → Core, Tests → all)
-- [ ] T008 [P] Create Dockerfile for HerPace.API (multi-stage build with .NET 8 SDK and aspnet runtime)
-- [ ] T009 [P] Create .gitignore for .NET projects (bin/, obj/, appsettings.Development.json, *.user)
+- [X] T001 Create Google Cloud project and enable required APIs (Cloud Run, Cloud SQL, Vertex AI, Secret Manager) via gcloud CLI
+- [X] T002 Create .NET solution structure (HerPace.sln, HerPace.API, HerPace.Core, HerPace.Infrastructure, HerPace.Tests) per plan.md
+- [X] T003 [P] Install backend NuGet packages (Microsoft.AspNetCore.Identity.EntityFrameworkCore, Npgsql.EntityFrameworkCore.PostgreSQL, Google.Cloud.AIPlatform.V1) in HerPace.API/Infrastructure
+- [X] T004 [P] Create Google Cloud SQL PostgreSQL instance (db-f1-micro, us-central1) and database via gcloud sql commands
+- [X] T005 [P] Configure connection string in HerPace.API/appsettings.Development.json for local PostgreSQL and Cloud SQL
+- [X] T006 Create Blazor WebAssembly project (HerPace.Client) and add MudBlazor NuGet package
+- [X] T007 [P] Set up project references (API → Core + Infrastructure, Infrastructure → Core, Tests → all)
+- [X] T008 [P] Create Dockerfile for HerPace.API (multi-stage build with .NET 8 SDK and aspnet runtime)
+- [X] T009 [P] Create .gitignore for .NET projects (bin/, obj/, appsettings.Development.json, *.user)
 - [ ] T010 Initialize Git repository, create initial commit on branch 001-hormone-aware-training
 
 **Completion Criteria**:

@@ -11,7 +11,26 @@
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/setup-plan.ps1\" -Json)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/update-agent-context.ps1\" -AgentType claude)",
       "Bash(dir:*)",
-      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json)"
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json)",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks)",
+      "Bash(powershell:*)",
+      "Bash(gcloud --version:*)",
+      "Bash(gcloud config get-value:*)",
+      "Bash(gcloud projects create:*)",
+      "Bash(gcloud config set:*)",
+      "Bash(gcloud auth:*)",
+      "Bash(gcloud services enable:*)",
+      "Bash(dotnet:*)",
+      "Bash(mkdir:*)",
+      "Bash(gcloud projects add-iam-policy-binding:*)",
+      "Bash(gcloud projects delete:*)",
+      "Bash(gcloud services list:*)",
+      "Bash(gcloud sql instances create:*)",
+      "Bash(gcloud sql instances list:*)",
+      "Bash(gcloud sql users set-password:*)",
+      "Bash(gcloud sql databases create:*)",
+      "Bash(gcloud sql instances describe:*)",
+      "Bash(docker:*)"
     ]
   }
 }

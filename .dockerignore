@@ -1,0 +1,68 @@
+# Directories
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/node_modules/
+**/dist/
+**/wwwroot/
+
+# Files
+**/*.log
+**/*.user
+**/*.suo
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README.md
+LICENSE
+
+# Specs
+specs/
+.specify/
+.claude/
+
+# Frontend (not needed for API Docker image)
+frontend/
+
+# Tests (not needed in production image)
+**/tests/
+**/*.Tests/
+
+# Development settings
+**/appsettings.Development.json
+**/launchSettings.json
+
+# Environment variables and secrets
+**/.env*
+**/secrets.json
+**/credentials.json
+**/service-account-key.json
+**/*GOOGLE_APPLICATION_CREDENTIALS*.json
+
+# Build artifacts
+**/artifacts/
+**/packages/
+**/*.nupkg
+**/*.snupkg
+
+# Coverage reports
+**/coverage/
+**/*.coverage
+**/*.coveragexml
+
+# Temporary files
+**/*.tmp
+**/*.temp
+**/*.bak
+**/*.cache
