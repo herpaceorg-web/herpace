@@ -1,0 +1,934 @@
+openapi: 3.0.3
+info:
+  title: HerPace API - Hormone-Aware Training Plan System
+  description: REST API for personalized, cycle-optimized running training plans
+  version: 1.0.0
+  contact:
+    name: HerPace Development Team
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+  - url: https://api.herpace.com/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Authentication and account management
+  - name: Profiles
+    description: Runner profile operations
+  - name: Races
+    description: Race goal management
+  - name: Plans
+    description: Training plan generation and management
+  - name: Sessions
+    description: Workout session interactions
+  - name: Cycle
+    description: Cycle tracking and logging
+
+paths:
+  # ============== AUTH ENDPOINTS ==============
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Create new user account
+      description: Register new user with email/password (FR-001)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: SecurePass123!
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    description: JWT authentication token
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already exists
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+  # ============== PROFILE ENDPOINTS ==============
+  /profiles/me:
+    get:
+      tags: [Profiles]
+      summary: Get current user's runner profile
+      description: Retrieve authenticated user's profile (FR-001)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerProfile'
+        '404':
+          description: Profile not found (user hasn't completed onboarding)
+
+    post:
+      tags: [Profiles]
+      summary: Create runner profile
+      description: Complete onboarding by creating profile (FR-001)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRunnerProfileRequest'
+      responses:
+        '201':
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Profile already exists
+
+    patch:
+      tags: [Profiles]
+      summary: Update runner profile
+      description: Modify profile data (FR-010 triggers plan regeneration if needed)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRunnerProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunnerProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ============== RACE ENDPOINTS ==============
+  /races:
+    get:
+      tags: [Races]
+      summary: List user's races
+      description: Get all races (active and archived) for authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived]
+          description: Filter by race status (based on date)
+      responses:
+        '200':
+          description: Races retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Race'
+
+    post:
+      tags: [Races]
+      summary: Create new race goal
+      description: Add race goal (FR-002) - validates date >= 7 days future (FR-016)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRaceRequest'
+      responses:
+        '201':
+          description: Race created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Race'
+        '400':
+          description: Invalid race date (< 7 days away) or other validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Race date must be at least 1 week in the future to generate a meaningful plan."
+
+  /races/{raceId}:
+    get:
+      tags: [Races]
+      summary: Get race details
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RaceId'
+      responses:
+        '200':
+          description: Race retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Race'
+        '404':
+          description: Race not found
+
+    patch:
+      tags: [Races]
+      summary: Update race details
+      description: Modify race (FR-019) - triggers plan regeneration if plan exists
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/RaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRaceRequest'
+      responses:
+        '200':
+          description: Race updated, plan regenerated if active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  race:
+                    $ref: '#/components/schemas/Race'
+                  planRegenerated:
+                    type: boolean
+                    description: True if associated plan was regenerated
+
+  # ============== PLAN ENDPOINTS ==============
+  /plans:
+    get:
+      tags: [Plans]
+      summary: Get user's training plans
+      description: Retrieve all plans (active + archived)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Active, Archived, Completed]
+          description: Filter by plan status
+      responses:
+        '200':
+          description: Plans retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrainingPlan'
+
+    post:
+      tags: [Plans]
+      summary: Generate new training plan
+      description: Create AI-generated plan for a race (FR-003). Validates only 1 active plan (FR-017)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+      responses:
+        '201':
+          description: Plan generated successfully (AI or fallback)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "You already have an active training plan for London Marathon. Please archive or complete your current plan before starting a new one."
+        '500':
+          description: Plan generation failed (AI + fallback both failed)
+
+  /plans/{planId}:
+    get:
+      tags: [Plans]
+      summary: Get plan details with sessions
+      description: Retrieve plan with all workout sessions (FR-007)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '200':
+          description: Plan retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlanDetailed'
+        '404':
+          description: Plan not found
+
+    post:
+      tags: [Plans]
+      summary: Regenerate plan
+      description: Update plan based on progress/changes (FR-010)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: "Feeling stronger than expected"
+                updatedProfile:
+                  type: object
+                  description: Optional profile updates to incorporate
+      responses:
+        '200':
+          description: Plan regenerated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+
+    delete:
+      tags: [Plans]
+      summary: Archive training plan
+      description: Archive plan (sets status to Archived) - allows creating new plan (FR-017)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '204':
+          description: Plan archived
+
+  /plans/active:
+    get:
+      tags: [Plans]
+      summary: Get current active plan
+      description: Shortcut to get the single active plan (FR-017)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active plan retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlanDetailed'
+        '404':
+          description: No active plan
+
+  # ============== SESSION ENDPOINTS ==============
+  /sessions/today:
+    get:
+      tags: [Sessions]
+      summary: Get today's workout
+      description: Retrieve workout scheduled for today (FR-007, SC-003)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Today's workout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSession'
+        '404':
+          description: No workout scheduled for today (rest day or no active plan)
+
+  /sessions/{sessionId}:
+    get:
+      tags: [Sessions]
+      summary: Get session details
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSession'
+
+    patch:
+      tags: [Sessions]
+      summary: Update session (complete/skip/modify)
+      description: Mark complete, skip, or modify workout (FR-008)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionRequest'
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingSession'
+
+  # ============== CYCLE ENDPOINTS ==============
+  /cycle/logs:
+    get:
+      tags: [Cycle]
+      summary: Get cycle logs
+      description: Retrieve user's cycle event history (FR-012)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Cycle logs retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CycleLog'
+
+    post:
+      tags: [Cycle]
+      summary: Log cycle event
+      description: Log period start, symptom, or energy level (FR-012)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCycleLogRequest'
+      responses:
+        '201':
+          description: Cycle event logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CycleLog'
+
+  /cycle/current-phase:
+    get:
+      tags: [Cycle]
+      summary: Get current cycle phase
+      description: Calculate current phase based on last period and cycle length (FR-005)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current phase calculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  phase:
+                    type: string
+                    enum: [Follicular, Ovulatory, Luteal, Menstrual]
+                  dayInCycle:
+                    type: integer
+                    example: 14
+                  nextPeriodEstimate:
+                    type: string
+                    format: date
+        '404':
+          description: Cannot calculate (cycle tracking opted out)
+
+# ============== COMPONENTS ==============
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RaceId:
+      name: raceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PlanId:
+      name: planId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+
+    RunnerProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        fitnessLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced, Elite]
+        cycleLength:
+          type: integer
+          nullable: true
+          minimum: 21
+          maximum: 45
+        lastPeriodStart:
+          type: string
+          format: date
+          nullable: true
+        typicalCycleRegularity:
+          type: string
+          enum: [Regular, Irregular, DoNotTrack]
+        recentRaceTime:
+          type: string
+          nullable: true
+          example: "10K in 55:30"
+        typicalWeeklyMileage:
+          type: number
+          nullable: true
+          example: 30.0
+        distanceUnit:
+          type: string
+          enum: [km, miles]
+
+    CreateRunnerProfileRequest:
+      type: object
+      required: [fitnessLevel, typicalCycleRegularity, distanceUnit]
+      properties:
+        fitnessLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced, Elite]
+        cycleLength:
+          type: integer
+          minimum: 21
+          maximum: 45
+        lastPeriodStart:
+          type: string
+          format: date
+        typicalCycleRegularity:
+          type: string
+          enum: [Regular, Irregular, DoNotTrack]
+        recentRaceTime:
+          type: string
+          example: "10K in 55:30"
+        typicalWeeklyMileage:
+          type: number
+          example: 30.0
+        distanceUnit:
+          type: string
+          enum: [km, miles]
+
+    UpdateRunnerProfileRequest:
+      type: object
+      properties:
+        fitnessLevel:
+          type: string
+          enum: [Beginner, Intermediate, Advanced, Elite]
+        cycleLength:
+          type: integer
+        lastPeriodStart:
+          type: string
+          format: date
+        recentRaceTime:
+          type: string
+        typicalWeeklyMileage:
+          type: number
+
+    Race:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        runnerId:
+          type: string
+          format: uuid
+        raceName:
+          type: string
+          example: "London Marathon 2026"
+        raceDate:
+          type: string
+          format: date
+        distance:
+          type: number
+          example: 42.2
+        distanceType:
+          type: string
+          enum: [5K, 10K, HalfMarathon, Marathon, Other]
+        goalTime:
+          type: string
+          nullable: true
+          example: "3:30:00"
+        isPublic:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateRaceRequest:
+      type: object
+      required: [raceName, raceDate, distance, distanceType]
+      properties:
+        raceName:
+          type: string
+        raceDate:
+          type: string
+          format: date
+        distance:
+          type: number
+        distanceType:
+          type: string
+          enum: [5K, 10K, HalfMarathon, Marathon, Other]
+        goalTime:
+          type: string
+        isPublic:
+          type: boolean
+          default: false
+
+    UpdateRaceRequest:
+      type: object
+      properties:
+        raceName:
+          type: string
+        raceDate:
+          type: string
+          format: date
+        goalTime:
+          type: string
+
+    TrainingPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        raceId:
+          type: string
+          format: uuid
+        runnerId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [Active, Archived, Completed]
+        generationSource:
+          type: string
+          enum: [AI, Fallback]
+        aiModel:
+          type: string
+          nullable: true
+          example: "claude-3-5-sonnet-20241022"
+        aiRationale:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TrainingPlanDetailed:
+      allOf:
+        - $ref: '#/components/schemas/TrainingPlan'
+        - type: object
+          properties:
+            race:
+              $ref: '#/components/schemas/Race'
+            sessions:
+              type: array
+              items:
+                $ref: '#/components/schemas/TrainingSession'
+            progress:
+              type: object
+              properties:
+                percentComplete:
+                  type: number
+                  example: 35.5
+                completedSessions:
+                  type: integer
+                  example: 12
+                totalSessions:
+                  type: integer
+                  example: 84
+
+    CreatePlanRequest:
+      type: object
+      required: [raceId]
+      properties:
+        raceId:
+          type: string
+          format: uuid
+
+    TrainingSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trainingPlanId:
+          type: string
+          format: uuid
+        scheduledDate:
+          type: string
+          format: date
+        workoutType:
+          type: string
+          enum: [Easy, Long, Tempo, Interval, Rest]
+        durationMinutes:
+          type: integer
+          nullable: true
+        distance:
+          type: number
+          nullable: true
+        intensityLevel:
+          type: string
+          enum: [Low, Moderate, High]
+        cyclePhase:
+          type: string
+          enum: [Follicular, Ovulatory, Luteal, Menstrual]
+          nullable: true
+        phaseGuidance:
+          type: string
+          nullable: true
+          example: "Your energy should be high today - great time for quality work"
+        status:
+          type: string
+          enum: [Scheduled, Completed, Skipped, Modified]
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        userNotes:
+          type: string
+          nullable: true
+        skipReason:
+          type: string
+          enum: [Sick, Injury, Life, Other]
+          nullable: true
+        modifiedFromType:
+          type: string
+          enum: [Easy, Long, Tempo, Interval, Rest]
+          nullable: true
+        modifiedFromDuration:
+          type: integer
+          nullable: true
+        modifiedFromIntensity:
+          type: string
+          enum: [Low, Moderate, High]
+          nullable: true
+
+    UpdateSessionRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [Completed, Skipped, Modified]
+        userNotes:
+          type: string
+        skipReason:
+          type: string
+          enum: [Sick, Injury, Life, Other]
+        workoutType:
+          type: string
+          enum: [Easy, Long, Tempo, Interval, Rest]
+          description: New type if modifying
+        durationMinutes:
+          type: integer
+          description: New duration if modifying
+        intensityLevel:
+          type: string
+          enum: [Low, Moderate, High]
+          description: New intensity if modifying
+
+    CycleLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        runnerId:
+          type: string
+          format: uuid
+        logDate:
+          type: string
+          format: date
+        eventType:
+          type: string
+          enum: [PeriodStart, Symptom, EnergyLevel]
+        symptom:
+          type: string
+          nullable: true
+        energyLevel:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCycleLogRequest:
+      type: object
+      required: [logDate, eventType]
+      properties:
+        logDate:
+          type: string
+          format: date
+        eventType:
+          type: string
+          enum: [PeriodStart, Symptom, EnergyLevel]
+        symptom:
+          type: string
+        energyLevel:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: string

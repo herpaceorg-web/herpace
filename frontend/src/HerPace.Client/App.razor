@@ -1,0 +1,28 @@
+﻿<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not Found - HerPace</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <MudContainer>
+                <MudText Typo="Typo.h4" Class="my-4">Page Not Found</MudText>
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    Sorry, there's nothing at this address.
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/">
+                    Go to Home
+                </MudButton>
+            </MudContainer>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    // Router configured with:
+    // - Default layout: MainLayout
+    // - Focus management for accessibility
+    // - 404 page with MudBlazor components
+    // - Routes defined in Pages/*.razor files with @page directive
+}
