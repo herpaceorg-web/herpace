@@ -29,8 +29,8 @@ public class GeminiPlanGenerator : IAIPlanGenerator
         _configuration = configuration;
         _logger = logger;
 
-        _apiKey = _configuration["Gemini:ApiKey"]
-            ?? throw new InvalidOperationException("Gemini API key is not configured in appsettings.json");
+        _apiKey = (_configuration["Gemini:ApiKey"]
+            ?? throw new InvalidOperationException("Gemini API key is not configured in appsettings.json")).Trim();
 
         var model = _configuration["Gemini:Model"] ?? "gemini-3-flash-preview";
         _apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent";
@@ -63,7 +63,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
                 GenerationConfig = new GeminiGenerationConfig
                 {
                     Temperature = 0.2, // Lower temperature for consistent output
-                    MaxOutputTokens = 4096,
+                    MaxOutputTokens = 65536, // Maximum allowed tokens for complete training plan
                     ResponseMimeType = "application/json" // Request JSON format
                 }
             };
@@ -100,10 +100,36 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
             var responseText = geminiResponse.Candidates[0].Content.Parts[0].Text;
 
-            // Parse the training plan JSON from response
-            var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(responseText, new JsonSerializerOptions
+            // Log the raw response for debugging
+            _logger.LogInformation("Raw Gemini response length: {Length} characters. First 500: {Response}",
+                responseText.Length,
+                responseText.Length > 500 ? responseText.Substring(0, 500) + "..." : responseText);
+            _logger.LogInformation("Last 500 characters: {Response}",
+                responseText.Length > 500 ? "..." + responseText.Substring(responseText.Length - 500) : responseText);
+
+            // Clean up response - remove markdown code fences if present
+            var jsonText = responseText.Trim();
+            if (jsonText.StartsWith("```json"))
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                jsonText = jsonText.Substring(7); // Remove ```json
+            }
+            else if (jsonText.StartsWith("```"))
+            {
+                jsonText = jsonText.Substring(3); // Remove ```
+            }
+
+            if (jsonText.EndsWith("```"))
+            {
+                jsonText = jsonText.Substring(0, jsonText.Length - 3); // Remove trailing ```
+            }
+
+            jsonText = jsonText.Trim();
+
+            // Parse the training plan JSON from response
+            var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
             });
 
             if (plan == null)
@@ -112,7 +138,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
             }
 
             // Set metadata
-            plan.GenerationSource = "AI";
+            plan.GenerationSource = GenerationSource.AI;
             plan.AiModel = "gemini-3-flash-preview";
 
             _logger.LogInformation(

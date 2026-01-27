@@ -1,7 +1,7 @@
+using HerPace.Core.DTOs;
 using HerPace.Core.Entities;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
-using HerPace.Infrastructure.AI.DTOs;
 using HerPace.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -145,7 +145,7 @@ public class PlanGenerationService : IPlanGenerationService
             Id = Guid.NewGuid(),
             TrainingPlanId = trainingPlan.Id,
             SessionName = sessionDto.SessionName,
-            ScheduledDate = sessionDto.ScheduledDate,
+            ScheduledDate = DateTime.SpecifyKind(sessionDto.ScheduledDate, DateTimeKind.Utc), // Ensure UTC for PostgreSQL
             WorkoutType = sessionDto.WorkoutType,
             WarmUp = sessionDto.WarmUp,
             SessionDescription = sessionDto.SessionDescription,

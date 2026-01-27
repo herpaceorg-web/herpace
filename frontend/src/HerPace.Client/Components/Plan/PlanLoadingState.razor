@@ -1,0 +1,60 @@
+@* Component for displaying plan generation loading state *@
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-8 text-center">
+        <MudProgressCircular Size="Size.Large"
+                             Indeterminate="true"
+                             Color="Color.Primary" />
+
+        <MudText Typo="Typo.h5" Class="mt-6" role="status" aria-live="polite">
+            Generating Your Personalized Training Plan
+        </MudText>
+
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-4">
+            Our AI is analyzing your fitness level, race goal, and cycle data to create
+            a customized plan that adapts to your hormonal fluctuations...
+        </MudText>
+
+        <MudProgressLinear Color="Color.Primary"
+                           Indeterminate="true"
+                           Class="mt-8"
+                           aria-label="Progress indicator" />
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-4">
+            This usually takes 3-5 seconds
+        </MudText>
+
+        @if (ShowTips)
+        {
+            <MudDivider Class="my-6" />
+
+            <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-2">
+                Did you know?
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @GetRandomTip()
+            </MudText>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public bool ShowTips { get; set; } = true;
+
+    private string[] _tips = new[]
+    {
+        "During your follicular phase (days 6-13), you have higher energy levels perfect for interval training and speed work.",
+        "The luteal phase (days 16-28) is when your body needs more recovery - easy runs and rest days are your friends.",
+        "Your menstrual phase (days 1-5) is ideal for light activity and rest to support your body's natural recovery process.",
+        "During ovulation (days 14-15), you're at peak performance - this is when to schedule your hardest workouts!",
+        "Adapting your training to your cycle can reduce injury risk and improve overall performance.",
+        "Every runner's cycle is unique - our AI personalizes your plan based on YOUR cycle patterns."
+    };
+
+    private string GetRandomTip()
+    {
+        var random = new Random();
+        return _tips[random.Next(_tips.Length)];
+    }
+}

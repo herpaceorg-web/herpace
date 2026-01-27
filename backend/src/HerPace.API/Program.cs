@@ -1,9 +1,12 @@
 using System.Text;
+using HerPace.API.Middleware;
 using HerPace.Core.Entities;
 using HerPace.Core.Interfaces;
 using HerPace.Infrastructure.AI;
 using HerPace.Infrastructure.Data;
 using HerPace.Infrastructure.Services;
+using HerPace.Infrastructure.Services.Cycle;
+using HerPace.Infrastructure.Services.Plan;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -78,10 +81,16 @@ builder.Services.AddAuthentication(options =>
 
 // Register application services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<ICyclePhaseCalculator, CyclePhaseCalculator>();
+builder.Services.AddScoped<IRaceService, RaceService>();
+builder.Services.AddScoped<IPlanGenerationService, PlanGenerationService>();
 
 // Configure AI Provider (Gemini or Fallback)
 var aiProvider = builder.Configuration["AI:Provider"] ?? "Gemini";
-builder.Services.AddHttpClient<GeminiPlanGenerator>(); // Register HttpClient for Gemini API
+builder.Services.AddHttpClient<GeminiPlanGenerator>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5); // Allow up to 5 minutes for AI plan generation
+}); // Register HttpClient for Gemini API
 
 builder.Services.AddScoped<IAIPlanGenerator>(sp =>
 {
@@ -113,7 +122,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "https://localhost:5001",
             "http://localhost:5000",
-            "https://herpace-app-frontend.storage.googleapis.com" // Cloud Storage URL
+            "https://herpace-frontend-81066941589.us-central1.run.app" // Cloud Run frontend URL
         )
         .AllowAnyMethod()
         .AllowAnyHeader()
@@ -131,6 +140,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Global error handling middleware
+app.UseErrorHandling();
 
 // Enable CORS
 app.UseCors("AllowBlazorClient");

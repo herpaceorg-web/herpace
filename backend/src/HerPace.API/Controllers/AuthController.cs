@@ -40,8 +40,11 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Signup([FromBody] SignupRequest request)
     {
+        _logger.LogInformation("Signup attempt for email: {Email}", request.Email);
+
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Signup failed for {Email}: Invalid model state", request.Email);
             return BadRequest(ModelState);
         }
 
@@ -49,6 +52,7 @@ public class AuthController : ControllerBase
         var existingUser = await _userManager.FindByEmailAsync(request.Email);
         if (existingUser != null)
         {
+            _logger.LogWarning("Signup failed for {Email}: User already exists", request.Email);
             return BadRequest(new { message = "User with this email already exists." });
         }
 
@@ -64,10 +68,13 @@ public class AuthController : ControllerBase
 
         if (!result.Succeeded)
         {
+            _logger.LogError("Signup failed for {Email}: {Errors}",
+                request.Email,
+                string.Join(", ", result.Errors.Select(e => $"{e.Code}: {e.Description}")));
             return BadRequest(new { message = "Failed to create user.", errors = result.Errors });
         }
 
-        _logger.LogInformation("New user registered: {Email}", user.Email);
+        _logger.LogInformation("New user registered successfully: {UserId} ({Email})", user.Id, user.Email);
 
         // Generate JWT token
         var roles = await _userManager.GetRolesAsync(user);
@@ -94,8 +101,11 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        _logger.LogInformation("Login attempt for email: {Email}", request.Email);
+
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Login failed for {Email}: Invalid model state", request.Email);
             return BadRequest(ModelState);
         }
 
@@ -103,29 +113,34 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
+            _logger.LogWarning("Login failed for {Email}: User not found", request.Email);
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
         // Check if user is soft-deleted (GDPR compliance)
         if (user.DeletedAt.HasValue)
         {
+            _logger.LogWarning("Login failed for {Email}: Account deleted at {DeletedAt}", request.Email, user.DeletedAt);
             return Unauthorized(new { message = "This account has been deleted." });
         }
 
         // Verify password
+        _logger.LogDebug("Verifying password for user {UserId}", user.Id);
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
 
         if (result.IsLockedOut)
         {
+            _logger.LogWarning("Login failed for {Email}: Account locked out", request.Email);
             return Unauthorized(new { message = "Account locked due to multiple failed login attempts. Try again later." });
         }
 
         if (!result.Succeeded)
         {
+            _logger.LogWarning("Login failed for {Email}: Invalid password", request.Email);
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
-        _logger.LogInformation("User logged in: {Email}", user.Email);
+        _logger.LogInformation("User {UserId} ({Email}) logged in successfully", user.Id, user.Email);
 
         // Generate JWT token
         var roles = await _userManager.GetRolesAsync(user);
