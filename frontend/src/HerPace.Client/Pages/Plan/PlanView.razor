@@ -1,0 +1,312 @@
+@page "/plan/{PlanId:guid}"
+@page "/plan"
+@using HerPace.Client.Services
+@using HerPace.Client.Components.Plan
+@inject ApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>Training Plan - HerPace</PageTitle>
+
+@if (_isLoading)
+{
+    <PlanLoadingState ShowTips="true" />
+}
+else if (_plan != null)
+{
+    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+        <MudPaper Elevation="3" Class="pa-6 mb-4">
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudText Typo="Typo.h4" GutterBottom="true">
+                        @_plan.PlanName
+                    </MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">
+                        Training for <strong>@_plan.RaceName</strong> on @_plan.RaceDate.ToString("MMMM dd, yyyy")
+                    </MudText>
+                </MudItem>
+                <MudItem xs="12" md="4" Class="d-flex align-center justify-end">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">
+                        @GetPlanStatusText(_plan.Status)
+                    </MudChip>
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Training Days/Week</MudText>
+                    <MudText Typo="Typo.h6">@_plan.TrainingDaysPerWeek days</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Long Run Day</MudText>
+                    <MudText Typo="Typo.h6">@_plan.LongRunDay</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Total Sessions</MudText>
+                    <MudText Typo="Typo.h6">@_plan.Sessions.Count</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Generation Source</MudText>
+                    <MudText Typo="Typo.h6">@GetGenerationSourceText(_plan.GenerationSource)</MudText>
+                </MudItem>
+            </MudGrid>
+
+            @if (!string.IsNullOrEmpty(_plan.PlanCompletionGoal))
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-4">
+                    <strong>Goal:</strong> @_plan.PlanCompletionGoal
+                </MudAlert>
+            }
+
+            @if (!string.IsNullOrEmpty(_plan.AiRationale))
+            {
+                <MudExpansionPanels Class="mt-4">
+                    <MudExpansionPanel Text="AI Plan Rationale">
+                        <MudText Typo="Typo.body2">@_plan.AiRationale</MudText>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+        </MudPaper>
+
+        <MudPaper Elevation="3" Class="pa-6">
+            <MudText Typo="Typo.h5" Class="mb-4">Training Sessions</MudText>
+
+            <MudDataGrid Items="@_plan.Sessions"
+                         Filterable="true"
+                         SortMode="SortMode.Single"
+                         Groupable="true"
+                         Dense="true"
+                         Hover="true"
+                         aria-label="Training sessions">
+                <Columns>
+                    <PropertyColumn Property="x => x.ScheduledDate"
+                                    Title="Date"
+                                    Format="MMM dd, yyyy"
+                                    Sortable="true" />
+
+                    <PropertyColumn Property="x => x.SessionName"
+                                    Title="Session"
+                                    Sortable="true" />
+
+                    <TemplateColumn Title="Workout Type">
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="@GetWorkoutTypeColor(context.Item.WorkoutType)"
+                                     Variant="Variant.Text">
+                                @GetWorkoutTypeText(context.Item.WorkoutType)
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.Distance"
+                                    Title="Distance (km)"
+                                    Format="F1" />
+
+                    <PropertyColumn Property="x => x.DurationMinutes"
+                                    Title="Duration (min)" />
+
+                    <TemplateColumn Title="Intensity">
+                        <CellTemplate>
+                            <MudRating ReadOnly="true"
+                                       SelectedValue="@GetIntensityRating(context.Item.IntensityLevel)"
+                                       MaxValue="3"
+                                       Size="Size.Small"
+                                       aria-label="Intensity level" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Cycle Phase" Sortable="true">
+                        <CellTemplate>
+                            <PhaseIndicator CyclePhase="@context.Item.CyclePhase" />
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            @if (context.Item.CompletedAt.HasValue)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                         Color="Color.Success"
+                                         Size="Size.Small"
+                                         Title="Completed" />
+                            }
+                            else if (context.Item.IsSkipped)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Cancel"
+                                         Color="Color.Warning"
+                                         Size="Size.Small"
+                                         Title="Skipped" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <ChildRowContent>
+                    <MudCard Elevation="0" Class="ma-2">
+                        <MudCardContent>
+                            @if (!string.IsNullOrEmpty(context.Item.SessionDescription))
+                            {
+                                <MudText Typo="Typo.body2"><strong>Description:</strong> @context.Item.SessionDescription</MudText>
+                            }
+                            @if (!string.IsNullOrEmpty(context.Item.WarmUp))
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-2"><strong>Warm-up:</strong> @context.Item.WarmUp</MudText>
+                            }
+                            @if (!string.IsNullOrEmpty(context.Item.HRZones))
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-2"><strong>HR Zones:</strong> @context.Item.HRZones</MudText>
+                            }
+                            @if (!string.IsNullOrEmpty(context.Item.PhaseGuidance))
+                            {
+                                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                                    <strong>Cycle Guidance:</strong> @context.Item.PhaseGuidance
+                                </MudAlert>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                </ChildRowContent>
+            </MudDataGrid>
+        </MudPaper>
+    </MudContainer>
+}
+else if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+        <MudAlert Severity="Severity.Error">
+            @_errorMessage
+        </MudAlert>
+    </MudContainer>
+}
+
+@code {
+    [Parameter]
+    public Guid? PlanId { get; set; }
+
+    private PlanDetailResponse? _plan;
+    private bool _isLoading = true;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlan();
+    }
+
+    private async Task LoadPlan()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            _plan = await ApiClient.GetAsync<PlanDetailResponse>("/api/plans/active");
+
+            if (_plan == null)
+            {
+                _errorMessage = "No active training plan found. Please create a race goal first.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading plan: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPlanStatusText(int status)
+    {
+        return status switch
+        {
+            0 => "Active",
+            1 => "Paused",
+            2 => "Archived",
+            3 => "Completed",
+            _ => "Unknown"
+        };
+    }
+
+    private string GetGenerationSourceText(int source)
+    {
+        return source switch
+        {
+            0 => "AI Generated",
+            1 => "Template",
+            _ => "Unknown"
+        };
+    }
+
+    private Color GetWorkoutTypeColor(int workoutType)
+    {
+        return workoutType switch
+        {
+            0 => Color.Success,      // Easy - Green
+            1 => Color.Primary,      // Long - Blue
+            2 => Color.Warning,      // Tempo - Orange
+            3 => Color.Error,        // Interval - Red
+            4 => Color.Default,      // Rest - Gray
+            _ => Color.Default
+        };
+    }
+
+    private string GetWorkoutTypeText(int workoutType)
+    {
+        return workoutType switch
+        {
+            0 => "Easy",
+            1 => "Long",
+            2 => "Tempo",
+            3 => "Interval",
+            4 => "Rest",
+            _ => "Unknown"
+        };
+    }
+
+    private int GetIntensityRating(int intensityLevel)
+    {
+        return intensityLevel switch
+        {
+            0 => 1,  // Low
+            1 => 2,  // Moderate
+            2 => 3,  // High
+            _ => 0
+        };
+    }
+
+    private class PlanDetailResponse
+    {
+        public Guid Id { get; set; }
+        public string RaceName { get; set; } = string.Empty;
+        public DateTime RaceDate { get; set; }
+        public string PlanName { get; set; } = string.Empty;
+        public int Status { get; set; }
+        public int GenerationSource { get; set; }
+        public string? AiModel { get; set; }
+        public string? AiRationale { get; set; }
+        public int TrainingDaysPerWeek { get; set; }
+        public DayOfWeek LongRunDay { get; set; }
+        public string? PlanCompletionGoal { get; set; }
+        public List<SessionSummary> Sessions { get; set; } = new();
+    }
+
+    private class SessionSummary
+    {
+        public Guid Id { get; set; }
+        public string SessionName { get; set; } = string.Empty;
+        public DateTime ScheduledDate { get; set; }
+        public int WorkoutType { get; set; }
+        public int? DurationMinutes { get; set; }
+        public decimal? Distance { get; set; }
+        public int IntensityLevel { get; set; }
+        public int? CyclePhase { get; set; }
+        public string? PhaseGuidance { get; set; }
+        public string? WarmUp { get; set; }
+        public string? SessionDescription { get; set; }
+        public string? HRZones { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public bool IsSkipped { get; set; }
+    }
+}
