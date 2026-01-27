@@ -30,7 +30,29 @@
       "Bash(gcloud sql users set-password:*)",
       "Bash(gcloud sql databases create:*)",
       "Bash(gcloud sql instances describe:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(gcloud artifacts repositories list:*)",
+      "Bash(gcloud artifacts repositories create:*)",
+      "Bash(gcloud run deploy:*)",
+      "Bash(curl:*)",
+      "Bash(gsutil mb:*)",
+      "Bash(gcloud storage buckets create:*)",
+      "Bash(gcloud storage buckets add-iam-policy-binding:*)",
+      "Bash(gcloud storage buckets update:*)",
+      "WebFetch(domain:storage.googleapis.com)",
+      "Bash(gcloud storage cp:*)",
+      "Bash(gcloud run services:*)",
+      "Bash(gcloud storage rsync:*)",
+      "Bash(cat:*)",
+      "Bash(gcloud storage rm:*)",
+      "WebFetch(domain:herpace-frontend-81066941589.us-central1.run.app)",
+      "Bash(gcloud secrets create:*)",
+      "Bash(gcloud sql users:*)",
+      "Bash(gcloud sql databases list:*)",
+      "Bash(gcloud sql databases delete:*)",
+      "Bash(gcloud sql connect:*)",
+      "Bash(./cloud-sql-proxy:*)",
+      "Bash(gcloud secrets:*)"
     ]
   }
 }

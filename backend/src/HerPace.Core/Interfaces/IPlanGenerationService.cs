@@ -1,5 +1,5 @@
+using HerPace.Core.DTOs;
 using HerPace.Core.Entities;
-using HerPace.Infrastructure.AI.DTOs;
 
 namespace HerPace.Core.Interfaces;
 

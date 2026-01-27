@@ -146,43 +146,43 @@ Phase 2 (Foundational) ← MUST complete before all user stories
 - [X] T030 [P] [US1] Create Race entity in HerPace.Core/Entities/Race.cs with RaceName, RaceDate, Distance, DistanceType enum, GoalTime, IsPublic
 - [X] T031 [P] [US1] Create TrainingPlan entity in HerPace.Core/Entities/TrainingPlan.cs with Status enum (Active/Archived/Completed), GenerationSource enum (AI/Fallback), AiModel, AiRationale, StartDate, EndDate
 - [X] T032 [P] [US1] Create TrainingSession entity in HerPace.Core/Entities/TrainingSession.cs with WorkoutType enum (Easy/Long/Tempo/Interval/Rest), DurationMinutes, Distance, IntensityLevel enum, CyclePhase enum, PhaseGuidance, ScheduledDate
-- [ ] T033 [US1] Configure EF Core relationships in HerPaceDbContext.OnModelCreating (User 1:1 Runner, Runner 1:* Race, Race 1:0..1 TrainingPlan Active per FR-017, TrainingPlan 1:* TrainingSession)
-- [ ] T034 [US1] Add unique partial index for single active plan constraint in HerPaceDbContext (HasIndex on RunnerId + Status with filter Status = 'Active' per FR-017)
-- [ ] T035 [US1] Create EF Core migration for US1 entities (dotnet ef migrations add UserStory1Entities)
+- [X] T033 [US1] Configure EF Core relationships in HerPaceDbContext.OnModelCreating (User 1:1 Runner, Runner 1:* Race, Race 1:0..1 TrainingPlan Active per FR-017, TrainingPlan 1:* TrainingSession)
+- [X] T034 [US1] Add unique partial index for single active plan constraint in HerPaceDbContext (HasIndex on RunnerId + Status with filter Status = 'Active' per FR-017)
+- [X] T035 [US1] Create EF Core migration for US1 entities (dotnet ef migrations add UserStory1Entities)
 
 ### Backend: Business Logic Services
 
-- [ ] T036 [P] [US1] Create ICyclePhaseCalculator interface in HerPace.Core/Interfaces/ with CalculateCurrentPhase and PredictPhasesForRange methods
-- [ ] T037 [P] [US1] Implement CyclePhaseCalculator service in HerPace.Infrastructure/Services/Cycle/CyclePhaseCalculator.cs (28-day cycle algorithm from research.md)
-- [ ] T038 [P] [US1] Create IRaceService interface in HerPace.Core/Interfaces/ with CreateRace and ValidateRaceDate methods
-- [ ] T039 [P] [US1] Implement RaceService in HerPace.Infrastructure/Services/RaceService.cs with FR-016 validation (race date ≥7 days future)
-- [ ] T040 [P] [US1] Create IPlanGenerationService interface in HerPace.Core/Interfaces/ with GeneratePlanAsync and ValidateAIResponse methods
-- [ ] T041 [US1] Implement PlanGenerationService in HerPace.Infrastructure/Services/Plan/PlanGenerationService.cs orchestrating cycle calculation + AI call + FR-017 single active plan check
-- [ ] T042 [US1] Implement Gemini prompt builder in GeminiPlanGenerator.BuildPlanPrompt with user profile, race goal, cycle phases, workout type constraints (per research.md Section 7)
-- [ ] T043 [US1] Implement AI response validation in PlanGenerationService.ValidateAIResponse checking JSON schema (plan metadata + sessions array per FR-021)
-- [ ] T044 [US1] Implement fallback plan selection in FallbackPlanGenerator.SelectTemplate based on race DistanceType and Runner FitnessLevel (research.md Section 7)
+- [X] T036 [P] [US1] Create ICyclePhaseCalculator interface in HerPace.Core/Interfaces/ with CalculateCurrentPhase and PredictPhasesForRange methods
+- [X] T037 [P] [US1] Implement CyclePhaseCalculator service in HerPace.Infrastructure/Services/Cycle/CyclePhaseCalculator.cs (28-day cycle algorithm from research.md)
+- [X] T038 [P] [US1] Create IRaceService interface in HerPace.Core/Interfaces/ with CreateRace and ValidateRaceDate methods
+- [X] T039 [P] [US1] Implement RaceService in HerPace.Infrastructure/Services/RaceService.cs with FR-016 validation (race date ≥7 days future)
+- [X] T040 [P] [US1] Create IPlanGenerationService interface in HerPace.Core/Interfaces/ with GeneratePlanAsync and ValidateAIResponse methods
+- [X] T041 [US1] Implement PlanGenerationService in HerPace.Infrastructure/Services/Plan/PlanGenerationService.cs orchestrating cycle calculation + AI call + FR-017 single active plan check
+- [X] T042 [US1] Implement Gemini prompt builder in GeminiPlanGenerator.BuildPlanPrompt with user profile, race goal, cycle phases, workout type constraints (per research.md Section 7)
+- [X] T043 [US1] Implement AI response validation in PlanGenerationService.ValidateAIResponse checking JSON schema (plan metadata + sessions array per FR-021)
+- [X] T044 [US1] Implement fallback plan selection in FallbackPlanGenerator.SelectTemplate based on race DistanceType and Runner FitnessLevel (research.md Section 7)
 
 ### Backend: API Endpoints
 
-- [ ] T045 [P] [US1] Create ProfileController in HerPace.API/Controllers/ with POST /profiles/me endpoint (create Runner profile, validate cycle length 21-45 days)
-- [ ] T046 [P] [US1] Add GET /profiles/me endpoint to ProfileController (retrieve authenticated user's Runner profile)
-- [ ] T047 [P] [US1] Create RaceController in HerPace.API/Controllers/ with POST /races endpoint (validate FR-016: date ≥7 days future, return error message if violated)
-- [ ] T048 [P] [US1] Create PlanController in HerPace.API/Controllers/ with POST /plans endpoint (check FR-017 single active plan constraint, call PlanGenerationService, return 409 Conflict if active plan exists)
-- [ ] T049 [P] [US1] Add GET /plans/active endpoint to PlanController (retrieve user's active TrainingPlan with sessions)
-- [ ] T050 [US1] Add global exception handler in HerPace.API/Middleware/ErrorHandlingMiddleware.cs catching AI_GENERATION_FAILED exception and triggering fallback plan per FR-015
+- [X] T045 [P] [US1] Create ProfileController in HerPace.API/Controllers/ with POST /profiles/me endpoint (create Runner profile, validate cycle length 21-45 days)
+- [X] T046 [P] [US1] Add GET /profiles/me endpoint to ProfileController (retrieve authenticated user's Runner profile)
+- [X] T047 [P] [US1] Create RaceController in HerPace.API/Controllers/ with POST /races endpoint (validate FR-016: date ≥7 days future, return error message if violated)
+- [X] T048 [P] [US1] Create PlanController in HerPace.API/Controllers/ with POST /plans endpoint (check FR-017 single active plan constraint, call PlanGenerationService, return 409 Conflict if active plan exists)
+- [X] T049 [P] [US1] Add GET /plans/active endpoint to PlanController (retrieve user's active TrainingPlan with sessions)
+- [X] T050 [US1] Add global exception handler in HerPace.API/Middleware/ErrorHandlingMiddleware.cs catching AI_GENERATION_FAILED exception and triggering fallback plan per FR-015
 
 ### Frontend: Blazor Components & Pages
 
-- [ ] T051 [P] [US1] Create Signup.razor page in HerPace.Client/Pages/Auth/ with MudTextField for email/password, call POST /auth/signup, store JWT in localStorage
-- [ ] T052 [P] [US1] Create Login.razor page in HerPace.Client/Pages/Auth/ with MudTextField, call POST /auth/login
-- [ ] T053 [P] [US1] Create ProfileSetup.razor page in HerPace.Client/Pages/Onboarding/ with MudSelect for FitnessLevel, MudNumericField for CycleLength (21-45 validation), MudDatePicker for LastPeriodStart, MudRadioGroup for TypicalCycleRegularity
-- [ ] T054 [P] [US1] Create RaceEntry.razor page in HerPace.Client/Pages/Onboarding/ with MudTextField for RaceName, MudDatePicker for RaceDate (min 7 days future client-side validation), MudNumericField for Distance, MudSelect for DistanceType
-- [ ] T055 [P] [US1] Create PlanView.razor page in HerPace.Client/Pages/Plan/ displaying TrainingPlan with MudDataGrid showing TrainingSessions (columns: Date, WorkoutType, Duration, Distance, CyclePhase badge)
-- [ ] T056 [P] [US1] Create PhaseIndicator.razor component in HerPace.Client/Components/Plan/ using MudChip with color-coded cycle phases (Follicular=Green, Ovulatory=Yellow, Luteal=Orange, Menstrual=Red)
-- [ ] T057 [P] [US1] Create PlanLoadingState.razor component in HerPace.Client/Components/Plan/ with MudProgressLinear and "Generating your personalized plan..." message (displayed during AI call)
-- [ ] T058 [US1] Implement navigation flow in HerPace.Client/App.razor routing Signup → ProfileSetup → RaceEntry → POST /plans → PlanView (redirect to /plan on successful plan generation)
-- [ ] T059 [US1] Add accessibility attributes to all US1 Blazor components (AriaLabel on MudButton, form labels via MudTextField Label property, semantic headings)
-- [ ] T060 [US1] Test responsive layout for US1 pages on 360px mobile viewport using browser dev tools (verify MudBlazor responsive grid)
+- [X] T051 [P] [US1] Create Signup.razor page in HerPace.Client/Pages/Auth/ with MudTextField for email/password, call POST /auth/signup, store JWT in localStorage
+- [X] T052 [P] [US1] Create Login.razor page in HerPace.Client/Pages/Auth/ with MudTextField, call POST /auth/login
+- [X] T053 [P] [US1] Create ProfileSetup.razor page in HerPace.Client/Pages/Onboarding/ with MudSelect for FitnessLevel, MudNumericField for CycleLength (21-45 validation), MudDatePicker for LastPeriodStart, MudRadioGroup for TypicalCycleRegularity
+- [X] T054 [P] [US1] Create RaceEntry.razor page in HerPace.Client/Pages/Onboarding/ with MudTextField for RaceName, MudDatePicker for RaceDate (min 7 days future client-side validation), MudNumericField for Distance, MudSelect for DistanceType
+- [X] T055 [P] [US1] Create PlanView.razor page in HerPace.Client/Pages/Plan/ displaying TrainingPlan with MudDataGrid showing TrainingSessions (columns: Date, WorkoutType, Duration, Distance, CyclePhase badge)
+- [X] T056 [P] [US1] Create PhaseIndicator.razor component in HerPace.Client/Components/Plan/ using MudChip with color-coded cycle phases (Follicular=Green, Ovulatory=Yellow, Luteal=Orange, Menstrual=Red)
+- [X] T057 [P] [US1] Create PlanLoadingState.razor component in HerPace.Client/Components/Plan/ with MudProgressLinear and "Generating your personalized plan..." message (displayed during AI call)
+- [X] T058 [US1] Implement navigation flow in HerPace.Client/App.razor routing Signup → ProfileSetup → RaceEntry → POST /plans → PlanView (redirect to /plan on successful plan generation)
+- [X] T059 [US1] Add accessibility attributes to all US1 Blazor components (AriaLabel on MudButton, form labels via MudTextField Label property, semantic headings)
+- [X] T060 [US1] Test responsive layout for US1 pages on 360px mobile viewport using browser dev tools (verify MudBlazor responsive grid)
 
 **Acceptance Scenario Validation**:
 1. ✅ AS1.1: User signs up, enters London Marathon 2026 (April 26), cycle 28 days, receives plan with workouts from today to race day with varying intensity per cycle phase

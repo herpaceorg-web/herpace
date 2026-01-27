@@ -10,7 +10,11 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure HttpClient for API calls
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7001";
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+builder.Services.AddScoped(sp => new HttpClient
+{
+    BaseAddress = new Uri(apiBaseUrl),
+    Timeout = TimeSpan.FromMinutes(5) // Allow up to 5 minutes for long-running API calls like plan generation
+});
 
 // Register API client service
 builder.Services.AddScoped<ApiClient>();

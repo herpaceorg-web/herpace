@@ -146,3 +146,23 @@ cloudbuild.yaml.local
 # Specification artifacts (keep these in repo)
 !specs/
 !.specify/
+deploy-cleanup.ps1
+deploy-complete-backup.ps1
+deploy-complete-fixed.ps1
+deploy-complete.ps1
+deploy-local-test.ps1
+deploy-update.ps1
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Deployment documentation
+DEPLOYMENT-COMMANDS.md
+DEPLOYMENT.md
+
+# Build outputs and cloud tools
+frontend/src/HerPace.Client/publish/
+backend/cloud-sql-proxy.exe
+
+# Frontend app configuration
+frontend/src/HerPace.Client/wwwroot/appsettings.json
