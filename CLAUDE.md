@@ -83,9 +83,9 @@ User (1) → (1) Runner → (∞) Race
 ## API Endpoints
 
 - `POST /api/auth/signup`, `/api/auth/login` - Authentication
-- `GET|PUT /api/profile`, `POST /api/profile/runner` - User/Runner profiles
-- `GET|POST /api/race`, `GET|PUT /api/race/{id}` - Race management
-- `POST /api/plan/generate`, `GET /api/plan`, `GET|PUT /api/plan/{id}` - Training plans
+- `GET|POST /api/profiles/me` - Runner profiles
+- `GET|POST /api/races`, `GET|PUT /api/races/{id}` - Race management
+- `POST /api/plans`, `GET /api/plans/active` - Training plans
 
 ## Configuration
 
@@ -94,16 +94,60 @@ Development settings in `appsettings.json`. Key configs:
 - `Jwt:Secret`, `Jwt:Issuer`, `Jwt:Audience` - JWT auth
 - `Gemini:ApiKey`, `Gemini:Model` - AI integration
 
+**Production Configuration (`appsettings.Production.json`):**
+- Do NOT put secrets (passwords, API keys) in this file - they will override environment variables
+- Secrets are injected via Google Cloud Secret Manager at runtime
+- Only put non-sensitive config values here
+
 ## Deployment
 
+### Quick Update (after code changes)
 ```powershell
-# Full GCP deployment (Windows PowerShell)
-.\deploy-complete.ps1
-
-# Update existing deployment
 .\deploy-update.ps1
 ```
 
-Production URLs:
+### Full Deployment (first time or infrastructure changes)
+```powershell
+.\deploy-complete.ps1
+```
+
+### Manual Deployment Commands
+
+**Backend:**
+```powershell
+# Build and push using Cloud Build (recommended - avoids local Docker issues)
+cd backend
+gcloud builds submit --tag us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-api:latest .
+
+# Deploy to Cloud Run
+gcloud run services update herpace-api --image=us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-api:latest --region=us-central1
+```
+
+**Frontend:**
+```powershell
+# Build
+cd frontend/src/HerPace.Client
+dotnet publish -c Release
+
+# Build and push Docker image using Cloud Build
+cd frontend
+gcloud builds submit --tag us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest .
+
+# Deploy to Cloud Run
+gcloud run services update herpace-frontend --image=us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest --region=us-central1
+```
+
+### Production URLs
 - API: `https://herpace-api-81066941589.us-central1.run.app`
 - Frontend: `https://herpace-frontend-81066941589.us-central1.run.app`
+
+### Google Cloud Secrets
+Secrets are stored in Secret Manager and injected as environment variables:
+- `jwt-secret` → `Jwt__Secret`
+- `db-connection` → `ConnectionStrings__HerPaceDb` AND `ConnectionStrings__CloudSqlConnection`
+- `gemini-api-key` → `Gemini__ApiKey`
+
+### Troubleshooting
+- **500 errors on login:** Check Cloud Run logs: `gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=herpace-api AND severity>=ERROR" --limit=10 --format=json`
+- **Database connection errors:** Ensure both `ConnectionStrings__HerPaceDb` AND `ConnectionStrings__CloudSqlConnection` are set (app uses `CloudSqlConnection` when `UseCloudSql=true`)
+- **Old frontend code:** Frontend is served from Cloud Run, not Cloud Storage. Redeploy with `gcloud run services update herpace-frontend`
