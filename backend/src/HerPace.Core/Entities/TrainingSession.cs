@@ -1,4 +1,5 @@
 using HerPace.Core.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HerPace.Core.Entities;
 
@@ -35,6 +36,39 @@ public class TrainingSession
     public string? UserNotes { get; set; }
     public bool IsSkipped { get; set; } = false;
     public string? SkipReason { get; set; }
+
+    /// <summary>
+    /// Computed property indicating if session was significantly modified (>20% deviation).
+    /// Not persisted to database - calculated on-demand.
+    /// </summary>
+    [NotMapped]
+    public bool WasModified
+    {
+        get
+        {
+            // Rest days and skipped sessions are never "modified"
+            if (WorkoutType == WorkoutType.Rest || IsSkipped)
+                return false;
+
+            // Check distance deviation if both planned and actual exist
+            if (Distance.HasValue && ActualDistance.HasValue && Distance.Value > 0)
+            {
+                var distanceDeviation = Math.Abs(ActualDistance.Value - Distance.Value) / Distance.Value;
+                if (distanceDeviation > 0.20m) // >20%
+                    return true;
+            }
+
+            // Check duration deviation if both planned and actual exist
+            if (DurationMinutes.HasValue && ActualDuration.HasValue && DurationMinutes.Value > 0)
+            {
+                var durationDeviation = Math.Abs(ActualDuration.Value - DurationMinutes.Value) / (decimal)DurationMinutes.Value;
+                if (durationDeviation > 0.20m) // >20%
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     // Timestamps
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

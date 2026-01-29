@@ -155,6 +155,202 @@ public class GeminiPlanGenerator : IAIPlanGenerator
         }
     }
 
+    public async Task<GeneratedPlanDto> RecalculatePlanAsync(
+        PlanRecalculationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Recalculating {Count} sessions for plan {PlanId} using Gemini API",
+                request.SessionsToRecalculate,
+                request.TrainingPlanId);
+
+            // Build the recalculation prompt
+            var prompt = BuildRecalculationPrompt(request);
+
+            // Create Gemini API request
+            var geminiRequest = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = prompt }
+                        }
+                    }
+                },
+                GenerationConfig = new GeminiGenerationConfig
+                {
+                    Temperature = 0.3, // Slightly higher for adaptive changes
+                    MaxOutputTokens = 16384, // Fewer tokens needed for partial plan
+                    ResponseMimeType = "application/json"
+                }
+            };
+
+            // Serialize request
+            var jsonRequest = JsonSerializer.Serialize(geminiRequest, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            // Create HTTP request
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, _apiUrl);
+            httpRequest.Headers.Add("x-goog-api-key", _apiKey);
+            httpRequest.Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+            // Send request
+            var startTime = DateTime.UtcNow;
+            var httpResponse = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            var duration = DateTime.UtcNow - startTime;
+
+            httpResponse.EnsureSuccessStatusCode();
+
+            // Parse response
+            var jsonResponse = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+            var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(jsonResponse, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            if (geminiResponse?.Candidates == null || geminiResponse.Candidates.Count == 0)
+            {
+                throw new InvalidOperationException("Gemini API returned no candidates");
+            }
+
+            var responseText = geminiResponse.Candidates[0].Content.Parts[0].Text;
+
+            // Clean up response - remove markdown code fences if present
+            var jsonText = responseText.Trim();
+            if (jsonText.StartsWith("```json"))
+            {
+                jsonText = jsonText.Substring(7);
+            }
+            else if (jsonText.StartsWith("```"))
+            {
+                jsonText = jsonText.Substring(3);
+            }
+
+            if (jsonText.EndsWith("```"))
+            {
+                jsonText = jsonText.Substring(0, jsonText.Length - 3);
+            }
+
+            jsonText = jsonText.Trim();
+
+            // Parse the recalculated sessions JSON
+            var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            });
+
+            if (plan == null)
+            {
+                throw new InvalidOperationException("Failed to parse Gemini recalculation response");
+            }
+
+            // Set metadata
+            plan.GenerationSource = GenerationSource.AI;
+            plan.AiModel = "gemini-3-flash-preview";
+
+            _logger.LogInformation(
+                "Plan recalculation completed in {Duration}ms. Sessions regenerated: {Count}",
+                duration.TotalMilliseconds,
+                plan.Sessions.Count);
+
+            return plan;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recalculating plan with Gemini API");
+            throw new InvalidOperationException("AI_RECALCULATION_FAILED: " + ex.Message, ex);
+        }
+    }
+
+    public async Task<string> GenerateRecalculationSummaryAsync(
+        PlanRecalculationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Generating recalculation summary for plan {PlanId} using Gemini API",
+                request.TrainingPlanId);
+
+            // Build the summary prompt
+            var prompt = BuildRecalculationSummaryPrompt(request);
+
+            // Create Gemini API request
+            var geminiRequest = new GeminiRequest
+            {
+                Contents = new List<GeminiContent>
+                {
+                    new GeminiContent
+                    {
+                        Parts = new List<GeminiPart>
+                        {
+                            new GeminiPart { Text = prompt }
+                        }
+                    }
+                },
+                GenerationConfig = new GeminiGenerationConfig
+                {
+                    Temperature = 0.4, // Slightly higher for more natural language
+                    MaxOutputTokens = 500, // Limit to keep summary concise
+                    ResponseMimeType = "text/plain" // Plain text response
+                }
+            };
+
+            // Serialize request
+            var jsonRequest = JsonSerializer.Serialize(geminiRequest, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            // Create HTTP request
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, _apiUrl);
+            httpRequest.Headers.Add("x-goog-api-key", _apiKey);
+            httpRequest.Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+            // Send request
+            var startTime = DateTime.UtcNow;
+            var httpResponse = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            var duration = DateTime.UtcNow - startTime;
+
+            httpResponse.EnsureSuccessStatusCode();
+
+            // Parse response
+            var jsonResponse = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+            var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(jsonResponse, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            if (geminiResponse?.Candidates == null || geminiResponse.Candidates.Count == 0)
+            {
+                throw new InvalidOperationException("Gemini API returned no candidates");
+            }
+
+            var summary = geminiResponse.Candidates[0].Content.Parts[0].Text.Trim();
+
+            _logger.LogInformation(
+                "Recalculation summary generated in {Duration}ms. Length: {Length} characters",
+                duration.TotalMilliseconds,
+                summary.Length);
+
+            return summary;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating recalculation summary with Gemini API");
+            // Return fallback message instead of throwing
+            return "Your training plan has been adjusted based on your recent performance. Check your updated sessions to see the changes.";
+        }
+    }
+
     private string BuildPlanPrompt(PlanGenerationRequest request)
     {
         var totalDays = (request.EndDate - request.StartDate).Days + 1;
@@ -275,5 +471,206 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 - Align workouts with cycle phases when provided
 - Include proper taper in final 2 weeks
 - Generate complete, detailed, actionable training plan";
+    }
+
+    private string BuildRecalculationPrompt(PlanRecalculationRequest request)
+    {
+        // Build historical summary
+        var historicalSummary = BuildHistoricalSummary(request.RecentSessions);
+
+        // Calculate stats
+        var skippedCount = request.RecentSessions.Count(s => s.IsSkipped);
+        var modifiedCount = request.RecentSessions.Count(s => s.WasModified);
+        var avgRPE = request.RecentSessions
+            .Where(s => s.RPE.HasValue)
+            .Select(s => s.RPE!.Value)
+            .DefaultIfEmpty(0)
+            .Average();
+
+        var distanceTypeStr = request.DistanceType switch
+        {
+            DistanceType.FiveK => "5K",
+            DistanceType.TenK => "10K",
+            DistanceType.HalfMarathon => "Half Marathon",
+            DistanceType.Marathon => "Marathon",
+            _ => request.Distance.ToString("F1") + " km"
+        };
+
+        var daysUntilRace = (request.RaceDate - request.RecalculationStartDate).Days;
+
+        return $@"Recalculate training plan sessions based on runner's recent performance. The runner is NOT following the original plan as expected and needs adaptive adjustments.
+
+**Context**:
+- Race: {request.RaceName} on {request.RaceDate:yyyy-MM-dd} ({distanceTypeStr}, {daysUntilRace} days away)
+- Runner Fitness: {request.FitnessLevel}
+- Original Plan: {request.PlanName}
+
+**Recent Performance Analysis (Last {request.RecentSessions.Count} Sessions)**:
+{historicalSummary}
+
+**Performance Summary**:
+- Skipped sessions: {skippedCount}/{request.RecentSessions.Count} ({(double)skippedCount / request.RecentSessions.Count:P0})
+- Modified sessions (>20% deviation): {modifiedCount}/{request.RecentSessions.Count} ({(double)modifiedCount / request.RecentSessions.Count:P0})
+- Average RPE (when available): {avgRPE:F1}/10
+
+**Adaptation Strategy**:
+Based on the pattern above, adjust the next {request.SessionsToRecalculate} sessions ({request.RecalculationStartDate:yyyy-MM-dd} to {request.RecalculationEndDate:yyyy-MM-dd}) to:
+
+1. **If many sessions skipped**: Reduce volume/frequency to build consistency before intensity
+2. **If many sessions modified with lower distance/duration**: Current plan may be too aggressive - scale back appropriately
+3. **If RPE consistently high (>7)**: Add more recovery, reduce intensity
+4. **If RPE consistently low (<5) and completing as planned**: Consider slight intensity increase
+5. **Maintain progressive overload** toward race goal while respecting current fitness reality
+6. **Re-align with cycle phases** for optimal hormonal support
+
+**Updated Cycle Phases** (for recalculation period):
+{(request.UpdatedCyclePhases != null && request.UpdatedCyclePhases.Any()
+    ? string.Join("\n", request.UpdatedCyclePhases.Select(kvp => $"- {kvp.Key:yyyy-MM-dd}: {kvp.Value}"))
+    : "Cycle tracking not enabled")}
+
+**Response Format** (JSON - return ONLY this JSON, no extra text):
+{{
+  ""planName"": ""{request.PlanName} (Adapted)"",
+  ""sessions"": [
+    {{
+      ""sessionName"": ""Adapted Easy Run"",
+      ""scheduledDate"": ""{request.RecalculationStartDate:yyyy-MM-dd}"",
+      ""workoutType"": 0,
+      ""warmUp"": ""5-10 min easy jog"",
+      ""sessionDescription"": ""Adjusted based on recent performance"",
+      ""durationMinutes"": 30,
+      ""distance"": 5.0,
+      ""intensityLevel"": 0,
+      ""hrZones"": ""Zone 2"",
+      ""cyclePhase"": 1,
+      ""phaseGuidance"": ""Recovery-focused adaptation""
+    }}
+  ]
+}}
+
+**Enum Value Mappings**:
+- workoutType: Easy=0, Long=1, Tempo=2, Interval=3, Rest=4
+- intensityLevel: Low=0, Moderate=1, High=2
+- cyclePhase: Menstrual=0, Follicular=1, Ovulatory=2, Luteal=3
+
+**CRITICAL**:
+- Return ONLY valid JSON (no markdown code fences)
+- Generate EXACTLY {request.SessionsToRecalculate} sessions
+- Sessions must cover dates {request.RecalculationStartDate:yyyy-MM-dd} to {request.RecalculationEndDate:yyyy-MM-dd}
+- Adapt workouts based on recent performance patterns
+- Keep runner progressing toward {request.RaceDate:yyyy-MM-dd} race goal
+- Align with updated cycle phases";
+    }
+
+    private string BuildHistoricalSummary(List<CompletedSessionContext> recentSessions)
+    {
+        if (!recentSessions.Any())
+        {
+            return "No recent sessions available";
+        }
+
+        var summary = new StringBuilder();
+        foreach (var session in recentSessions.OrderBy(s => s.ScheduledDate))
+        {
+            var status = session.IsSkipped ? "SKIPPED" :
+                        session.WasModified ? "MODIFIED" :
+                        "Completed as planned";
+
+            summary.AppendLine($"- {session.ScheduledDate:yyyy-MM-dd} ({session.WorkoutType}): {status}");
+
+            if (session.IsSkipped)
+            {
+                summary.AppendLine($"  Reason: {session.SkipReason ?? "Not specified"}");
+            }
+            else
+            {
+                summary.AppendLine($"  Planned: {session.PlannedDistance?.ToString("F1") ?? "N/A"} km, {session.PlannedDuration ?? 0} min");
+                summary.AppendLine($"  Actual: {session.ActualDistance?.ToString("F1") ?? "N/A"} km, {session.ActualDuration ?? 0} min");
+
+                if (session.RPE.HasValue)
+                {
+                    summary.AppendLine($"  RPE: {session.RPE}/10");
+                }
+
+                if (!string.IsNullOrEmpty(session.UserNotes))
+                {
+                    summary.AppendLine($"  Notes: {session.UserNotes}");
+                }
+            }
+        }
+
+        return summary.ToString();
+    }
+
+    private string BuildRecalculationSummaryPrompt(PlanRecalculationRequest request)
+    {
+        // Calculate performance stats
+        var skippedCount = request.RecentSessions.Count(s => s.IsSkipped);
+        var modifiedCount = request.RecentSessions.Count(s => s.WasModified);
+        var completedAsPlanned = request.RecentSessions.Count - skippedCount - modifiedCount;
+
+        var avgRPE = request.RecentSessions
+            .Where(s => s.RPE.HasValue && !s.IsSkipped)
+            .Select(s => s.RPE!.Value)
+            .DefaultIfEmpty(0)
+            .Average();
+
+        // Determine performance pattern
+        var performancePattern = modifiedCount > 0
+            ? (request.RecentSessions.Where(s => !s.IsSkipped && s.ActualDistance.HasValue && s.PlannedDistance.HasValue)
+                .Average(s => s.ActualDistance!.Value) >
+               request.RecentSessions.Where(s => !s.IsSkipped && s.ActualDistance.HasValue && s.PlannedDistance.HasValue)
+                .Average(s => s.PlannedDistance!.Value)
+                ? "overperforming" : "underperforming")
+            : (skippedCount > 0 ? "inconsistent" : "on-track");
+
+        // Get upcoming cycle phase if available
+        var upcomingPhase = request.UpdatedCyclePhases != null && request.UpdatedCyclePhases.Any()
+            ? $"You're entering your {request.UpdatedCyclePhases.First().Value} phase."
+            : "";
+
+        var daysUntilRace = (request.RaceDate - DateTime.UtcNow.Date).Days;
+
+        return $@"You are a supportive running coach helping a woman runner understand how her training plan has been adjusted.
+
+**Runner Context:**
+- Race: {request.RaceName} on {request.RaceDate:yyyy-MM-dd} ({daysUntilRace} days away)
+- Fitness Level: {request.FitnessLevel}
+
+**Recent Performance Summary ({request.RecentSessions.Count} sessions):**
+- Completed as planned: {completedAsPlanned}
+- Modified (>20% deviation): {modifiedCount}
+- Skipped: {skippedCount}
+- Average RPE: {avgRPE:F1}/10
+- Performance pattern: {performancePattern}
+
+**Cycle Information:**
+{upcomingPhase}
+
+**Task:**
+Write a supportive, empowering 3-4 sentence summary explaining the plan adjustments. Use this structure:
+
+1. **Performance observation**: Acknowledge the runner's pattern ({performancePattern})
+2. **Adjustment explanation**: Briefly explain how the plan has been adapted (increased/decreased volume or intensity)
+3. **Hormone cycle context**: If cycle phase info available, explain how adjustments align with hormonal needs
+4. **Encouragement**: End with supportive guidance
+
+**Tone Guidelines:**
+- Warm, coach-like, empowering
+- Avoid technical jargon
+- No condescension or over-praise
+- Focus on science-backed hormonal insights when relevant
+- Emphasize sustainable progress
+
+**Example for overperforming:**
+""You've been crushing your planned distances - 20% above target! I've increased your mileage to match your fitness gains while adding extra recovery days. {upcomingPhase} This means higher energy needs, so fuel well. Keep this momentum sustainable!""
+
+**Example for underperforming:**
+""I noticed you've been running shorter than planned recently. I've scaled back the next week's volume by 15% to rebuild confidence and consistency. {upcomingPhase} Energy naturally dips during this time - be kind to yourself. Small, consistent efforts win races!""
+
+**Example for inconsistent:**
+""Your training has been a bit sporadic with {skippedCount} skipped sessions. I've simplified the plan with more easy runs and flexible timing. {upcomingPhase} You'll feel energy returning - perfect for getting back on track. Progress isn't linear!""
+
+Now generate the summary (ONLY the summary text, no extra formatting):";
     }
 }
