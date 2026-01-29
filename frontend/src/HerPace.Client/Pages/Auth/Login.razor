@@ -140,8 +140,8 @@
         try
         {
             var activePlan = await ApiClient.GetAsync<PlanResponse>("/api/plans/active");
-            // User has an active plan, show it
-            Navigation.NavigateTo("/plan");
+            // User has an active plan, show dashboard
+            Navigation.NavigateTo("/dashboard");
         }
         catch
         {

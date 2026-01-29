@@ -3,6 +3,7 @@ using System;
 using HerPace.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HerPace.Infrastructure.Migrations
 {
     [DbContext(typeof(HerPaceDbContext))]
-    partial class HerPaceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260127225208_AddPlanRecalculationTracking")]
+    partial class AddPlanRecalculationTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -179,9 +182,6 @@ namespace HerPace.Infrastructure.Migrations
                     b.Property<DateTime?>("LastRecalculationRequestedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("LastRecalculationSummary")
-                        .HasColumnType("text");
-
                     b.Property<int>("LongRunDay")
                         .HasColumnType("integer");
 
@@ -196,9 +196,6 @@ namespace HerPace.Infrastructure.Migrations
 
                     b.Property<Guid>("RaceId")
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RecalculationSummaryViewedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RunnerId")
                         .HasColumnType("uuid");

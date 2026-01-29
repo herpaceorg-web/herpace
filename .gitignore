@@ -166,3 +166,7 @@ backend/cloud-sql-proxy.exe
 
 # Frontend app configuration
 frontend/src/HerPace.Client/wwwroot/appsettings.json
+fix-db-permissions.csx
+create-database.csx
+fix-permissions.sql
+fix-production-permissions.csx

@@ -52,7 +52,22 @@
       "Bash(gcloud sql databases delete:*)",
       "Bash(gcloud sql connect:*)",
       "Bash(./cloud-sql-proxy:*)",
-      "Bash(gcloud secrets:*)"
+      "Bash(gcloud secrets:*)",
+      "Bash(ls:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"./deploy-to-cloud.ps1\")",
+      "Bash(echo:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(find:*)",
+      "Bash(gcloud logging read:*)",
+      "Bash(gcloud builds submit:*)",
+      "Bash(gsutil cat:*)",
+      "Bash(gcloud storage cat:*)",
+      "Bash(psql:*)",
+      "Bash(gcloud sql execute-sql:*)",
+      "Bash(where:*)",
+      "Bash(choco install:*)",
+      "Bash(gcloud sql operations:*)"
     ]
   }
 }

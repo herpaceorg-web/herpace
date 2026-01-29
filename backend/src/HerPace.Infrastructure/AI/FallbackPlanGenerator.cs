@@ -54,6 +54,141 @@ public class FallbackPlanGenerator : IAIPlanGenerator
         return Task.FromResult(plan);
     }
 
+    public Task<GeneratedPlanDto> RecalculatePlanAsync(
+        PlanRecalculationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogWarning("Using fallback template-based plan recalculation for plan: {PlanName}", request.PlanName);
+
+        // Analyze recent performance to determine adjustment factor
+        var adjustmentFactor = CalculateAdjustmentFactor(request.RecentSessions);
+
+        _logger.LogInformation(
+            "Recalculation adjustment factor: {Factor} based on {Count} recent sessions",
+            adjustmentFactor,
+            request.RecentSessions.Count);
+
+        var distanceTypeStr = request.DistanceType switch
+        {
+            DistanceType.FiveK => "5K",
+            DistanceType.TenK => "10K",
+            DistanceType.HalfMarathon => "Half Marathon",
+            DistanceType.Marathon => "Marathon",
+            _ => $"{request.Distance:F1}km"
+        };
+
+        var plan = new GeneratedPlanDto
+        {
+            PlanName = $"{request.PlanName} (Adapted)",
+            Sessions = GenerateRecalculatedSessions(request, adjustmentFactor)
+        };
+
+        _logger.LogInformation("Fallback recalculation generated {Count} adapted sessions", plan.Sessions.Count);
+
+        return Task.FromResult(plan);
+    }
+
+    private decimal CalculateAdjustmentFactor(List<CompletedSessionContext> recentSessions)
+    {
+        if (!recentSessions.Any())
+            return 1.0m;
+
+        var skippedCount = recentSessions.Count(s => s.IsSkipped);
+        var modifiedCount = recentSessions.Count(s => s.WasModified);
+        var offTrackCount = skippedCount + modifiedCount;
+        var offTrackRatio = (decimal)offTrackCount / recentSessions.Count;
+
+        // Calculate average RPE if available
+        var avgRPE = recentSessions
+            .Where(s => s.RPE.HasValue && !s.IsSkipped)
+            .Select(s => s.RPE!.Value)
+            .DefaultIfEmpty(6)
+            .Average();
+
+        // Adjustment logic:
+        // - If >50% off-track: reduce to 0.7 (30% reduction)
+        // - If 33-50% off-track: reduce to 0.85 (15% reduction)
+        // - If RPE consistently high (>7.5): reduce by additional 10%
+        // - If RPE consistently low (<5) and on track: maintain or slight increase
+
+        decimal factor = offTrackRatio switch
+        {
+            > 0.50m => 0.70m,
+            >= 0.33m => 0.85m,
+            _ => 1.0m
+        };
+
+        // Adjust based on RPE
+        if (avgRPE > 7.5)
+        {
+            factor *= 0.9m; // Additional 10% reduction for high RPE
+        }
+        else if (avgRPE < 5.0 && offTrackRatio < 0.20m)
+        {
+            factor = Math.Min(1.05m, factor * 1.05m); // Slight increase if handling well
+        }
+
+        return Math.Max(0.6m, Math.Min(1.1m, factor)); // Clamp between 60% and 110%
+    }
+
+    private List<TrainingSessionDto> GenerateRecalculatedSessions(
+        PlanRecalculationRequest request,
+        decimal adjustmentFactor)
+    {
+        var sessions = new List<TrainingSessionDto>();
+        var template = SelectTemplate(request.DistanceType, request.FitnessLevel);
+
+        // Calculate how many days we need to generate
+        var daysToGenerate = (request.RecalculationEndDate - request.RecalculationStartDate).Days + 1;
+        var currentDate = request.RecalculationStartDate;
+
+        // Generate sessions for the recalculation period
+        for (int day = 0; day < daysToGenerate; day++)
+        {
+            var sessionDate = currentDate.AddDays(day);
+            var dayOfWeek = sessionDate.DayOfWeek;
+
+            // Find matching template session for this day of week
+            var templateSession = template.FirstOrDefault(t => t.DayOfWeek == dayOfWeek);
+
+            if (templateSession != null)
+            {
+                // Get cycle phase for this date
+                CyclePhase? cyclePhase = null;
+                if (request.UpdatedCyclePhases != null && request.UpdatedCyclePhases.ContainsKey(sessionDate))
+                {
+                    cyclePhase = request.UpdatedCyclePhases[sessionDate];
+                }
+
+                // Adjust workout based on cycle phase and performance
+                var adjustedIntensity = AdjustIntensityForCyclePhase(templateSession.IntensityLevel, cyclePhase);
+                var adjustedWorkoutType = AdjustWorkoutTypeForCyclePhase(templateSession.WorkoutType, cyclePhase);
+
+                // Apply adjustment factor to volume
+                sessions.Add(new TrainingSessionDto
+                {
+                    SessionName = templateSession.SessionName + " (Adapted)",
+                    ScheduledDate = sessionDate,
+                    WorkoutType = adjustedWorkoutType,
+                    WarmUp = templateSession.WarmUp,
+                    SessionDescription = templateSession.SessionDescription + " - Adjusted based on recent performance.",
+                    DurationMinutes = templateSession.DurationMinutes.HasValue
+                        ? (int)(templateSession.DurationMinutes.Value * adjustmentFactor)
+                        : null,
+                    Distance = templateSession.Distance.HasValue
+                        ? templateSession.Distance.Value * adjustmentFactor
+                        : null,
+                    IntensityLevel = adjustedIntensity,
+                    HRZones = templateSession.HRZones,
+                    CyclePhase = cyclePhase,
+                    PhaseGuidance = GetPhaseGuidance(cyclePhase, adjustedWorkoutType)
+                });
+            }
+        }
+
+        return sessions.OrderBy(s => s.ScheduledDate).ToList();
+    }
+
     private int SelectTrainingDaysPerWeek(FitnessLevel fitnessLevel)
     {
         return fitnessLevel switch
@@ -220,6 +355,71 @@ public class FallbackPlanGenerator : IAIPlanGenerator
             CyclePhase.Luteal => "Body needs more recovery - focus on consistent, sustainable effort.",
             _ => "Listen to your body and adjust as needed."
         };
+    }
+
+    public Task<string> GenerateRecalculationSummaryAsync(
+        PlanRecalculationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogWarning("Using fallback summary generation for plan: {PlanName}", request.PlanName);
+
+        // Calculate performance stats
+        var skippedCount = request.RecentSessions.Count(s => s.IsSkipped);
+        var modifiedCount = request.RecentSessions.Count(s => s.WasModified);
+        var avgRPE = request.RecentSessions
+            .Where(s => s.RPE.HasValue && !s.IsSkipped)
+            .Select(s => s.RPE!.Value)
+            .DefaultIfEmpty(0)
+            .Average();
+
+        // Generate generic but personalized fallback message
+        string summary;
+
+        if (skippedCount >= request.RecentSessions.Count / 2)
+        {
+            // Many skipped sessions
+            summary = $"I noticed you've skipped {skippedCount} recent sessions. I've simplified your plan with more flexibility and easier workouts to help you build consistency. Small steps forward are still progress!";
+        }
+        else if (modifiedCount > 0)
+        {
+            // Determine if over or under performing
+            var avgActual = request.RecentSessions
+                .Where(s => !s.IsSkipped && s.ActualDistance.HasValue)
+                .Select(s => s.ActualDistance!.Value)
+                .DefaultIfEmpty(0)
+                .Average();
+
+            var avgPlanned = request.RecentSessions
+                .Where(s => !s.IsSkipped && s.PlannedDistance.HasValue)
+                .Select(s => s.PlannedDistance!.Value)
+                .DefaultIfEmpty(0)
+                .Average();
+
+            if (avgActual > avgPlanned * 1.1m)
+            {
+                // Overperforming
+                summary = "You've been exceeding your planned workouts - great effort! I've increased your training load to match your growing fitness while ensuring adequate recovery. Listen to your body and fuel well!";
+            }
+            else
+            {
+                // Underperforming
+                summary = "I've noticed you've been running a bit less than planned. I've adjusted your plan to better match your current capacity. Building back gradually will set you up for success. You've got this!";
+            }
+        }
+        else if (avgRPE > 7)
+        {
+            // High RPE
+            summary = "Your recent workouts have felt quite challenging. I've added more recovery and reduced intensity to prevent burnout. Rest is when your body gets stronger. Trust the process!";
+        }
+        else
+        {
+            // On track
+            summary = "Your training is progressing well! I've fine-tuned your plan to keep you on track for your race goal. Stay consistent and trust your preparation!";
+        }
+
+        _logger.LogInformation("Generated fallback summary: {Summary}", summary);
+
+        return Task.FromResult(summary);
     }
 
     private record TemplateSession(

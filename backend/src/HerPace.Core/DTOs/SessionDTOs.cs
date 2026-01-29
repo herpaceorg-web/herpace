@@ -1,0 +1,97 @@
+using HerPace.Core.Enums;
+
+namespace HerPace.Core.DTOs;
+
+/// <summary>
+/// Request to mark a session as completed with actual performance data.
+/// </summary>
+public class CompleteSessionRequest
+{
+    public decimal? ActualDistance { get; set; } // Actual distance in km
+    public int? ActualDuration { get; set; } // Actual duration in minutes
+    public int? RPE { get; set; } // Rate of Perceived Exertion (1-10 scale)
+    public string? UserNotes { get; set; } // Optional user feedback/comments
+}
+
+/// <summary>
+/// Request to mark a session as skipped.
+/// </summary>
+public class SkipSessionRequest
+{
+    public string? SkipReason { get; set; } // Reason for skipping the session
+}
+
+/// <summary>
+/// Response containing upcoming sessions.
+/// </summary>
+public class UpcomingSessionsResponse
+{
+    public List<SessionDetailDto> Sessions { get; set; } = new();
+    public bool HasPendingRecalculation { get; set; } // Is a recalculation job currently running?
+}
+
+/// <summary>
+/// Detailed session information including completion data.
+/// </summary>
+public class SessionDetailDto
+{
+    public Guid Id { get; set; }
+    public string SessionName { get; set; } = string.Empty;
+    public DateTime ScheduledDate { get; set; }
+    public WorkoutType WorkoutType { get; set; }
+    public string? WarmUp { get; set; }
+    public string? SessionDescription { get; set; }
+    public int? DurationMinutes { get; set; }
+    public decimal? Distance { get; set; }
+    public IntensityLevel IntensityLevel { get; set; }
+    public string? HRZones { get; set; }
+    public CyclePhase? CyclePhase { get; set; }
+    public string? PhaseGuidance { get; set; }
+
+    // Completion data
+    public DateTime? CompletedAt { get; set; }
+    public decimal? ActualDistance { get; set; }
+    public int? ActualDuration { get; set; }
+    public int? RPE { get; set; }
+    public string? UserNotes { get; set; }
+    public bool IsSkipped { get; set; }
+    public string? SkipReason { get; set; }
+
+    // Computed fields
+    public bool WasModified { get; set; } // >20% deviation from planned
+    public bool IsCompleted { get; set; } // CompletedAt != null && !IsSkipped
+}
+
+/// <summary>
+/// Response after completing or skipping a session.
+/// </summary>
+public class SessionCompletionResponse
+{
+    public Guid SessionId { get; set; }
+    public bool Success { get; set; }
+    public bool RecalculationTriggered { get; set; } // Did this action trigger plan recalculation?
+    public string? Message { get; set; }
+}
+
+/// <summary>
+/// Summary of active training plan including today's session and recalculation status.
+/// </summary>
+public class PlanSummaryDto
+{
+    public Guid PlanId { get; set; }
+    public string PlanName { get; set; } = string.Empty;
+    public string RaceName { get; set; } = string.Empty;
+    public DateTime RaceDate { get; set; }
+    public int DaysUntilRace { get; set; }
+    public bool HasPendingRecalculation { get; set; } // Is a recalculation job currently running?
+    public string? RecalculationSummary { get; set; } // AI-generated summary (null if viewed or no recalculation)
+    public SessionDetailDto? TodaysSession { get; set; } // Today's session (null if no session today)
+}
+
+/// <summary>
+/// Empty request to dismiss the recalculation summary.
+/// </summary>
+public class DismissSummaryRequest
+{
+    // Empty - just triggers timestamp update
+}
