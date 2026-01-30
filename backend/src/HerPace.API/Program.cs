@@ -84,6 +84,8 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ICyclePhaseCalculator, CyclePhaseCalculator>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IPlanGenerationService, PlanGenerationService>();
+builder.Services.AddScoped<ICycleTrackingService, CycleTrackingService>();
+builder.Services.AddScoped<IPlanRegenerationService, PlanRegenerationService>();
 
 // Configure AI Provider (Gemini or Fallback)
 var aiProvider = builder.Configuration["AI:Provider"] ?? "Gemini";

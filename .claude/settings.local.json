@@ -52,7 +52,10 @@
       "Bash(gcloud sql databases delete:*)",
       "Bash(gcloud sql connect:*)",
       "Bash(./cloud-sql-proxy:*)",
-      "Bash(gcloud secrets:*)"
+      "Bash(gcloud secrets:*)",
+      "Bash(Get-Service postgresql*)",
+      "Bash(Select-Object Name, Status, DisplayName)",
+      "Bash(psql:*)"
     ]
   }
 }

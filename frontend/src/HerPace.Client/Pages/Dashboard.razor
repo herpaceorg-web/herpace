@@ -1,0 +1,205 @@
+@page "/dashboard"
+@using HerPace.Client.Services
+@using HerPace.Client.Components.Cycle
+@using HerPace.Client.Models
+@inject ApiClient ApiClient
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - HerPace</PageTitle>
+
+@if (_isLoading)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-8 text-center">
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+        <MudText Typo="Typo.body1" Class="mt-4">Loading your dashboard...</MudText>
+    </MudContainer>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">Welcome to Your Dashboard</MudText>
+
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _successMessage = string.Empty)">
+                @_successMessage
+            </MudAlert>
+        }
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => _errorMessage = string.Empty)">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <MudGrid>
+            <!-- Cycle Position Card -->
+            <MudItem xs="12" md="6">
+                @if (_cyclePosition != null)
+                {
+                    <CyclePositionCard
+                        CyclePosition="_cyclePosition"
+                        OnReportPeriodClick="@OpenReportDialog" />
+                }
+                else
+                {
+                    <MudPaper Elevation="3" Class="pa-6">
+                        <MudText Typo="Typo.h6" GutterBottom="true">Cycle Tracking</MudText>
+                        <MudAlert Severity="Severity.Info">
+                            Cycle tracking is not enabled. Update your profile to enable cycle-aware training.
+                        </MudAlert>
+                    </MudPaper>
+                }
+            </MudItem>
+
+            <!-- Training Overview Card -->
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="3" Class="pa-6">
+                    <MudText Typo="Typo.h6" GutterBottom="true">Training Overview</MudText>
+
+                    @if (_hasActivePlan)
+                    {
+                        <MudText Typo="Typo.body1" Class="mb-4">
+                            You have an active training plan!
+                        </MudText>
+                        <MudButton
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            OnClick="@(() => Navigation.NavigateTo("/plan"))"
+                            StartIcon="@Icons.Material.Filled.FitnessCenter">
+                            View Training Plan
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body1" Class="mb-4">
+                            You don't have an active training plan yet.
+                        </MudText>
+                        <MudButton
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            OnClick="@(() => Navigation.NavigateTo("/onboarding/race"))"
+                            StartIcon="@Icons.Material.Filled.AddCircle">
+                            Create Training Plan
+                        </MudButton>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+}
+
+<!-- Report Period Dialog -->
+<ReportPeriodDialog
+    @bind-IsOpen="_showReportDialog"
+    OnPeriodReported="@HandlePeriodReported" />
+
+@code {
+    private CyclePositionDto? _cyclePosition;
+    private bool _isLoading = true;
+    private bool _hasActivePlan = false;
+    private bool _showReportDialog = false;
+    private string _errorMessage = string.Empty;
+    private string _successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            // Load cycle position
+            try
+            {
+                _cyclePosition = await ApiClient.GetAsync<CyclePositionDto>("/api/cycle/position");
+            }
+            catch
+            {
+                // Cycle tracking not enabled, this is OK
+                _cyclePosition = null;
+            }
+
+            // Check if user has an active plan
+            try
+            {
+                var plan = await ApiClient.GetAsync<PlanDetailResponse>("/api/plans/active");
+                _hasActivePlan = plan != null;
+            }
+            catch
+            {
+                _hasActivePlan = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading dashboard: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenReportDialog()
+    {
+        _showReportDialog = true;
+    }
+
+    private async Task HandlePeriodReported(ReportPeriodResponse response)
+    {
+        _showReportDialog = false;
+
+        if (response.Success)
+        {
+            _successMessage = response.Message;
+
+            // Reload dashboard data
+            await LoadDashboardData();
+        }
+        else
+        {
+            _errorMessage = "Failed to report period. Please try again.";
+        }
+    }
+
+    // Plan-specific DTOs
+    public class PlanDetailResponse
+    {
+        public Guid Id { get; set; }
+        public string PlanName { get; set; } = string.Empty;
+        public string RaceName { get; set; } = string.Empty;
+        public DateTime RaceDate { get; set; }
+        public int Status { get; set; }
+        public int TrainingDaysPerWeek { get; set; }
+        public DayOfWeek LongRunDay { get; set; }
+        public int GenerationSource { get; set; }
+        public string? AiRationale { get; set; }
+        public string? PlanCompletionGoal { get; set; }
+        public List<SessionSummary> Sessions { get; set; } = new();
+    }
+
+    public class SessionSummary
+    {
+        public Guid Id { get; set; }
+        public string SessionName { get; set; } = string.Empty;
+        public DateTime ScheduledDate { get; set; }
+        public int WorkoutType { get; set; }
+        public string? SessionDescription { get; set; }
+        public int? DurationMinutes { get; set; }
+        public decimal? Distance { get; set; }
+        public int IntensityLevel { get; set; }
+        public string? HRZones { get; set; }
+        public int? CyclePhase { get; set; }
+        public string? PhaseGuidance { get; set; }
+        public string? WarmUp { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public bool IsSkipped { get; set; }
+    }
+}

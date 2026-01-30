@@ -1,0 +1,138 @@
+@using HerPace.Client.Services
+@using HerPace.Client.Models
+@inject ApiClient ApiClient
+
+<MudDialog @bind-Visible="IsOpen" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-2" />
+            Report Period Start
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Select the date your period started. This will help us adjust your training plan to align with your actual cycle.
+        </MudText>
+
+        <MudDatePicker
+            Label="Period Start Date"
+            @bind-Date="_selectedDate"
+            MaxDate="@DateTime.Today"
+            Required="true"
+            Variant="Variant.Outlined"
+            HelperText="Select a date (cannot be in the future)"
+            aria-label="Period start date"
+            aria-required="true" />
+
+        @if (_isSubmitting)
+        {
+            <div class="mt-4 text-center">
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                <MudText Typo="Typo.body2" Class="mt-2">Submitting...</MudText>
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel" Disabled="@_isSubmitting">Cancel</MudButton>
+        <MudButton
+            Variant="Variant.Filled"
+            Color="Color.Primary"
+            OnClick="@Submit"
+            Disabled="@(_isSubmitting || !_selectedDate.HasValue)">
+            Submit
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<ReportPeriodResponse> OnPeriodReported { get; set; }
+
+    private DateTime? _selectedDate;
+    private bool _isSubmitting = false;
+    private string _errorMessage = string.Empty;
+
+    private readonly DialogOptions _dialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        CloseButton = true
+    };
+
+    private async Task Submit()
+    {
+        if (!_selectedDate.HasValue)
+        {
+            _errorMessage = "Please select a date";
+            return;
+        }
+
+        if (_selectedDate.Value > DateTime.Today)
+        {
+            _errorMessage = "Period start date cannot be in the future";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            var request = new ReportPeriodRequest
+            {
+                PeriodStartDate = _selectedDate.Value
+            };
+
+            var response = await ApiClient.PostAsync<ReportPeriodRequest, ReportPeriodResponse>("/api/cycle/report", request);
+
+            if (response != null && response.Success)
+            {
+                // Notify parent component
+                await OnPeriodReported.InvokeAsync(response);
+
+                // Close dialog
+                await CloseDialog();
+            }
+            else
+            {
+                _errorMessage = response?.Message ?? "Failed to report period. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await CloseDialog();
+    }
+
+    private async Task CloseDialog()
+    {
+        IsOpen = false;
+        await IsOpenChanged.InvokeAsync(IsOpen);
+
+        // Reset form
+        _selectedDate = null;
+        _errorMessage = string.Empty;
+    }
+}

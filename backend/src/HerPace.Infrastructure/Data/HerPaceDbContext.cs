@@ -21,9 +21,7 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
     public DbSet<Race> Races => Set<Race>();
     public DbSet<TrainingPlan> TrainingPlans => Set<TrainingPlan>();
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
-
-    // Additional DbSets will be added in future user stories:
-    // - CycleLog (T076)
+    public DbSet<CycleLog> CycleLogs => Set<CycleLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -188,6 +186,45 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
             entity.HasIndex(ts => ts.CompletedAt);
         });
 
+        // Configure CycleLog entity
+        modelBuilder.Entity<CycleLog>(entity =>
+        {
+            entity.ToTable("cycle_logs");
+
+            entity.HasKey(cl => cl.Id);
+
+            entity.Property(cl => cl.ActualPeriodStart)
+                .IsRequired();
+
+            entity.Property(cl => cl.ReportedAt)
+                .IsRequired();
+
+            entity.Property(cl => cl.ActualCycleLength)
+                .IsRequired();
+
+            entity.Property(cl => cl.WasPredictionAccurate)
+                .IsRequired();
+
+            entity.Property(cl => cl.TriggeredRegeneration)
+                .IsRequired();
+
+            // Relationship with Runner
+            entity.HasOne(cl => cl.Runner)
+                .WithMany()
+                .HasForeignKey(cl => cl.RunnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional relationship with TrainingPlan
+            entity.HasOne(cl => cl.AffectedTrainingPlan)
+                .WithMany()
+                .HasForeignKey(cl => cl.AffectedTrainingPlanId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(cl => cl.RunnerId);
+            entity.HasIndex(cl => cl.ActualPeriodStart);
+            entity.HasIndex(cl => cl.ReportedAt);
+        });
+
         // Configure Identity tables with custom names (lowercase for PostgreSQL convention)
         modelBuilder.Entity<User>().ToTable("users");
         modelBuilder.Entity<IdentityRole<Guid>>().ToTable("roles");
@@ -196,8 +233,5 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
         modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins");
         modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("user_tokens");
         modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("role_claims");
-
-        // Additional model configurations will be added in future user stories:
-        // - CycleLog entity configuration (T077)
     }
 }

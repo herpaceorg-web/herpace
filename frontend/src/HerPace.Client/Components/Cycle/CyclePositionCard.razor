@@ -1,0 +1,93 @@
+@using HerPace.Client.Components.Plan
+
+<MudPaper Elevation="3" Class="pa-6">
+    <MudText Typo="Typo.h6" GutterBottom="true">Your Cycle</MudText>
+
+    <div class="d-flex flex-column align-center mb-4">
+        <!-- Circular Progress -->
+        <MudProgressCircular
+            Size="Size.Large"
+            Value="@GetCycleProgress()"
+            Color="@GetPhaseColor()"
+            Style="width: 150px; height: 150px;">
+            <MudText Typo="Typo.h6">Day @GetCurrentDayInCycle()</MudText>
+            <MudText Typo="Typo.caption">of @GetCycleLength()</MudText>
+        </MudProgressCircular>
+
+        <!-- Phase Badge -->
+        <div class="mt-4">
+            <PhaseIndicator Phase="@GetCurrentPhase()" />
+        </div>
+
+        <!-- Phase Description -->
+        <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
+            @GetPhaseDescription()
+        </MudText>
+    </div>
+
+    <MudDivider Class="my-4" />
+
+    <!-- Next Period Info -->
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Next Predicted Period</MudText>
+            <MudText Typo="Typo.body1">
+                @GetNextPredictedPeriod().ToString("MMMM dd, yyyy")
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                (@GetDaysUntilNextPeriod() days away)
+            </MudText>
+        </MudItem>
+    </MudGrid>
+
+    @if (!string.IsNullOrEmpty(GetPhaseGuidance()))
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-4">
+            @GetPhaseGuidance()
+        </MudAlert>
+    }
+
+    <!-- Report Period Button -->
+    <MudButton
+        Variant="Variant.Filled"
+        Color="Color.Primary"
+        FullWidth="true"
+        Class="mt-4"
+        OnClick="@OnReportPeriodClick"
+        StartIcon="@Icons.Material.Filled.CalendarToday">
+        Report Period Start
+    </MudButton>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public object CyclePosition { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnReportPeriodClick { get; set; }
+
+    private int GetCurrentDayInCycle() => (int)CyclePosition.GetType().GetProperty("CurrentDayInCycle")!.GetValue(CyclePosition)!;
+    private int GetCycleLength() => (int)CyclePosition.GetType().GetProperty("CycleLength")!.GetValue(CyclePosition)!;
+    private int GetCurrentPhase() => (int)CyclePosition.GetType().GetProperty("CurrentPhase")!.GetValue(CyclePosition)!;
+    private DateTime GetNextPredictedPeriod() => (DateTime)CyclePosition.GetType().GetProperty("NextPredictedPeriod")!.GetValue(CyclePosition)!;
+    private int GetDaysUntilNextPeriod() => (int)CyclePosition.GetType().GetProperty("DaysUntilNextPeriod")!.GetValue(CyclePosition)!;
+    private string GetPhaseDescription() => (string)CyclePosition.GetType().GetProperty("PhaseDescription")!.GetValue(CyclePosition)!;
+    private string GetPhaseGuidance() => (string)CyclePosition.GetType().GetProperty("PhaseGuidance")!.GetValue(CyclePosition)!;
+
+    private double GetCycleProgress()
+    {
+        return (double)GetCurrentDayInCycle() / GetCycleLength() * 100;
+    }
+
+    private Color GetPhaseColor()
+    {
+        return GetCurrentPhase() switch
+        {
+            0 => Color.Error,      // Menstrual - Red
+            1 => Color.Success,    // Follicular - Green
+            2 => Color.Warning,    // Ovulatory - Orange
+            3 => Color.Info,       // Luteal - Blue
+            _ => Color.Default
+        };
+    }
+}
