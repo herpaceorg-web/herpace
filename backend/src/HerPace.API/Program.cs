@@ -1,4 +1,6 @@
 using System.Text;
+using Hangfire;
+using Hangfire.PostgreSql;
 using HerPace.API.Middleware;
 using HerPace.Core.Entities;
 using HerPace.Core.Interfaces;
@@ -28,6 +30,21 @@ if (string.IsNullOrEmpty(connectionString))
 // Add Entity Framework Core with PostgreSQL
 builder.Services.AddDbContext<HerPaceDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Configure Hangfire with PostgreSQL storage for background jobs
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(connectionString)));
+
+// Add Hangfire server for processing background jobs
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 2; // Limit concurrent jobs
+    options.ServerName = "HerPace-API";
+});
 
 // Configure ASP.NET Core Identity
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
@@ -86,6 +103,9 @@ builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IPlanGenerationService, PlanGenerationService>();
 builder.Services.AddScoped<ICycleTrackingService, CycleTrackingService>();
 builder.Services.AddScoped<IPlanRegenerationService, PlanRegenerationService>();
+builder.Services.AddScoped<ISessionCompletionService, SessionCompletionService>();
+builder.Services.AddScoped<IPlanAdaptationService, PlanAdaptationService>();
+
 
 // Configure AI Provider (Gemini or Fallback)
 var aiProvider = builder.Configuration["AI:Provider"] ?? "Gemini";
@@ -139,6 +159,28 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        try
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<HerPaceDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            logger.LogInformation("Ensuring database is created and applying migrations...");
+
+            // This will create the database if it doesn't exist and apply all migrations
+            dbContext.Database.Migrate();
+
+            logger.LogInformation("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while migrating the database.");
+            throw;
+        }
+    }
 }
 
 app.UseHttpsRedirection();
@@ -152,6 +194,15 @@ app.UseCors("AllowBlazorClient");
 // Authentication & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Hangfire Dashboard (development only)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HerPace.API.Infrastructure.HangfireAuthorizationFilter() }
+    });
+}
 
 // Map controllers
 app.MapControllers();

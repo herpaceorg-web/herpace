@@ -3,6 +3,7 @@ using System;
 using HerPace.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HerPace.Infrastructure.Migrations
 {
     [DbContext(typeof(HerPaceDbContext))]
-    partial class HerPaceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260129144010_AddRecalculationSummary")]
+    partial class AddRecalculationSummary
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,55 +24,6 @@ namespace HerPace.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("HerPace.Core.Entities.CycleLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ActualCycleLength")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("ActualPeriodStart")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("AffectedTrainingPlanId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("DaysDifference")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("PredictedPeriodStart")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ReportedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RunnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("TriggeredRegeneration")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("WasPredictionAccurate")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActualPeriodStart");
-
-                    b.HasIndex("AffectedTrainingPlanId");
-
-                    b.HasIndex("ReportedAt");
-
-                    b.HasIndex("RunnerId");
-
-                    b.ToTable("cycle_logs", (string)null);
-                });
 
             modelBuilder.Entity("HerPace.Core.Entities.Race", b =>
                 {
@@ -571,24 +525,6 @@ namespace HerPace.Infrastructure.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("user_tokens", (string)null);
-                });
-
-            modelBuilder.Entity("HerPace.Core.Entities.CycleLog", b =>
-                {
-                    b.HasOne("HerPace.Core.Entities.TrainingPlan", "AffectedTrainingPlan")
-                        .WithMany()
-                        .HasForeignKey("AffectedTrainingPlanId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HerPace.Core.Entities.Runner", "Runner")
-                        .WithMany()
-                        .HasForeignKey("RunnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AffectedTrainingPlan");
-
-                    b.Navigation("Runner");
                 });
 
             modelBuilder.Entity("HerPace.Core.Entities.Race", b =>

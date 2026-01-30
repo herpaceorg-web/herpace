@@ -32,6 +32,13 @@ public class TrainingPlan
     public string? AiModel { get; set; } // e.g., "gemini-3-flash-preview"
     public string? AiRationale { get; set; } // Optional AI explanation
 
+    // Plan Recalculation Tracking (for adaptive plans)
+    public string? LastRecalculationJobId { get; set; } // Hangfire job ID for in-progress recalculation
+    public DateTime? LastRecalculationRequestedAt { get; set; } // When recalculation was last queued
+    public DateTime? LastRecalculatedAt { get; set; } // When recalculation was last completed
+    public string? LastRecalculationSummary { get; set; } // AI-generated summary shown to user after recalculation
+    public DateTime? RecalculationSummaryViewedAt { get; set; } // When user dismissed the recalculation summary
+
     // Plan Timeline
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

@@ -1,0 +1,224 @@
+@using HerPace.Client.Components.Plan
+
+<MudCard Class="mb-4">
+    <MudCardContent>
+        <div class="d-flex justify-space-between align-center mb-2">
+            <MudText Typo="Typo.h6">@Session.SessionName</MudText>
+            @if (Session.IsCompleted)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Medium" />
+            }
+            else if (Session.IsSkipped)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning">Skipped</MudChip>
+            }
+        </div>
+
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            @Session.ScheduledDate.ToString("dddd, MMMM dd, yyyy")
+        </MudText>
+
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+            <MudChip T="string" Size="Size.Small" Color="GetWorkoutTypeColor(Session.WorkoutType)">
+                @Session.WorkoutType.ToString()
+            </MudChip>
+
+            @if (Session.CyclePhase.HasValue)
+            {
+                <PhaseIndicator Phase="@Session.CyclePhase.Value" Size="small" />
+            }
+
+            @if (Session.Distance.HasValue)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                    @Session.Distance.Value.ToString("F1") km
+                </MudChip>
+            }
+
+            @if (Session.DurationMinutes.HasValue)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                    @Session.DurationMinutes.Value min
+                </MudChip>
+            }
+        </div>
+
+        @if (Session.IntensityLevel > 0)
+        {
+            <div class="mb-3">
+                <MudText Typo="Typo.caption" Class="mb-1">Intensity</MudText>
+                <MudRating ReadOnly="true" SelectedValue="@((int)Session.IntensityLevel + 1)" MaxValue="3" Size="Size.Small" />
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Session.SessionDescription))
+        {
+            <MudExpansionPanels Elevation="0" Class="mb-2">
+                <MudExpansionPanel Text="Details" Dense="true">
+                    <MudText Typo="Typo.body2" Class="mb-2">@Session.SessionDescription</MudText>
+
+                    @if (!string.IsNullOrEmpty(Session.WarmUp))
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-2"><strong>Warm-up:</strong> @Session.WarmUp</MudText>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Session.HRZones))
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-1"><strong>HR Zones:</strong> @Session.HRZones</MudText>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Session.PhaseGuidance))
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">@Session.PhaseGuidance</MudAlert>
+                    }
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        }
+
+        @if (Session.IsCompleted && !Session.IsSkipped)
+        {
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">Completed Performance</MudText>
+            <div class="d-flex gap-4 mb-2">
+                @if (Session.ActualDistance.HasValue)
+                {
+                    <div>
+                        <MudText Typo="Typo.caption">Distance</MudText>
+                        <MudText Typo="Typo.body2">@Session.ActualDistance.Value.ToString("F1") km</MudText>
+                    </div>
+                }
+                @if (Session.ActualDuration.HasValue)
+                {
+                    <div>
+                        <MudText Typo="Typo.caption">Duration</MudText>
+                        <MudText Typo="Typo.body2">@Session.ActualDuration.Value min</MudText>
+                    </div>
+                }
+                @if (Session.RPE.HasValue)
+                {
+                    <div>
+                        <MudText Typo="Typo.caption">RPE</MudText>
+                        <MudText Typo="Typo.body2">@Session.RPE.Value/10</MudText>
+                    </div>
+                }
+            </div>
+
+            @if (Session.WasModified)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">Modified (>20% deviation)</MudChip>
+            }
+
+            @if (!string.IsNullOrEmpty(Session.UserNotes))
+            {
+                <MudText Typo="Typo.caption" Class="mt-2"><strong>Notes:</strong> @Session.UserNotes</MudText>
+            }
+        }
+
+        @if (Session.IsSkipped && !string.IsNullOrEmpty(Session.SkipReason))
+        {
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Class="mt-2"><strong>Skip Reason:</strong> @Session.SkipReason</MudText>
+        }
+    </MudCardContent>
+
+    @if (!Session.IsCompleted && !Session.IsSkipped && (AllowModification || Session.ScheduledDate.Date <= DateTime.UtcNow.Date))
+    {
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnCompleteClicked" StartIcon="@Icons.Material.Filled.CheckCircle">
+                Complete Workout
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="OnSkipClicked" StartIcon="@Icons.Material.Filled.Cancel">
+                Skip
+            </MudButton>
+        </MudCardActions>
+    }
+</MudCard>
+
+@code {
+    [Parameter]
+    public SessionDetailDto Session { get; set; } = null!;
+
+    [Parameter]
+    public bool AllowModification { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnSessionUpdated { get; set; }
+
+    [Parameter]
+    public EventCallback<SessionDetailDto> OnCompleteRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<SessionDetailDto> OnSkipRequested { get; set; }
+
+    public class SessionDetailDto
+    {
+        public Guid Id { get; set; }
+        public string SessionName { get; set; } = string.Empty;
+        public DateTime ScheduledDate { get; set; }
+        public WorkoutType WorkoutType { get; set; }
+        public string? WarmUp { get; set; }
+        public string? SessionDescription { get; set; }
+        public int? DurationMinutes { get; set; }
+        public decimal? Distance { get; set; }
+        public IntensityLevel IntensityLevel { get; set; }
+        public string? HRZones { get; set; }
+        public CyclePhase? CyclePhase { get; set; }
+        public string? PhaseGuidance { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public decimal? ActualDistance { get; set; }
+        public int? ActualDuration { get; set; }
+        public int? RPE { get; set; }
+        public string? UserNotes { get; set; }
+        public bool IsSkipped { get; set; }
+        public string? SkipReason { get; set; }
+        public bool WasModified { get; set; }
+        public bool IsCompleted { get; set; }
+    }
+
+    public enum WorkoutType
+    {
+        Easy = 0,
+        Long = 1,
+        Tempo = 2,
+        Interval = 3,
+        Rest = 4
+    }
+
+    public enum IntensityLevel
+    {
+        Low = 0,
+        Moderate = 1,
+        High = 2
+    }
+
+    public enum CyclePhase
+    {
+        Menstrual = 0,
+        Follicular = 1,
+        Ovulatory = 2,
+        Luteal = 3
+    }
+
+    private Color GetWorkoutTypeColor(WorkoutType workoutType)
+    {
+        return workoutType switch
+        {
+            WorkoutType.Easy => Color.Success,
+            WorkoutType.Long => Color.Primary,
+            WorkoutType.Tempo => Color.Warning,
+            WorkoutType.Interval => Color.Error,
+            WorkoutType.Rest => Color.Default,
+            _ => Color.Default
+        };
+    }
+
+    private async Task OnCompleteClicked()
+    {
+        await OnCompleteRequested.InvokeAsync(Session);
+    }
+
+    private async Task OnSkipClicked()
+    {
+        await OnSkipRequested.InvokeAsync(Session);
+    }
+}
