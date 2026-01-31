@@ -127,11 +127,13 @@
         try
         {
             var profile = await ApiClient.GetAsync<ProfileResponse>("/api/profiles/me");
+            Console.WriteLine($"✓ Profile found: {profile?.Name}");
             // Profile exists, check for active plan
         }
-        catch
+        catch (Exception ex)
         {
             // No profile (404) or error - redirect to profile setup
+            Console.WriteLine($"✗ Profile check failed: {ex.Message}");
             Navigation.NavigateTo("/onboarding/profile");
             return;
         }
@@ -140,12 +142,14 @@
         try
         {
             var activePlan = await ApiClient.GetAsync<PlanResponse>("/api/plans/active");
+            Console.WriteLine($"✓ Active plan found: {activePlan?.PlanName}");
             // User has an active plan, show dashboard
             Navigation.NavigateTo("/dashboard");
         }
-        catch
+        catch (Exception ex)
         {
             // No active plan (404) or error - redirect to race entry
+            Console.WriteLine($"✗ Active plan check failed: {ex.Message}");
             Navigation.NavigateTo("/onboarding/race");
         }
     }
