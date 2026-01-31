@@ -19,6 +19,9 @@ builder.Services.AddScoped(sp => new HttpClient
 // Register API client service
 builder.Services.AddScoped<ApiClient>();
 
+// Register user preferences service for managing user preferences like distance units
+builder.Services.AddScoped<UserPreferencesService>();
+
 // Add MudBlazor services
 builder.Services.AddMudServices();
 

@@ -4,6 +4,7 @@
 @using HerPace.Client.Components.Plan
 @inject ApiClient ApiClient
 @inject NavigationManager Navigation
+@inject UserPreferencesService UserPreferencesService
 
 <PageTitle>Training Plan - HerPace</PageTitle>
 
@@ -100,9 +101,18 @@ else if (_plan != null)
                         </CellTemplate>
                     </TemplateColumn>
 
-                    <PropertyColumn Property="x => x.Distance"
-                                    Title="Distance (km)"
-                                    Format="F1" />
+                    <TemplateColumn Title="@GetDistanceColumnTitle()">
+                        <CellTemplate>
+                            @if (context.Item.Distance.HasValue)
+                            {
+                                @FormatDistance(context.Item.Distance.Value)
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
 
                     <PropertyColumn Property="x => x.DurationMinutes"
                                     Title="Duration (min)" />
@@ -187,9 +197,21 @@ else if (!string.IsNullOrEmpty(_errorMessage))
     private PlanDetailResponse? _plan;
     private bool _isLoading = true;
     private string _errorMessage = string.Empty;
+    private DistanceUnit _userDistanceUnit = DistanceUnit.Kilometers;
 
     protected override async Task OnInitializedAsync()
     {
+        // Load user's distance unit preference
+        try
+        {
+            _userDistanceUnit = await UserPreferencesService.GetDistanceUnitAsync();
+        }
+        catch
+        {
+            // Default to kilometers if unable to load preference
+            _userDistanceUnit = DistanceUnit.Kilometers;
+        }
+
         await LoadPlan();
     }
 
@@ -274,6 +296,23 @@ else if (!string.IsNullOrEmpty(_errorMessage))
             2 => 3,  // High
             _ => 0
         };
+    }
+
+    private string GetDistanceColumnTitle()
+    {
+        var unitLabel = _userDistanceUnit == DistanceUnit.Miles ? "mi" : "km";
+        return $"Distance ({unitLabel})";
+    }
+
+    private string FormatDistance(decimal distanceInKm)
+    {
+        // Convert from kilometers to user's preferred unit for display
+        var displayDistance = _userDistanceUnit == DistanceUnit.Miles
+            ? DistanceConversionService.KmToMiles(distanceInKm)
+            : distanceInKm;
+
+        var unitLabel = _userDistanceUnit == DistanceUnit.Miles ? "mi" : "km";
+        return $"{displayDistance:F1} {unitLabel}";
     }
 
     private class PlanDetailResponse

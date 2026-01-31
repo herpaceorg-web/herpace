@@ -1,4 +1,6 @@
 @using HerPace.Client.Components.Plan
+@using HerPace.Client.Services
+@inject UserPreferencesService UserPreferencesService
 
 <MudCard Class="mb-4">
     <MudCardContent>
@@ -31,7 +33,7 @@
             @if (Session.Distance.HasValue)
             {
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
-                    @Session.Distance.Value.ToString("F1") km
+                    @FormatDistance(Session.Distance.Value)
                 </MudChip>
             }
 
@@ -84,7 +86,7 @@
                 {
                     <div>
                         <MudText Typo="Typo.caption">Distance</MudText>
-                        <MudText Typo="Typo.body2">@Session.ActualDistance.Value.ToString("F1") km</MudText>
+                        <MudText Typo="Typo.body2">@FormatDistance(Session.ActualDistance.Value)</MudText>
                     </div>
                 }
                 @if (Session.ActualDuration.HasValue)
@@ -124,12 +126,29 @@
     @if (!Session.IsCompleted && !Session.IsSkipped && (AllowModification || Session.ScheduledDate.Date <= DateTime.UtcNow.Date))
     {
         <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnCompleteClicked" StartIcon="@Icons.Material.Filled.CheckCircle">
-                Complete Workout
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="OnSkipClicked" StartIcon="@Icons.Material.Filled.Cancel">
-                Skip
-            </MudButton>
+            @if (Session.WorkoutType == WorkoutType.Rest)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnCompleteClicked" StartIcon="@Icons.Material.Filled.SelfImprovement">
+                    I'll take it easy
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="OnReportWorkoutClicked" StartIcon="@Icons.Material.Filled.DirectionsRun">
+                    Report Workout
+                </MudButton>
+            }
+            else
+            {
+                <div class="d-flex gap-2 flex-wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnCompleteClicked" StartIcon="@Icons.Material.Filled.CheckCircle">
+                        Complete Workout
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="OnModifyClicked" StartIcon="@Icons.Material.Filled.Edit">
+                        Modify Workout
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="OnSkipClicked" StartIcon="@Icons.Material.Filled.Cancel">
+                        Skip
+                    </MudButton>
+                </div>
+            }
         </MudCardActions>
     }
 </MudCard>
@@ -149,6 +168,39 @@
 
     [Parameter]
     public EventCallback<SessionDetailDto> OnSkipRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<SessionDetailDto> OnReportWorkoutRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<SessionDetailDto> OnModifyRequested { get; set; }
+
+    private DistanceUnit _userDistanceUnit = DistanceUnit.Kilometers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load user's distance unit preference
+        try
+        {
+            _userDistanceUnit = await UserPreferencesService.GetDistanceUnitAsync();
+        }
+        catch
+        {
+            // Default to kilometers if unable to load preference
+            _userDistanceUnit = DistanceUnit.Kilometers;
+        }
+    }
+
+    private string FormatDistance(decimal distanceInKm)
+    {
+        // Convert from kilometers to user's preferred unit for display
+        var displayDistance = _userDistanceUnit == DistanceUnit.Miles
+            ? DistanceConversionService.KmToMiles(distanceInKm)
+            : distanceInKm;
+
+        var unitLabel = _userDistanceUnit == DistanceUnit.Miles ? "mi" : "km";
+        return $"{displayDistance:F1} {unitLabel}";
+    }
 
     public class SessionDetailDto
     {
@@ -220,5 +272,15 @@
     private async Task OnSkipClicked()
     {
         await OnSkipRequested.InvokeAsync(Session);
+    }
+
+    private async Task OnReportWorkoutClicked()
+    {
+        await OnReportWorkoutRequested.InvokeAsync(Session);
+    }
+
+    private async Task OnModifyClicked()
+    {
+        await OnModifyRequested.InvokeAsync(Session);
     }
 }

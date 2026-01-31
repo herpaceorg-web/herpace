@@ -1,4 +1,5 @@
 @using MudBlazor
+@using static HerPace.Client.Components.Session.SessionCard
 @using HerPace.Client.Services
 @inject ISnackbar Snackbar
 @inject UserPreferencesService UserPreferencesService
@@ -6,27 +7,29 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
-            Complete Workout
+            <MudIcon Icon="@Icons.Material.Filled.DirectionsRun" Class="mr-2" />
+            Report Workout
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudText Typo="Typo.subtitle2" Class="mb-4">@Session.SessionName - @Session.ScheduledDate.ToString("MMM dd, yyyy")</MudText>
+
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+            This was scheduled as a rest day. Let's log the workout you did instead!
+        </MudAlert>
 
         <MudNumericField @bind-Value="ActualDistance"
                          Label="@GetDistanceLabel()"
                          Variant="Variant.Outlined"
                          Step="0.1M"
                          Min="0M"
-                         HelperText="@GetDistanceHelper()"
                          Class="mb-4" />
 
         <MudNumericField @bind-Value="ActualDuration"
-                         Label="Actual Duration (minutes)"
+                         Label="Duration (minutes)"
                          Variant="Variant.Outlined"
                          Step="1"
                          Min="0"
-                         HelperText="@GetDurationHelper()"
                          Class="mb-4" />
 
         <div class="mb-4">
@@ -41,13 +44,13 @@
                       Label="Notes (optional)"
                       Variant="Variant.Outlined"
                       Lines="3"
-                      Placeholder="How did the workout feel? Any observations..."
+                      Placeholder="What workout did you do? How did it feel?"
                       Class="mb-2" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!IsValid())">
-            Save
+            Log Workout
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -58,9 +61,6 @@
 
     [Parameter]
     public SessionDetailDto Session { get; set; } = null!;
-
-    [Parameter]
-    public EventCallback<bool> OnCompleted { get; set; }
 
     private decimal? ActualDistance { get; set; }
     private int? ActualDuration { get; set; }
@@ -80,43 +80,6 @@
             // Default to kilometers if unable to load preference
             _userDistanceUnit = DistanceUnit.Kilometers;
         }
-
-        // Pre-fill with planned values (convert to user's unit for display)
-        if (Session.Distance.HasValue)
-        {
-            ActualDistance = _userDistanceUnit == DistanceUnit.Miles
-                ? DistanceConversionService.KmToMiles(Session.Distance.Value)
-                : Session.Distance.Value;
-        }
-        ActualDuration = Session.DurationMinutes;
-    }
-
-    private string GetDistanceHelper()
-    {
-        if (Session.Distance.HasValue)
-        {
-            var displayDistance = _userDistanceUnit == DistanceUnit.Miles
-                ? DistanceConversionService.KmToMiles(Session.Distance.Value)
-                : Session.Distance.Value;
-            var unitLabel = _userDistanceUnit == DistanceUnit.Miles ? "mi" : "km";
-            return $"Planned: {displayDistance:F1} {unitLabel}";
-        }
-        return string.Empty;
-    }
-
-    private string GetDistanceLabel()
-    {
-        var unitLabel = _userDistanceUnit == DistanceUnit.Miles ? "mi" : "km";
-        return $"Actual Distance ({unitLabel})";
-    }
-
-    private string GetDurationHelper()
-    {
-        if (Session.DurationMinutes.HasValue)
-        {
-            return $"Planned: {Session.DurationMinutes.Value} min";
-        }
-        return string.Empty;
     }
 
     private string GetRPEDescription()
@@ -160,12 +123,9 @@
         Dialog?.Close(DialogResult.Ok(completionRequest));
     }
 
-    public class SessionDetailDto
+    private string GetDistanceLabel()
     {
-        public Guid Id { get; set; }
-        public string SessionName { get; set; } = string.Empty;
-        public DateTime ScheduledDate { get; set; }
-        public int? DurationMinutes { get; set; }
-        public decimal? Distance { get; set; }
+        var unitLabel = _userDistanceUnit == DistanceUnit.Miles ? "mi" : "km";
+        return $"Distance ({unitLabel})";
     }
 }

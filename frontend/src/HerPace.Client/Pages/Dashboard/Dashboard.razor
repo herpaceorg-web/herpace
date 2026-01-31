@@ -103,7 +103,9 @@
                         <SessionCard Session="@planSummary.TodaysSession"
                                      AllowModification="@Testing"
                                      OnCompleteRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenCompleteDialog))"
-                                     OnSkipRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenSkipDialog))" />
+                                     OnSkipRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenSkipDialog))"
+                                     OnReportWorkoutRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenReportWorkoutDialog))"
+                                     OnModifyRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenModifyDialog))" />
                     }
                     else
                     {
@@ -133,7 +135,9 @@
                     <SessionCard Session="@session"
                                  AllowModification="@Testing"
                                  OnCompleteRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenCompleteDialog))"
-                                 OnSkipRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenSkipDialog))" />
+                                 OnSkipRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenSkipDialog))"
+                                 OnReportWorkoutRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenReportWorkoutDialog))"
+                                 OnModifyRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenModifyDialog))" />
                 }
             }
             else
@@ -263,17 +267,42 @@
 
     private async Task OpenCompleteDialog(SessionCard.SessionDetailDto session)
     {
-        var parameters = new DialogParameters
+        // For rest days, just confirm and complete without asking for details
+        if (session.WorkoutType == SessionCard.WorkoutType.Rest)
         {
-            ["Session"] = session
-        };
+            var confirm = await DialogService.ShowMessageBox(
+                "Rest Day",
+                "Great job listening to your body! Mark this rest day as complete?",
+                yesText: "Yes",
+                cancelText: "Cancel");
 
-        var dialog = await DialogService.ShowAsync<SessionCompletionDialog>("Complete Workout", parameters);
-        var result = await dialog.Result;
-
-        if (!result.Canceled && result.Data != null)
+            if (confirm == true)
+            {
+                // Submit rest day completion with minimal data
+                var restDayCompletion = new
+                {
+                    ActualDistance = (decimal?)null,
+                    ActualDuration = (int?)null,
+                    RPE = (int?)null,
+                    UserNotes = "Rest day - took it easy"
+                };
+                await CompleteSession(session.Id, restDayCompletion);
+            }
+        }
+        else
         {
-            await CompleteSession(session.Id, result.Data);
+            var parameters = new DialogParameters
+            {
+                ["Session"] = session
+            };
+
+            var dialog = await DialogService.ShowAsync<SessionCompletionDialog>("Complete Workout", parameters);
+            var result = await dialog.Result;
+
+            if (!result.Canceled && result.Data != null)
+            {
+                await CompleteSession(session.Id, result.Data);
+            }
         }
     }
 
@@ -290,6 +319,39 @@
         if (!result.Canceled && result.Data != null)
         {
             await SkipSession(session.Id, result.Data);
+        }
+    }
+
+    private async Task OpenReportWorkoutDialog(SessionCard.SessionDetailDto session)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Session"] = session
+        };
+
+        var dialog = await DialogService.ShowAsync<ReportRestDayWorkoutDialog>("Report Workout", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data != null)
+        {
+            // Use the complete endpoint to log the workout
+            await CompleteSession(session.Id, result.Data);
+        }
+    }
+
+    private async Task OpenModifyDialog(SessionCard.SessionDetailDto session)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Session"] = session
+        };
+
+        var dialog = await DialogService.ShowAsync<SessionCompletionDialog>("Modify Workout", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data != null)
+        {
+            await CompleteSession(session.Id, result.Data);
         }
     }
 
