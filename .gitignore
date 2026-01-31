@@ -171,3 +171,4 @@ create-database.csx
 fix-permissions.sql
 fix-production-permissions.csx
 backend/src/HerPace.API/appsettings.json
+backend/src/HerPace.API/appsettings.json
