@@ -55,7 +55,8 @@
       "Bash(gcloud secrets:*)",
       "Bash(Get-Service postgresql*)",
       "Bash(Select-Object Name, Status, DisplayName)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

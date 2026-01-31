@@ -1,6 +1,8 @@
 @page "/dashboard"
 @using HerPace.Client.Components.Session
+@using HerPace.Client.Components.Cycle
 @using HerPace.Client.Services
+@using HerPace.Client.Models
 @using System.Text.Json
 @using System.Timers
 @inject ApiClient ApiClient
@@ -71,26 +73,49 @@
             <RecalculationAlert Summary="@planSummary.RecalculationSummary" OnDismiss="DismissSummary" />
         }
 
-        @* Today's Workout *@
-        <div class="mb-6">
-            <MudText Typo="Typo.h5" Class="mb-3">Today's Workout</MudText>
+        <MudGrid>
+            @* Cycle Position Card *@
+            <MudItem xs="12" md="6" Class="mb-6">
+                @if (cyclePosition != null)
+                {
+                    <CyclePositionCard
+                        CyclePosition="@cyclePosition"
+                        OnReportPeriodClick="@OpenReportDialog" />
+                }
+                else
+                {
+                    <MudPaper Elevation="3" Class="pa-6">
+                        <MudText Typo="Typo.h6" GutterBottom="true">Cycle Tracking</MudText>
+                        <MudAlert Severity="Severity.Info">
+                            Cycle tracking is not enabled. Update your profile to enable cycle-aware training.
+                        </MudAlert>
+                    </MudPaper>
+                }
+            </MudItem>
 
-            @if (planSummary.TodaysSession != null)
-            {
-                <SessionCard Session="@planSummary.TodaysSession"
-                             AllowModification="@Testing"
-                             OnCompleteRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenCompleteDialog))"
-                             OnSkipRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenSkipDialog))" />
-            }
-            else
-            {
-                <MudPaper Class="pa-4" Elevation="2">
-                    <MudText Typo="Typo.body1" Color="Color.Secondary">
-                        No session scheduled for today - rest day!
-                    </MudText>
+            @* Today's Workout Card *@
+            <MudItem xs="12" md="6" Class="mb-6">
+                <MudPaper Elevation="3" Class="pa-6">
+                    <MudText Typo="Typo.h5" Class="mb-3">Today's Workout</MudText>
+
+                    @if (planSummary.TodaysSession != null)
+                    {
+                        <SessionCard Session="@planSummary.TodaysSession"
+                                     AllowModification="@Testing"
+                                     OnCompleteRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenCompleteDialog))"
+                                     OnSkipRequested="@(EventCallback.Factory.Create<SessionCard.SessionDetailDto>(this, OpenSkipDialog))" />
+                    }
+                    else
+                    {
+                        <MudPaper Class="pa-4" Elevation="0">
+                            <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                No session scheduled for today - rest day!
+                            </MudText>
+                        </MudPaper>
+                    }
                 </MudPaper>
-            }
-        </div>
+            </MudItem>
+        </MudGrid>
 
         @* Upcoming Sessions *@
         <div class="mb-6">
@@ -119,6 +144,11 @@
     }
 </MudContainer>
 
+@* Report Period Dialog *@
+<ReportPeriodDialog
+    @bind-IsOpen="_showReportDialog"
+    OnPeriodReported="@HandlePeriodReported" />
+
 @code {
     [Parameter]
     [SupplyParameterFromQuery]
@@ -126,8 +156,10 @@
 
     private bool loading = true;
     private PlanSummaryDto? planSummary;
+    private CyclePositionDto? cyclePosition;
     private List<SessionCard.SessionDetailDto> upcomingSessions = new();
     private System.Timers.Timer? pollingTimer;
+    private bool _showReportDialog = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,6 +184,17 @@
 
             // Load plan summary
             planSummary = await ApiClient.GetAsync<PlanSummaryDto>("/api/sessions/plan-summary");
+
+            // Load cycle position
+            try
+            {
+                cyclePosition = await ApiClient.GetAsync<CyclePositionDto>("/api/cycle/position");
+            }
+            catch
+            {
+                // Cycle tracking not enabled, this is OK
+                cyclePosition = null;
+            }
 
             // Load upcoming sessions
             var upcomingResponse = await ApiClient.GetAsync<UpcomingSessionsResponse>("/api/sessions/upcoming?count=7");
@@ -312,6 +355,34 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Error dismissing summary: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OpenReportDialog()
+    {
+        _showReportDialog = true;
+    }
+
+    private async Task HandlePeriodReported(ReportPeriodResponse response)
+    {
+        _showReportDialog = false;
+
+        if (response.Success)
+        {
+            Snackbar.Add(response.Message, Severity.Success);
+
+            if (response.TriggeredRegeneration)
+            {
+                Snackbar.Add("Your training plan is being adjusted based on your cycle update.", Severity.Info);
+                StartPolling();
+            }
+
+            // Reload dashboard data
+            await LoadDashboard();
+        }
+        else
+        {
+            Snackbar.Add("Failed to report period. Please try again.", Severity.Error);
         }
     }
 
