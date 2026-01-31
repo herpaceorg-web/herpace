@@ -339,6 +339,13 @@ public class SessionController : ControllerBase
     private Guid GetRunnerIdFromClaims()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Guid.Empty;
+        }
+
+        // Look up the Runner entity to get the Runner.Id (not User.Id)
+        var runner = _context.Runners.FirstOrDefault(r => r.UserId == userId);
+        return runner?.Id ?? Guid.Empty;
     }
 }
