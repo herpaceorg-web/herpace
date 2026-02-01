@@ -1,24 +1,30 @@
-// Enums
-export enum WorkoutType {
-  Easy = 0,
-  Long = 1,
-  Tempo = 2,
-  Interval = 3,
-  Rest = 4
-}
+// Enums (using const objects to work with erasableSyntaxOnly)
+export const WorkoutType = {
+  Easy: 0,
+  Long: 1,
+  Tempo: 2,
+  Interval: 3,
+  Rest: 4
+} as const
 
-export enum CyclePhase {
-  Menstrual = 0,
-  Follicular = 1,
-  Ovulatory = 2,
-  Luteal = 3
-}
+export type WorkoutType = typeof WorkoutType[keyof typeof WorkoutType]
 
-export enum IntensityLevel {
-  Low = 0,
-  Moderate = 1,
-  High = 2
-}
+export const CyclePhase = {
+  Menstrual: 0,
+  Follicular: 1,
+  Ovulatory: 2,
+  Luteal: 3
+} as const
+
+export type CyclePhase = typeof CyclePhase[keyof typeof CyclePhase]
+
+export const IntensityLevel = {
+  Low: 0,
+  Moderate: 1,
+  High: 2
+} as const
+
+export type IntensityLevel = typeof IntensityLevel[keyof typeof IntensityLevel]
 
 // Auth DTOs
 export interface LoginRequest {

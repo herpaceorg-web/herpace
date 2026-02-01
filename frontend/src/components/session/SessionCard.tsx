@@ -1,4 +1,5 @@
-import { SessionDetailDto, WorkoutType, CyclePhase } from '@/types/api'
+import type { SessionDetailDto } from '@/types/api'
+import { WorkoutType, CyclePhase } from '@/types/api'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 

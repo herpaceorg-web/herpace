@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
-import { PlanSummaryDto, SessionDetailDto } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto } from '@/types/api'
 import { SessionCard } from '@/components/session/SessionCard'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
