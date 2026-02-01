@@ -9,7 +9,7 @@ HerPaceApp is a hormone-aware training plan application for women runners. It ge
 ## Tech Stack
 
 - **Backend:** C# 12, .NET 8.0, ASP.NET Core Web API, Entity Framework Core 8
-- **Frontend:** Blazor WebAssembly (.NET 8.0), MudBlazor
+- **Frontend:** React 19 + TypeScript, Vite, shadcn/ui + Tailwind CSS
 - **Database:** PostgreSQL 15+ (Google Cloud SQL in production)
 - **AI:** Google Gemini API
 - **Auth:** ASP.NET Core Identity with JWT tokens
@@ -17,6 +17,7 @@ HerPaceApp is a hormone-aware training plan application for women runners. It ge
 
 ## Build Commands
 
+**Backend:**
 ```bash
 # Build entire solution
 dotnet build HerPace.sln
@@ -24,14 +25,28 @@ dotnet build HerPace.sln
 # Run backend API (port 7001)
 dotnet run --project backend/src/HerPace.API
 
-# Run frontend (port 5163)
-dotnet run --project frontend/src/HerPace.Client
-
 # Run tests
 dotnet test HerPace.sln
 
 # Run single test
 dotnet test --filter "FullyQualifiedName~TestName"
+```
+
+**Frontend:**
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run dev server (port 5163)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
 ## Database Migrations (EF Core)
@@ -55,14 +70,38 @@ backend/
 └── tests/HerPace.Tests/       # xUnit tests
 
 frontend/
-└── src/HerPace.Client/        # Blazor WASM pages, components, ApiClient service
+└── src/
+    ├── pages/                 # React page components (Login, Signup, Dashboard, etc.)
+    ├── components/            # Reusable UI components (shadcn/ui)
+    ├── lib/                   # Utilities (api-client.ts, auth.ts)
+    ├── contexts/              # React contexts (AuthContext, etc.)
+    ├── hooks/                 # Custom React hooks
+    ├── schemas/               # Zod validation schemas
+    ├── types/                 # TypeScript type definitions
+    └── utils/                 # Helper functions
 ```
 
 **Layered Architecture:**
 - API layer handles HTTP routing to services
 - Core defines contracts and domain models
 - Infrastructure implements services and data access
-- Frontend consumes API via `Services/ApiClient.cs`
+- Frontend is a React SPA that consumes API via `lib/api-client.ts` (axios-based)
+
+**Frontend Features:**
+- React Router for client-side routing
+- AuthContext for authentication state management
+- ProtectedRoute component for route guards
+- React Hook Form + Zod for form validation
+- shadcn/ui components (built on Radix UI primitives)
+- Tailwind CSS for styling
+- Axios for HTTP requests with JWT token handling
+
+**Key Pages:**
+- `/login` - User login
+- `/signup` - New user registration
+- `/onboarding` - Profile setup after signup
+- `/dashboard` - Main app dashboard (protected)
+- `/privacy`, `/terms` - Legal pages
 
 ## Key Domain Concepts
 
@@ -89,6 +128,8 @@ User (1) → (1) Runner → (∞) Race
 
 ## Configuration
 
+**Backend:**
+
 Development settings in `appsettings.json`. Key configs:
 - `ConnectionStrings:HerPaceDb` - PostgreSQL connection
 - `Jwt:Secret`, `Jwt:Issuer`, `Jwt:Audience` - JWT auth
@@ -98,6 +139,13 @@ Development settings in `appsettings.json`. Key configs:
 - Do NOT put secrets (passwords, API keys) in this file - they will override environment variables
 - Secrets are injected via Google Cloud Secret Manager at runtime
 - Only put non-sensitive config values here
+
+**Frontend:**
+
+Environment variables for Vite (prefixed with `VITE_`):
+- `.env.development` - Local development (API at `https://localhost:7001`)
+- `.env.production` - Production build (API at Cloud Run URL)
+- `VITE_API_BASE_URL` - Base URL for API calls (used by `lib/api-client.ts`)
 
 ## Deployment
 
@@ -125,16 +173,16 @@ gcloud run services update herpace-api --image=us-central1-docker.pkg.dev/herpac
 
 **Frontend:**
 ```powershell
-# Build
-cd frontend/src/HerPace.Client
-dotnet publish -c Release
-
 # Build and push Docker image using Cloud Build
 cd frontend
 gcloud builds submit --tag us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest .
 
 # Deploy to Cloud Run
 gcloud run services update herpace-frontend --image=us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest --region=us-central1
+
+# Note: The Dockerfile uses multi-stage build:
+# - Stage 1: Node.js build (npm run build)
+# - Stage 2: nginx serves static files from /usr/share/nginx/html
 ```
 
 ### Production URLs

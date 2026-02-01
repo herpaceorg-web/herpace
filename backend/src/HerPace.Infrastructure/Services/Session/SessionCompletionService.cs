@@ -145,7 +145,7 @@ public class SessionCompletionService : ISessionCompletionService
             .Include(s => s.TrainingPlan)
             .Where(s => s.TrainingPlan.RunnerId == runnerId &&
                        s.TrainingPlan.Status == PlanStatus.Active &&
-                       s.ScheduledDate >= today)
+                       s.ScheduledDate > today)
             .OrderBy(s => s.ScheduledDate)
             .Take(count)
             .ToListAsync();

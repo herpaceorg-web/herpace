@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { SessionCard } from '@/components/session/SessionCard'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const [planSummary, setPlanSummary] = useState<PlanSummaryDto | null>(null)
   const [upcomingSessions, setUpcomingSessions] = useState<SessionDetailDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -98,7 +101,12 @@ export function Dashboard() {
 
       {/* Upcoming sessions */}
       <div>
-        <h2 className="text-2xl font-semibold mb-4">Upcoming Sessions</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Upcoming Sessions</h2>
+          <Button variant="outline" onClick={() => navigate('/calendar')}>
+            View Full Calendar
+          </Button>
+        </div>
 
         {upcomingSessions.length > 0 ? (
           <div className="space-y-4">

@@ -167,13 +167,14 @@ export interface ProfileResponse {
   distanceUnit: number
   dateOfBirth?: string
   typicalWeeklyMileage?: number
-  cycleRegularity: number
+  typicalCycleRegularity: number
   cycleLength?: number
   lastPeriodStart?: string
   fiveKPR?: string
   tenKPR?: string
   halfMarathonPR?: string
   marathonPR?: string
+  createdAt: string
 }
 
 // Race DTOs
@@ -212,4 +213,40 @@ export interface PlanResponse {
   planName: string
   startDate: string
   endDate: string
+}
+
+export interface SessionSummary {
+  id: string
+  sessionName: string
+  scheduledDate: string
+  workoutType: WorkoutType
+  durationMinutes?: number
+  distance?: number
+  intensityLevel: IntensityLevel
+  cyclePhase?: CyclePhase
+  phaseGuidance?: string
+  completedAt?: string
+  isSkipped: boolean
+}
+
+export interface PlanDetailResponse {
+  id: string
+  raceId: string
+  raceName: string
+  raceDate: string
+  runnerId: string
+  planName: string
+  status: number
+  generationSource: number
+  aiModel?: string
+  aiRationale?: string
+  startDate: string
+  endDate: string
+  trainingDaysPerWeek: number
+  longRunDay: number
+  daysBeforePeriodToReduceIntensity: number
+  daysAfterPeriodToReduceIntensity: number
+  planCompletionGoal?: string
+  createdAt: string
+  sessions: SessionSummary[]
 }

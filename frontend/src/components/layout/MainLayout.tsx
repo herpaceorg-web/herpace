@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -12,6 +13,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
     logout()
@@ -23,7 +25,35 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">HerPace</h1>
+          <div className="flex items-center gap-8">
+            <h1 className="text-2xl font-bold text-primary">HerPace</h1>
+
+            {/* Navigation */}
+            <nav className="flex gap-6">
+              <Link
+                to="/dashboard"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === '/dashboard'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/calendar"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === '/calendar'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                Calendar
+              </Link>
+            </nav>
+          </div>
 
           {/* User menu */}
           <div className="flex items-center gap-4">
