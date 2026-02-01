@@ -86,6 +86,7 @@ public class PlanSummaryDto
     public bool HasPendingRecalculation { get; set; } // Is a recalculation job currently running?
     public string? RecalculationSummary { get; set; } // AI-generated summary (null if viewed or no recalculation)
     public SessionDetailDto? TodaysSession { get; set; } // Today's session (null if no session today)
+    public CyclePhaseTipsDto? CyclePhaseTips { get; set; } // Wellness tips for today's cycle phase
 }
 
 /// <summary>

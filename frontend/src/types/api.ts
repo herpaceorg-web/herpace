@@ -78,6 +78,15 @@ export interface AuthResponse {
   expiresAt: string
 }
 
+// Cycle Phase Tips DTO
+export interface CyclePhaseTipsDto {
+  phase: string
+  nutritionTips: string[]
+  restTips: string[]
+  injuryPreventionTips: string[]
+  moodInsights: string[]
+}
+
 // Plan and Session DTOs
 export interface PlanSummaryDto {
   planId: string
@@ -88,6 +97,7 @@ export interface PlanSummaryDto {
   hasPendingRecalculation: boolean
   recalculationSummary?: string
   todaysSession?: SessionDetailDto
+  cyclePhaseTips?: CyclePhaseTipsDto
 }
 
 export interface SessionDetailDto {

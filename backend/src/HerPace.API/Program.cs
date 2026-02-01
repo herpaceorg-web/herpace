@@ -99,6 +99,7 @@ builder.Services.AddAuthentication(options =>
 // Register application services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<ICyclePhaseCalculator, CyclePhaseCalculator>();
+builder.Services.AddScoped<ICyclePhaseTipsService, CyclePhaseTipsService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IPlanGenerationService, PlanGenerationService>();
 builder.Services.AddScoped<ICycleTrackingService, CycleTrackingService>();

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { SessionCard } from '@/components/session/SessionCard'
+import { CyclePhaseTips } from '@/components/session/CyclePhaseTips'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,11 @@ export function Dashboard() {
           {planSummary.daysUntilRace} days until race day
         </p>
       </div>
+
+      {/* Cycle Phase Tips */}
+      {planSummary.cyclePhaseTips && (
+        <CyclePhaseTips tips={planSummary.cyclePhaseTips} />
+      )}
 
       {/* Today's workout */}
       {planSummary.todaysSession && (

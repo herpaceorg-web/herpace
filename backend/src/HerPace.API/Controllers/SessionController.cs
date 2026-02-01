@@ -19,15 +19,18 @@ namespace HerPace.API.Controllers;
 public class SessionController : ControllerBase
 {
     private readonly ISessionCompletionService _sessionCompletionService;
+    private readonly ICyclePhaseTipsService _cyclePhaseTipsService;
     private readonly HerPaceDbContext _context;
     private readonly ILogger<SessionController> _logger;
 
     public SessionController(
         ISessionCompletionService sessionCompletionService,
+        ICyclePhaseTipsService cyclePhaseTipsService,
         HerPaceDbContext context,
         ILogger<SessionController> logger)
     {
         _sessionCompletionService = sessionCompletionService;
+        _cyclePhaseTipsService = cyclePhaseTipsService;
         _context = context;
         _logger = logger;
     }
@@ -281,6 +284,13 @@ public class SessionController : ControllerBase
             ? activePlan.LastRecalculationSummary
             : null;
 
+        // Get cycle phase tips for today's session
+        CyclePhaseTipsDto? cyclePhaseTips = null;
+        if (todaysSession?.CyclePhase != null)
+        {
+            cyclePhaseTips = _cyclePhaseTipsService.GetTipsForPhase(todaysSession.CyclePhase.Value);
+        }
+
         var planSummary = new PlanSummaryDto
         {
             PlanId = activePlan.Id,
@@ -290,7 +300,8 @@ public class SessionController : ControllerBase
             DaysUntilRace = (activePlan.Race.RaceDate - DateTime.UtcNow.Date).Days,
             HasPendingRecalculation = hasPendingRecalculation,
             RecalculationSummary = recalculationSummary,
-            TodaysSession = todaysSession
+            TodaysSession = todaysSession,
+            CyclePhaseTips = cyclePhaseTips
         };
 
         return Ok(planSummary);
