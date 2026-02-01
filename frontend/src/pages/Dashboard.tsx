@@ -92,7 +92,7 @@ export function Dashboard() {
       {planSummary.todaysSession && (
         <div>
           <h2 className="text-2xl font-semibold mb-4">Today's Workout</h2>
-          <SessionCard session={planSummary.todaysSession} />
+          <SessionCard session={planSummary.todaysSession} onSessionUpdated={loadDashboardData} />
         </div>
       )}
 
@@ -103,7 +103,7 @@ export function Dashboard() {
         {upcomingSessions.length > 0 ? (
           <div className="space-y-4">
             {upcomingSessions.map((session) => (
-              <SessionCard key={session.id} session={session} />
+              <SessionCard key={session.id} session={session} onSessionUpdated={loadDashboardData} />
             ))}
           </div>
         ) : (

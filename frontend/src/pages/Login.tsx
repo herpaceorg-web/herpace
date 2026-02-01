@@ -30,9 +30,8 @@ export function Login() {
       // Store token and update auth state
       login(response.token)
 
-      // Navigate to dashboard
-      // TODO: Check if user has profile/plan and navigate accordingly
-      navigate('/dashboard')
+      // Navigate to root - RootRedirect will handle onboarding check
+      navigate('/')
 
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
