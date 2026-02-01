@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { SessionCard } from '@/components/session/SessionCard'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -21,13 +21,13 @@ export function Dashboard() {
       setError(null)
 
       // Load plan summary and upcoming sessions in parallel
-      const [summary, sessions] = await Promise.all([
+      const [summary, sessionsResponse] = await Promise.all([
         api.get<PlanSummaryDto>('/api/sessions/plan-summary'),
-        api.get<SessionDetailDto[]>('/api/sessions/upcoming?count=7')
+        api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7')
       ])
 
       setPlanSummary(summary)
-      setUpcomingSessions(sessions)
+      setUpcomingSessions(sessionsResponse.sessions)
 
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {

@@ -1,7 +1,13 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function NotFound() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+
+  const handleGoHome = () => {
+    navigate(isAuthenticated ? '/dashboard' : '/login')
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -9,10 +15,10 @@ export function NotFound() {
         <h1 className="text-6xl font-bold text-muted-foreground mb-4">404</h1>
         <p className="text-xl text-foreground mb-8">Page not found</p>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={handleGoHome}
           className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
         >
-          Go to Dashboard
+          Go Home
         </button>
       </div>
     </div>

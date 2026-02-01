@@ -74,6 +74,11 @@ export interface SessionDetailDto {
   completionNotes?: string
 }
 
+export interface UpcomingSessionsResponse {
+  sessions: SessionDetailDto[]
+  hasPendingRecalculation: boolean
+}
+
 // Profile DTOs (for future use)
 export interface RunnerProfileDto {
   userId: string
