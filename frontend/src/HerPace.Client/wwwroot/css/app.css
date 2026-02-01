@@ -101,3 +101,8 @@ a, .btn-link {
 code {
     color: #c02d76;
 }
+
+/* Global button border radius */
+.mud-button-root {
+    border-radius: 0.5rem !important; /* 8px */
+}
