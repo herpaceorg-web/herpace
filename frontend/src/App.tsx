@@ -3,7 +3,10 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Login } from '@/pages/Login'
+import { Signup } from '@/pages/Signup'
 import { Dashboard } from '@/pages/Dashboard'
+import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
+import { TermsOfService } from '@/pages/TermsOfService'
 import { NotFound } from '@/pages/NotFound'
 
 function App() {
@@ -13,6 +16,9 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
 
           {/* Protected routes */}
           <Route
