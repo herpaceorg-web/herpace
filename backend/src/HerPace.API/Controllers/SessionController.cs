@@ -204,11 +204,12 @@ public class SessionController : ControllerBase
     /// <summary>
     /// Get plan summary including today's session and recalculation status.
     /// </summary>
+    /// <param name="clientDate">Client's local date (optional, defaults to UTC)</param>
     [HttpGet("plan-summary")]
     [ProducesResponseType(typeof(PlanSummaryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetPlanSummary()
+    public async Task<IActionResult> GetPlanSummary([FromQuery] DateTime? clientDate = null)
     {
         var runnerId = GetRunnerIdFromClaims();
         if (runnerId == Guid.Empty)
@@ -245,8 +246,8 @@ public class SessionController : ControllerBase
             }
         }
 
-        // Get today's session
-        var today = DateTime.UtcNow.Date;
+        // Get today's session (use client's local date if provided, otherwise UTC)
+        var today = (clientDate ?? DateTime.UtcNow).Date;
         var todaysSession = activePlan.Sessions
             .Where(s => s.ScheduledDate.Date == today)
             .Select(s => new SessionDetailDto

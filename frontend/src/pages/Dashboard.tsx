@@ -23,9 +23,12 @@ export function Dashboard() {
       setIsLoading(true)
       setError(null)
 
+      // Get client's local date in ISO format (YYYY-MM-DD)
+      const clientDate = new Date().toISOString().split('T')[0]
+
       // Load plan summary and upcoming sessions in parallel
       const [summary, sessionsResponse] = await Promise.all([
-        api.get<PlanSummaryDto>('/api/sessions/plan-summary'),
+        api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
         api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7')
       ])
 

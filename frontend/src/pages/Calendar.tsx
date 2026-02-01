@@ -80,14 +80,17 @@ export default function Calendar() {
       })
       setSessionsByMonth(sessionGroups)
 
-      // Generate month list
+      // Generate month list (current month and future months only)
       const startDate = new Date(planData.startDate)
       const endDate = new Date(planData.raceDate)
       const monthsList: MonthInfo[] = []
       const currentDate = new Date()
       const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
 
-      const monthDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
+      // Start from the later of: plan start date or current month
+      const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+      const planStartMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
+      const monthDate = new Date(Math.max(currentMonthStart.getTime(), planStartMonth.getTime()))
       const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1)
 
       while (monthDate <= endMonth) {
