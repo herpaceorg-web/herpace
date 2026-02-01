@@ -1,20 +1,33 @@
-# Frontend Dockerfile for Cloud Run
+# Build stage
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build argument for API URL
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# Build the application
+RUN npm run build
+
+# Production stage
 FROM nginx:alpine
 
-# Copy the published Blazor WASM files
-COPY src/HerPace.Client/bin/Release/net8.0/publish/wwwroot /usr/share/nginx/html
+# Copy built files from build stage
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Create nginx configuration for Blazor routing
-RUN echo 'server { \
-    listen 8080; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Nginx runs on port 8080 by default in this config
+# Expose port 8080 (Cloud Run requirement)
 EXPOSE 8080
 
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

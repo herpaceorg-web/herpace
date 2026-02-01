@@ -56,7 +56,16 @@
       "Bash(Get-Service postgresql*)",
       "Bash(Select-Object Name, Status, DisplayName)",
       "Bash(psql:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm exec:*)",
+      "Bash(npm run dev:*)",
+      "Bash(taskkill /F /FI \"IMAGENAME eq node.exe\")"
     ]
   }
 }
