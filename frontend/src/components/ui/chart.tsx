@@ -69,60 +69,40 @@ const ChartTooltipContent = React.forwardRef<
           className
         )}
       >
-        {!hideLabel && (
+        {!hideLabel && label && (
           <div className={cn("font-medium", labelClassName)}>
             {labelFormatter ? labelFormatter(label, payload) : label}
           </div>
         )}
         <div className="grid gap-1.5">
-          {payload.map((item: any, index: number) => {
-            const key = `${nameKey || item.dataKey || item.name || "value"}-${index}`
-            const itemColor = item.payload.fill || item.color
-
-            return (
-              <div
-                key={key}
-                className="flex w-full items-center text-xs"
-              >
-                {!hideIndicator && (
-                  <div
-                    className={cn(
-                      "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
-                      {
-                        "h-2.5 w-2.5": indicator === "dot",
-                        "w-1 h-2.5": indicator === "line",
-                        "w-0 border-[1.5px] border-dashed bg-transparent":
-                          indicator === "dashed",
-                      }
-                    )}
-                    style={
-                      {
-                        "--color-bg": itemColor,
-                        "--color-border": itemColor,
-                      } as React.CSSProperties
-                    }
-                  />
-                )}
+          {payload.map((item: any, index: number) => (
+            <div
+              key={`item-${index}`}
+              className="flex w-full items-center gap-2"
+            >
+              {!hideIndicator && (
                 <div
                   className={cn(
-                    "flex flex-1 justify-between leading-none",
-                    hideIndicator ? "items-end" : "items-center"
+                    "h-2 w-2 shrink-0 rounded-[2px]",
+                    indicator === "dot" && "rounded-full",
+                    indicator === "dashed" && "border border-dashed"
                   )}
-                >
-                  <div className="grid gap-1.5">
-                    <span className="text-muted-foreground">
-                      {item.name}
-                    </span>
-                  </div>
-                  {item.value && (
-                    <span className="font-mono font-medium tabular-nums text-foreground">
-                      {formatter ? formatter(item.value, item.name, item, index, payload) : item.value}
-                    </span>
-                  )}
-                </div>
+                  style={{
+                    backgroundColor: item.color,
+                    borderColor: item.color,
+                  }}
+                />
+              )}
+              <div className="flex flex-1 justify-between leading-none">
+                <span className="text-muted-foreground">
+                  {nameKey ? item.payload[nameKey] : item.name}
+                </span>
+                <span className="font-mono font-medium tabular-nums text-foreground">
+                  {formatter ? formatter(item.value, item.name, item, index, payload) : item.value}
+                </span>
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -130,8 +110,4 @@ const ChartTooltipContent = React.forwardRef<
 )
 ChartTooltipContent.displayName = "ChartTooltipContent"
 
-export {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-}
+export { ChartContainer, ChartTooltip, ChartTooltipContent }
