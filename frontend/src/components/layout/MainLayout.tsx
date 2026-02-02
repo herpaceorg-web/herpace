@@ -56,7 +56,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 to="/history"
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === '/history'
+                  location.pathname.startsWith('/history')
                     ? 'text-primary'
                     : 'text-muted-foreground'
                 )}
