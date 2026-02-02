@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 interface AuthContextType {
   isAuthenticated: boolean
   token: string | null
-  login: (token: string) => void
+  login: (token: string, expiresAt?: string) => void
   logout: () => void
 }
 
@@ -16,8 +16,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => auth.getToken())
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!auth.getToken())
 
-  const login = (newToken: string) => {
-    auth.setToken(newToken)
+  const login = (newToken: string, expiresAt?: string) => {
+    auth.setToken(newToken, expiresAt)
     setToken(newToken)
     setIsAuthenticated(true)
   }
