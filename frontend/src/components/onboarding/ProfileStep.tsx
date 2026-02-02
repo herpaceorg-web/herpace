@@ -24,9 +24,9 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
     today.getMonth(),
     today.getDate()
   )
-  const resolvedDefaults = {
-    cycleRegularity: 'Regular',
-    distanceUnit: 'Miles',
+  const resolvedDefaults: Partial<ProfileFormValues> = {
+    cycleRegularity: 'Regular' as const,
+    distanceUnit: 'Miles' as const,
     dateOfBirth: defaultBirthDate,
     ...defaultValues
   }
@@ -37,7 +37,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
     setValue,
     formState: { errors, isSubmitting }
   } = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileStepSchema),
+    resolver: zodResolver(profileStepSchema) as any,
     defaultValues: resolvedDefaults
   })
 

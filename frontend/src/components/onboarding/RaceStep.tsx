@@ -27,6 +27,11 @@ const STANDARD_DISTANCES = {
 }
 
 export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
+  const resolvedDefaults: Partial<RaceFormValues> = defaultValues || {
+    distanceType: 'FiveK' as const,
+    distance: 5
+  }
+
   const {
     register,
     handleSubmit,
@@ -34,11 +39,8 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
     setValue,
     formState: { errors, isSubmitting }
   } = useForm<RaceFormValues>({
-    resolver: zodResolver(raceStepSchema),
-    defaultValues: defaultValues || {
-      distanceType: 'FiveK',
-      distance: 5
-    }
+    resolver: zodResolver(raceStepSchema) as any,
+    defaultValues: resolvedDefaults
   })
 
   const raceDate = watch('raceDate')

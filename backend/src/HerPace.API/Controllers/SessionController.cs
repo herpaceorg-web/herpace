@@ -207,12 +207,12 @@ public class SessionController : ControllerBase
     /// <summary>
     /// Get plan summary including today's session and recalculation status.
     /// </summary>
-    /// <param name="clientDate">Client's local date (optional, defaults to UTC)</param>
+    /// <param name="clientDate">Client's local date in YYYY-MM-DD format (optional, defaults to UTC)</param>
     [HttpGet("plan-summary")]
     [ProducesResponseType(typeof(PlanSummaryDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetPlanSummary([FromQuery] DateTime? clientDate = null)
+    public async Task<IActionResult> GetPlanSummary([FromQuery] string? clientDate = null)
     {
         var runnerId = GetRunnerIdFromClaims();
         if (runnerId == Guid.Empty)
@@ -220,7 +220,7 @@ public class SessionController : ControllerBase
             return Unauthorized("Invalid user claims");
         }
 
-        _logger.LogInformation("Getting plan summary for runner {RunnerId}", runnerId);
+        _logger.LogInformation("Getting plan summary for runner {RunnerId} with clientDate {ClientDate}", runnerId, clientDate);
 
         // Find active plan with race and sessions
         var activePlan = await _context.TrainingPlans
@@ -249,8 +249,20 @@ public class SessionController : ControllerBase
             }
         }
 
-        // Get today's session (use client's local date if provided, otherwise UTC)
-        var today = (clientDate ?? DateTime.UtcNow).Date;
+        // Parse client date string to ensure correct date-only comparison
+        DateTime today;
+        if (!string.IsNullOrEmpty(clientDate) && DateTime.TryParse(clientDate, out var parsedDate))
+        {
+            today = parsedDate.Date;
+            _logger.LogInformation("Using client date {Today} for today's session lookup", today);
+        }
+        else
+        {
+            today = DateTime.UtcNow.Date;
+            _logger.LogInformation("Using UTC date {Today} for today's session lookup", today);
+        }
+
+        // Get today's session using date-only comparison
         var todaysSession = activePlan.Sessions
             .Where(s => s.ScheduledDate.Date == today)
             .Select(s => new SessionDetailDto

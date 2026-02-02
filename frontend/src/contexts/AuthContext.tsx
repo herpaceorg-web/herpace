@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import { auth } from '@/lib/auth'
 
@@ -12,17 +12,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  // Load token from localStorage on mount
-  useEffect(() => {
-    const savedToken = auth.getToken()
-    if (savedToken) {
-      setToken(savedToken)
-      setIsAuthenticated(true)
-    }
-  }, [])
+  // Initialize state from localStorage synchronously to prevent flash redirects
+  const [token, setToken] = useState<string | null>(() => auth.getToken())
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!auth.getToken())
 
   const login = (newToken: string) => {
     auth.setToken(newToken)

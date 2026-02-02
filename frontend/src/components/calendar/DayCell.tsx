@@ -59,8 +59,21 @@ export function DayCell({ date, session, cyclePhase, isCurrentMonth, onClick }: 
           {dayNumber}
         </span>
 
-        {/* Intensity badge (only for non-rest workouts) */}
-        {hasSession && !isRest && session.intensityLevel !== undefined && (
+        {/* Status indicators - only show one at a time */}
+        {/* Completion indicator */}
+        {isCompleted && (
+          <div className="text-green-600 text-sm sm:text-base" title="Completed">
+            ✓
+          </div>
+        )}
+        {/* Skip indicator */}
+        {!isCompleted && isSkipped && (
+          <div className="text-gray-500 text-sm sm:text-base" title="Skipped">
+            –
+          </div>
+        )}
+        {/* Intensity badge (only for non-rest workouts that aren't completed or skipped) */}
+        {!isCompleted && !isSkipped && hasSession && !isRest && session.intensityLevel !== undefined && (
           <div
             className={cn(
               'w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center',
@@ -71,18 +84,6 @@ export function DayCell({ date, session, cyclePhase, isCurrentMonth, onClick }: 
             <span className="text-white text-[8px] sm:text-[10px] font-bold">
               {intensityLabels[session.intensityLevel]}
             </span>
-          </div>
-        )}
-
-        {/* Completion/skip indicator */}
-        {isCompleted && (
-          <div className="text-green-600 text-sm sm:text-base" title="Completed">
-            ✓
-          </div>
-        )}
-        {isSkipped && !isCompleted && (
-          <div className="text-gray-500 text-sm sm:text-base" title="Skipped">
-            –
           </div>
         )}
       </div>

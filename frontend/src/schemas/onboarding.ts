@@ -68,7 +68,8 @@ export const profileStepSchema = z.object({
   }
 )
 
-export type ProfileFormValues = z.infer<typeof profileStepSchema>
+// Export the output type (after preprocessing) instead of input type
+export type ProfileFormValues = z.output<typeof profileStepSchema>
 
 export const raceStepSchema = z.object({
   raceName: z.string()
@@ -136,4 +137,5 @@ export const raceStepSchema = z.object({
     .optional(),
 })
 
-export type RaceFormValues = z.infer<typeof raceStepSchema>
+// Export the output type (after preprocessing) instead of input type
+export type RaceFormValues = z.output<typeof raceStepSchema>
