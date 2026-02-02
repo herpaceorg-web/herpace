@@ -24,10 +24,6 @@ import { Eye, EyeOff } from 'lucide-react'
 
 // Validation schema
 const signupSchema = z.object({
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(50, 'Username must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores'),
   email: z.string()
     .email('Please enter a valid email address')
     .min(1, 'Email is required'),
@@ -64,7 +60,6 @@ export function Signup() {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -85,8 +80,8 @@ export function Signup() {
 
       const response = await api.post<SignupRequest, AuthResponse>('/api/auth/signup', request)
 
-      // Store token and update auth state
-      login(response.token)
+      // Store token with expiration and update auth state
+      login(response.token, response.expiresAt)
 
       // Navigate to root - RootRedirect will handle onboarding check
       navigate('/')
@@ -125,24 +120,6 @@ export function Signup() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username*</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter your username"
-                        disabled={isLoading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}

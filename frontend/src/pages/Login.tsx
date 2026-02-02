@@ -27,8 +27,8 @@ export function Login() {
       const request: LoginRequest = { email, password }
       const response = await api.post<LoginRequest, AuthResponse>('/api/auth/login', request)
 
-      // Store token and update auth state
-      login(response.token)
+      // Store token with expiration and update auth state
+      login(response.token, response.expiresAt)
 
       // Navigate to root - RootRedirect will handle onboarding check
       navigate('/')
