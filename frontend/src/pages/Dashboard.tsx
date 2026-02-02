@@ -3,10 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { SessionCard } from '@/components/session/SessionCard'
-import { CyclePhaseTips } from '@/components/session/CyclePhaseTips'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Loader2, Sparkles } from 'lucide-react'
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -14,10 +22,29 @@ export function Dashboard() {
   const [upcomingSessions, setUpcomingSessions] = useState<SessionDetailDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showSummaryModal, setShowSummaryModal] = useState(false)
 
   useEffect(() => {
     loadDashboardData()
   }, [])
+
+  // Poll for recalculation status when pending
+  useEffect(() => {
+    if (!planSummary?.hasPendingRecalculation) return
+
+    const pollInterval = setInterval(() => {
+      loadDashboardData()
+    }, 5000) // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval)
+  }, [planSummary?.hasPendingRecalculation])
+
+  // Show summary modal when recalculation completes
+  useEffect(() => {
+    if (planSummary?.recalculationSummary && !showSummaryModal) {
+      setShowSummaryModal(true)
+    }
+  }, [planSummary?.recalculationSummary])
 
   const loadDashboardData = async () => {
     try {
@@ -49,6 +76,19 @@ export function Dashboard() {
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDismissSummary = async () => {
+    try {
+      await api.post('/api/sessions/dismiss-summary', {})
+      setShowSummaryModal(false)
+      // Refresh to clear the summary from planSummary
+      await loadDashboardData()
+    } catch (err) {
+      console.error('Failed to dismiss summary:', err)
+      // Still close the modal even if API call fails
+      setShowSummaryModal(false)
     }
   }
 
@@ -95,16 +135,28 @@ export function Dashboard() {
         </p>
       </div>
 
-      {/* Cycle Phase Tips */}
-      {planSummary.cyclePhaseTips && (
-        <CyclePhaseTips tips={planSummary.cyclePhaseTips} />
+      {/* Recalculation status banner */}
+      {planSummary.hasPendingRecalculation && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-900">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertDescription className="ml-2">
+            <div className="font-medium mb-1">Adapting Your Training Plan</div>
+            <p className="text-sm text-muted-foreground">
+              We've noticed your training has been a bit different than the plan. We're building you a personalized update to better match where you are right now. This usually takes just a minute or two.
+            </p>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Today's workout */}
       {planSummary.todaysSession && (
         <div>
           <h2 className="text-2xl font-semibold mb-4">Today's Workout</h2>
-          <SessionCard session={planSummary.todaysSession} onSessionUpdated={loadDashboardData} />
+          <SessionCard
+            session={planSummary.todaysSession}
+            cyclePhaseTips={planSummary.cyclePhaseTips}
+            onSessionUpdated={loadDashboardData}
+          />
         </div>
       )}
 
@@ -138,6 +190,29 @@ export function Dashboard() {
           </Card>
         )}
       </div>
+
+      {/* Recalculation summary modal */}
+      <Dialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Your Training Plan Has Been Updated
+            </DialogTitle>
+            <DialogDescription>
+              Based on your recent training, we've adapted your plan to better support your goals.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm whitespace-pre-line">
+              {planSummary?.recalculationSummary}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleDismissSummary}>Got It</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

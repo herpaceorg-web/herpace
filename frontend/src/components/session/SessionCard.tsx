@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { SessionDetailDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
+import { useState, useMemo } from 'react'
+import type { SessionDetailDto, CompleteSessionRequest, SessionCompletionResponse, CyclePhaseTipsDto } from '@/types/api'
 import { WorkoutType, CyclePhase } from '@/types/api'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { api } from '@/lib/api-client'
 
 interface SessionCardProps {
   session: SessionDetailDto
+  cyclePhaseTips?: CyclePhaseTipsDto
   onSessionUpdated?: () => void
 }
 
@@ -41,7 +42,7 @@ const cyclePhaseColors: Record<CyclePhase, string> = {
   [CyclePhase.Luteal]: 'bg-blue-100 text-blue-800 border-blue-300',
 }
 
-export function SessionCard({ session, onSessionUpdated }: SessionCardProps) {
+export function SessionCard({ session, cyclePhaseTips, onSessionUpdated }: SessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(session)
@@ -51,6 +52,23 @@ export function SessionCard({ session, onSessionUpdated }: SessionCardProps) {
     month: 'short',
     day: 'numeric'
   })
+
+  // Get a random wellness tip
+  const randomTip = useMemo(() => {
+    if (!cyclePhaseTips) return null
+
+    const allTips = [
+      ...cyclePhaseTips.nutritionTips.map(tip => ({ category: 'Nutrition', tip })),
+      ...cyclePhaseTips.restTips.map(tip => ({ category: 'Rest', tip })),
+      ...cyclePhaseTips.injuryPreventionTips.map(tip => ({ category: 'Injury Prevention', tip })),
+      ...cyclePhaseTips.moodInsights.map(tip => ({ category: 'Mood', tip })),
+    ]
+
+    if (allTips.length === 0) return null
+
+    const randomIndex = Math.floor(Math.random() * allTips.length)
+    return allTips[randomIndex]
+  }, [cyclePhaseTips])
 
   const handleSkip = async () => {
     setIsSkipping(true)
@@ -163,6 +181,18 @@ export function SessionCard({ session, onSessionUpdated }: SessionCardProps) {
               <p className="text-sm text-muted-foreground">
                 {localSession.sessionDescription}
               </p>
+            )}
+
+            {/* Wellness Tip */}
+            {randomTip && cyclePhaseTips && (
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-800 rounded-md p-3">
+                <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">
+                  {cyclePhaseTips.phase} Phase Tip • {randomTip.category}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {randomTip.tip}
+                </p>
+              </div>
             )}
 
             {/* Completion status */}

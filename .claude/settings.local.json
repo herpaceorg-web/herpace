@@ -71,7 +71,9 @@
       "Bash(pwsh -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
       "Bash(gcloud builds submit:*)",
       "Bash(npx shadcn:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout /t 5 /nobreak)"
     ]
   }
 }
