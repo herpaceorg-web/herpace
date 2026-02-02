@@ -18,6 +18,18 @@ interface ProfileStepProps {
 }
 
 export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
+  const today = new Date()
+  const defaultBirthDate = new Date(
+    today.getFullYear() - 30,
+    today.getMonth(),
+    today.getDate()
+  )
+  const resolvedDefaults = {
+    cycleRegularity: 'Regular',
+    distanceUnit: 'Miles',
+    dateOfBirth: defaultBirthDate,
+    ...defaultValues
+  }
   const {
     register,
     handleSubmit,
@@ -26,10 +38,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
     formState: { errors, isSubmitting }
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileStepSchema),
-    defaultValues: defaultValues || {
-      cycleRegularity: 'Regular',
-      distanceUnit: 'Miles'
-    }
+    defaultValues: resolvedDefaults
   })
 
   const cycleRegularity = watch('cycleRegularity')
@@ -124,7 +133,11 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
             <Calendar
               mode="single"
               selected={dateOfBirth}
+              defaultMonth={dateOfBirth ?? defaultBirthDate}
               onSelect={(date: Date | undefined) => setValue('dateOfBirth', date)}
+              captionLayout="dropdown"
+              fromYear={1900}
+              toYear={today.getFullYear()}
               disabled={(date: Date) => date > new Date() || date < new Date('1900-01-01')}
               initialFocus
             />

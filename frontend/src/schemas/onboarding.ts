@@ -15,7 +15,13 @@ export const profileStepSchema = z.object({
 
   dateOfBirth: z.date().optional(),
 
-  typicalWeeklyMileage: z.number().min(0).max(200).optional(),
+  typicalWeeklyMileage: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return undefined
+      return typeof value === 'number' && Number.isNaN(value) ? undefined : value
+    },
+    z.number().min(0).max(200).optional()
+  ),
 
   cycleRegularity: z.enum(['Regular', 'Irregular', 'DoNotTrack'], {
     message: 'Please indicate your cycle tracking preference'
@@ -89,11 +95,41 @@ export const raceStepSchema = z.object({
     .max(200, 'Location must be less than 200 characters')
     .optional(),
 
-  goalTime: z.string()
-    .optional()
-    .refine((val) => !val || /^(\d{1,2}):([0-5]\d):([0-5]\d)$/.test(val), {
-      message: 'Format: HH:MM:SS (e.g., 3:45:00)'
-    }),
+  goalTime: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return undefined
+      if (typeof value !== 'string') return value
+      const trimmed = value.trim()
+      if (!trimmed) return undefined
+      const parts = trimmed.split(':')
+      if (parts.length > 3) return value
+      const [rawHours, rawMinutes = '0', rawSeconds = '0'] = parts
+      if (rawHours === '' || rawMinutes === '' || rawSeconds === '') return value
+      const hours = Number(rawHours)
+      const minutes = Number(rawMinutes)
+      const seconds = Number(rawSeconds)
+      if (
+        Number.isNaN(hours) ||
+        Number.isNaN(minutes) ||
+        Number.isNaN(seconds) ||
+        hours < 0 ||
+        minutes < 0 ||
+        minutes > 59 ||
+        seconds < 0 ||
+        seconds > 59
+      ) {
+        return value
+      }
+      const paddedMinutes = String(minutes).padStart(2, '0')
+      const paddedSeconds = String(seconds).padStart(2, '0')
+      return `${hours}:${paddedMinutes}:${paddedSeconds}`
+    },
+    z.string()
+      .optional()
+      .refine((val) => !val || /^(\d+):([0-5]\d):([0-5]\d)$/.test(val), {
+        message: 'Format: H:MM:SS (e.g., 3:45:00)'
+      })
+  ),
 
   raceCompletionGoal: z.string()
     .max(1000, 'Goal description must be less than 1000 characters')

@@ -174,11 +174,11 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
         <Input
           id="goalTime"
           {...register('goalTime')}
-          placeholder="HH:MM:SS (e.g., 3:45:00)"
+          placeholder="H, H:MM, or H:MM:SS (e.g., 3:45 or 3:45:00)"
           disabled={isSubmitting}
         />
         <p className="text-xs text-muted-foreground">
-          Format: Hours:Minutes:Seconds
+          Format: Hours, Hours:Minutes, or Hours:Minutes:Seconds
         </p>
         {errors.goalTime && (
           <p className="text-sm text-destructive">{errors.goalTime.message}</p>
