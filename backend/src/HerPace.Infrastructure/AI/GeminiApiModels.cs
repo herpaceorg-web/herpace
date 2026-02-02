@@ -14,6 +14,10 @@ public class GeminiRequest
 
     [JsonPropertyName("generationConfig")]
     public GeminiGenerationConfig? GenerationConfig { get; set; }
+
+    // ThinkingConfig is commented out - not yet supported by the Gemini API
+    // [JsonPropertyName("thinkingConfig")]
+    // public GeminiThinkingConfig? ThinkingConfig { get; set; }
 }
 
 public class GeminiContent
@@ -53,4 +57,16 @@ public class GeminiCandidate
 
     [JsonPropertyName("finishReason")]
     public string? FinishReason { get; set; }
+}
+
+public class GeminiThinkingConfig
+{
+    /// <summary>
+    /// Controls the maximum depth of the model's internal reasoning process.
+    /// Supported values:
+    /// - Both Pro and Flash: "low", "high" (default)
+    /// - Flash-only: "minimal", "medium"
+    /// </summary>
+    [JsonPropertyName("thinking_level")]
+    public string? ThinkingLevel { get; set; }
 }

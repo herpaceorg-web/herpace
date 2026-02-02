@@ -52,6 +52,17 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 Calendar
               </Link>
+              <Link
+                to="/history"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === '/history'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                History
+              </Link>
             </nav>
           </div>
 

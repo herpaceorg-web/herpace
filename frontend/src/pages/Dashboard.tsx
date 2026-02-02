@@ -110,11 +110,16 @@ export function Dashboard() {
 
       {/* Upcoming sessions */}
       <div>
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-2xl font-semibold">Upcoming Sessions</h2>
-          <Button variant="outline" onClick={() => navigate('/calendar')}>
-            View Full Calendar
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate('/calendar')}>
+              View Full Calendar
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/history')}>
+              View Training History
+            </Button>
+          </div>
         </div>
 
         {upcomingSessions.length > 0 ? (

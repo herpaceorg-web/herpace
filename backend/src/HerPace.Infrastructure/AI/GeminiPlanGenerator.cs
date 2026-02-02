@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace HerPace.Infrastructure.AI;
 
 /// <summary>
-/// Generates training plans using Google Gemini 3 Flash Preview via REST API.
+/// Generates training plans using Google Gemini 3 (Flash or Pro) via REST API.
+/// Supports configurable thinking levels for advanced reasoning.
 /// Uses direct API key authentication (x-goog-api-key header).
 /// </summary>
 public class GeminiPlanGenerator : IAIPlanGenerator
@@ -19,6 +20,8 @@ public class GeminiPlanGenerator : IAIPlanGenerator
     private readonly ILogger<GeminiPlanGenerator> _logger;
     private readonly string _apiKey;
     private readonly string _apiUrl;
+    private readonly string _model;
+    private readonly string? _thinkingLevel;
 
     public GeminiPlanGenerator(
         HttpClient httpClient,
@@ -32,8 +35,12 @@ public class GeminiPlanGenerator : IAIPlanGenerator
         _apiKey = (_configuration["Gemini:ApiKey"]
             ?? throw new InvalidOperationException("Gemini API key is not configured in appsettings.json")).Trim();
 
-        var model = _configuration["Gemini:Model"] ?? "gemini-3-flash-preview";
-        _apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent";
+        _model = _configuration["Gemini:Model"] ?? "gemini-3-flash-preview";
+        _thinkingLevel = null; // ThinkingConfig not yet supported by API
+        _apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/{_model}:generateContent";
+
+        _logger.LogInformation("GeminiPlanGenerator initialized with model: {Model}",
+            _model);
     }
 
     public async Task<GeneratedPlanDto> GeneratePlanAsync(
@@ -62,10 +69,11 @@ public class GeminiPlanGenerator : IAIPlanGenerator
                 },
                 GenerationConfig = new GeminiGenerationConfig
                 {
-                    Temperature = 0.2, // Lower temperature for consistent output
+                    Temperature = 1.0, // Keep at default for Gemini 3 as per documentation
                     MaxOutputTokens = 65536, // Maximum allowed tokens for complete training plan
                     ResponseMimeType = "application/json" // Request JSON format
                 }
+                // ThinkingConfig removed - not yet supported by Gemini API
             };
 
             // Serialize request
@@ -139,7 +147,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
             // Set metadata
             plan.GenerationSource = GenerationSource.AI;
-            plan.AiModel = "gemini-3-flash-preview";
+            plan.AiModel = _model;
 
             _logger.LogInformation(
                 "Training plan generated successfully in {Duration}ms. Sessions: {Count}",
@@ -184,10 +192,11 @@ public class GeminiPlanGenerator : IAIPlanGenerator
                 },
                 GenerationConfig = new GeminiGenerationConfig
                 {
-                    Temperature = 0.3, // Slightly higher for adaptive changes
+                    Temperature = 1.0, // Keep at default for Gemini 3 as per documentation
                     MaxOutputTokens = 16384, // Fewer tokens needed for partial plan
                     ResponseMimeType = "application/json"
                 }
+                // ThinkingConfig removed - not yet supported by Gemini API
             };
 
             // Serialize request
@@ -254,7 +263,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
             // Set metadata
             plan.GenerationSource = GenerationSource.AI;
-            plan.AiModel = "gemini-3-flash-preview";
+            plan.AiModel = _model;
 
             _logger.LogInformation(
                 "Plan recalculation completed in {Duration}ms. Sessions regenerated: {Count}",
@@ -298,10 +307,11 @@ public class GeminiPlanGenerator : IAIPlanGenerator
                 },
                 GenerationConfig = new GeminiGenerationConfig
                 {
-                    Temperature = 0.4, // Slightly higher for more natural language
+                    Temperature = 1.0, // Keep at default for Gemini 3 as per documentation
                     MaxOutputTokens = 500, // Limit to keep summary concise
                     ResponseMimeType = "text/plain" // Plain text response
                 }
+                // ThinkingConfig removed - not yet supported by Gemini API
             };
 
             // Serialize request

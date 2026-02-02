@@ -7,6 +7,7 @@ import { Signup } from '@/pages/Signup'
 import { Onboarding } from '@/pages/Onboarding'
 import { Dashboard } from '@/pages/Dashboard'
 import Calendar from '@/pages/Calendar'
+import TrainingHistory from '@/pages/TrainingHistory'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
 import { NotFound } from '@/pages/NotFound'
@@ -48,6 +49,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Calendar />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <TrainingHistory />
                 </MainLayout>
               </ProtectedRoute>
             }
