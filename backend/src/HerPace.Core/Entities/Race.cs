@@ -21,7 +21,9 @@ public class Race
     public bool IsPublic { get; set; } = false; // Future feature for social sharing
 
     // Race Results (post-race)
+    public RaceCompletionStatus CompletionStatus { get; set; } = RaceCompletionStatus.NotAttempted;
     public TimeSpan? RaceResult { get; set; } // Actual finish time
+    public DateTime? ResultLoggedAt { get; set; } // When result was logged
 
     // Timestamps
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

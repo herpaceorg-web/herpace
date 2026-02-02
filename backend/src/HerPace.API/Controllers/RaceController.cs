@@ -1,3 +1,4 @@
+using HerPace.Core.DTOs;
 using HerPace.Core.Entities;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
@@ -127,7 +128,9 @@ public class RaceController : ControllerBase
             DistanceType = race.DistanceType,
             GoalTime = race.GoalTime,
             RaceCompletionGoal = race.RaceCompletionGoal,
+            CompletionStatus = race.CompletionStatus,
             RaceResult = race.RaceResult,
+            ResultLoggedAt = race.ResultLoggedAt,
             IsPublic = race.IsPublic,
             CreatedAt = race.CreatedAt,
             HasTrainingPlan = race.TrainingPlan != null
@@ -135,7 +138,7 @@ public class RaceController : ControllerBase
     }
 
     /// <summary>
-    /// Gets all races for the authenticated user.
+    /// Gets all races for the authenticated user with training plan statistics.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetRaces()
@@ -147,12 +150,17 @@ public class RaceController : ControllerBase
 
         if (runner == null)
         {
-            return Ok(new List<RaceResponse>());
+            return Ok(new List<RaceWithStatsResponse>());
         }
 
-        var races = await _raceService.GetRacesForRunnerAsync(runner.Id);
+        var races = await _context.Races
+            .Include(r => r.TrainingPlan)
+                .ThenInclude(tp => tp!.Sessions)
+            .Where(r => r.RunnerId == runner.Id)
+            .OrderByDescending(r => r.RaceDate)
+            .ToListAsync();
 
-        var response = races.Select(race => new RaceResponse
+        var response = races.Select(race => new RaceWithStatsResponse
         {
             Id = race.Id,
             RunnerId = race.RunnerId,
@@ -162,13 +170,83 @@ public class RaceController : ControllerBase
             Distance = race.Distance,
             DistanceType = race.DistanceType,
             GoalTime = race.GoalTime,
-            RaceCompletionGoal = race.RaceCompletionGoal,
+            CompletionStatus = race.CompletionStatus,
             RaceResult = race.RaceResult,
-            IsPublic = race.IsPublic,
+            ResultLoggedAt = race.ResultLoggedAt,
+            HasTrainingPlan = race.TrainingPlan != null,
+            SessionCount = race.TrainingPlan?.Sessions.Count,
+            PlanStatus = race.TrainingPlan?.Status,
             CreatedAt = race.CreatedAt
         }).ToList();
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Logs race result (Completed/DNS/DNF).
+    /// Can only be done after race date.
+    /// Auto-archives training plan if status is Completed.
+    /// </summary>
+    [HttpPut("{id}/result")]
+    public async Task<IActionResult> LogRaceResult(Guid id, [FromBody] LogRaceResultRequest request)
+    {
+        var userId = GetAuthenticatedUserId();
+
+        var race = await _context.Races
+            .Include(r => r.Runner)
+            .Include(r => r.TrainingPlan)
+            .FirstOrDefaultAsync(r => r.Id == id && r.Runner.UserId == userId);
+
+        if (race == null)
+        {
+            return NotFound(new { message = "Race not found." });
+        }
+
+        // Validate: can only log result after race date
+        if (race.RaceDate.Date > DateTime.UtcNow.Date)
+        {
+            return BadRequest(new { message = "Cannot log race result before race date." });
+        }
+
+        // Validate: if status is Completed, finish time is required
+        if (request.CompletionStatus == RaceCompletionStatus.Completed && !request.FinishTime.HasValue)
+        {
+            return BadRequest(new { message = "Finish time is required when marking race as completed." });
+        }
+
+        // Update race
+        race.CompletionStatus = request.CompletionStatus;
+        race.RaceResult = request.FinishTime;
+        race.ResultLoggedAt = DateTime.UtcNow;
+        race.UpdatedAt = DateTime.UtcNow;
+
+        var planArchived = false;
+
+        // Auto-archive plan if race completed
+        if (request.CompletionStatus == RaceCompletionStatus.Completed && race.TrainingPlan != null)
+        {
+            race.TrainingPlan.Status = PlanStatus.Completed;
+            race.TrainingPlan.UpdatedAt = DateTime.UtcNow;
+            planArchived = true;
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Race {RaceId} result logged: {Status}, Plan archived: {Archived}",
+            id, request.CompletionStatus, planArchived);
+
+        return Ok(new LogRaceResultResponse
+        {
+            RaceId = race.Id,
+            CompletionStatus = race.CompletionStatus,
+            FinishTime = race.RaceResult,
+            LoggedAt = race.ResultLoggedAt.Value,
+            PlanArchived = planArchived,
+            Message = planArchived
+                ? "Race result logged and training plan archived."
+                : "Race result logged."
+        });
     }
 
     private Guid GetAuthenticatedUserId()
@@ -211,8 +289,33 @@ public class RaceResponse
     public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; }
     public string? RaceCompletionGoal { get; set; }
+    public RaceCompletionStatus CompletionStatus { get; set; }
     public TimeSpan? RaceResult { get; set; }
+    public DateTime? ResultLoggedAt { get; set; }
     public bool IsPublic { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool HasTrainingPlan { get; set; }
+}
+
+/// <summary>
+/// Response containing race data with training plan statistics.
+/// Used for list views where summary information is needed.
+/// </summary>
+public class RaceWithStatsResponse
+{
+    public Guid Id { get; set; }
+    public Guid RunnerId { get; set; }
+    public string RaceName { get; set; } = string.Empty;
+    public string? Location { get; set; }
+    public DateTime RaceDate { get; set; }
+    public decimal Distance { get; set; }
+    public DistanceType DistanceType { get; set; }
+    public string? GoalTime { get; set; }
+    public RaceCompletionStatus CompletionStatus { get; set; }
+    public TimeSpan? RaceResult { get; set; }
+    public DateTime? ResultLoggedAt { get; set; }
+    public bool HasTrainingPlan { get; set; }
+    public int? SessionCount { get; set; }
+    public PlanStatus? PlanStatus { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

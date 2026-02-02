@@ -60,6 +60,24 @@ export const DistanceType = {
 
 export type DistanceType = typeof DistanceType[keyof typeof DistanceType]
 
+export const RaceCompletionStatus = {
+  NotAttempted: 0,
+  Completed: 1,
+  DNS: 2,
+  DNF: 3
+} as const
+
+export type RaceCompletionStatus = typeof RaceCompletionStatus[keyof typeof RaceCompletionStatus]
+
+export const PlanStatus = {
+  Active: 0,
+  Paused: 1,
+  Archived: 2,
+  Completed: 3
+} as const
+
+export type PlanStatus = typeof PlanStatus[keyof typeof PlanStatus]
+
 // Auth DTOs
 export interface LoginRequest {
   email: string
@@ -209,7 +227,43 @@ export interface RaceResponse {
   location?: string
   goalTime?: string
   raceCompletionGoal?: string
+  completionStatus: RaceCompletionStatus
+  raceResult?: string  // TimeSpan format
+  resultLoggedAt?: string
   isPublic: boolean
+  hasTrainingPlan: boolean
+}
+
+export interface RaceWithStatsResponse {
+  id: string
+  runnerId: string
+  raceName: string
+  raceDate: string
+  distance: number
+  distanceType: number
+  location?: string
+  goalTime?: string
+  completionStatus: RaceCompletionStatus
+  raceResult?: string  // TimeSpan format
+  resultLoggedAt?: string
+  hasTrainingPlan: boolean
+  sessionCount?: number
+  planStatus?: PlanStatus
+  createdAt: string
+}
+
+export interface LogRaceResultRequest {
+  completionStatus: RaceCompletionStatus
+  finishTime?: string  // TimeSpan format: "HH:mm:ss"
+}
+
+export interface LogRaceResultResponse {
+  raceId: string
+  completionStatus: RaceCompletionStatus
+  finishTime?: string
+  loggedAt: string
+  planArchived: boolean
+  message: string
 }
 
 // Plan DTOs

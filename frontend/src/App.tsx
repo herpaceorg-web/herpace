@@ -8,6 +8,7 @@ import { Onboarding } from '@/pages/Onboarding'
 import { Dashboard } from '@/pages/Dashboard'
 import Calendar from '@/pages/Calendar'
 import TrainingHistory from '@/pages/TrainingHistory'
+import RaceDetail from '@/pages/RaceDetail'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
 import { NotFound } from '@/pages/NotFound'
@@ -59,6 +60,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <TrainingHistory />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history/:raceId"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <RaceDetail />
                 </MainLayout>
               </ProtectedRoute>
             }

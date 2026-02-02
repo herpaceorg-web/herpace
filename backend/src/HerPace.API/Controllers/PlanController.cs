@@ -184,6 +184,75 @@ public class PlanController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Retrieves the training plan for a specific race.
+    /// Returns 404 if no plan exists for the race.
+    /// </summary>
+    [HttpGet("race/{raceId}")]
+    public async Task<IActionResult> GetPlanByRaceId(Guid raceId)
+    {
+        var userId = GetAuthenticatedUserId();
+
+        var runner = await _context.Runners
+            .FirstOrDefaultAsync(r => r.UserId == userId);
+
+        if (runner == null)
+        {
+            return BadRequest(new { message = "Profile not found." });
+        }
+
+        var plan = await _context.TrainingPlans
+            .Include(tp => tp.Race)
+            .Include(tp => tp.Sessions)
+            .FirstOrDefaultAsync(tp => tp.RaceId == raceId && tp.RunnerId == runner.Id);
+
+        if (plan == null)
+        {
+            return NotFound(new { message = "No training plan found for this race." });
+        }
+
+        var response = new PlanDetailResponse
+        {
+            Id = plan.Id,
+            RaceId = plan.RaceId,
+            RaceName = plan.Race.RaceName,
+            RaceDate = plan.Race.RaceDate,
+            RunnerId = plan.RunnerId,
+            PlanName = plan.PlanName,
+            Status = plan.Status,
+            GenerationSource = plan.GenerationSource,
+            AiModel = plan.AiModel,
+            AiRationale = plan.AiRationale,
+            StartDate = plan.StartDate,
+            EndDate = plan.EndDate,
+            TrainingDaysPerWeek = plan.TrainingDaysPerWeek,
+            LongRunDay = plan.LongRunDay,
+            DaysBeforePeriodToReduceIntensity = plan.DaysBeforePeriodToReduceIntensity,
+            DaysAfterPeriodToReduceIntensity = plan.DaysAfterPeriodToReduceIntensity,
+            PlanCompletionGoal = plan.PlanCompletionGoal,
+            CreatedAt = plan.CreatedAt,
+            Sessions = plan.Sessions
+                .OrderBy(s => s.ScheduledDate)
+                .Select(s => new SessionSummary
+                {
+                    Id = s.Id,
+                    SessionName = s.SessionName,
+                    ScheduledDate = s.ScheduledDate,
+                    WorkoutType = s.WorkoutType,
+                    DurationMinutes = s.DurationMinutes,
+                    Distance = s.Distance,
+                    IntensityLevel = s.IntensityLevel,
+                    CyclePhase = s.CyclePhase,
+                    PhaseGuidance = s.PhaseGuidance,
+                    CompletedAt = s.CompletedAt,
+                    IsSkipped = s.IsSkipped
+                })
+                .ToList()
+        };
+
+        return Ok(response);
+    }
+
     private Guid GetAuthenticatedUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

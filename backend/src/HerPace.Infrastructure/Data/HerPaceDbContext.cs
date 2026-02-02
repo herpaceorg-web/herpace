@@ -1,4 +1,5 @@
 using HerPace.Core.Entities;
+using HerPace.Core.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -98,6 +99,12 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
 
             entity.Property(r => r.RaceCompletionGoal)
                 .HasMaxLength(1000);
+
+            entity.Property(r => r.CompletionStatus)
+                .HasDefaultValue(RaceCompletionStatus.NotAttempted);
+
+            entity.Property(r => r.ResultLoggedAt)
+                .IsRequired(false);
 
             // One-to-one optional relationship with TrainingPlan
             entity.HasOne(r => r.TrainingPlan)
