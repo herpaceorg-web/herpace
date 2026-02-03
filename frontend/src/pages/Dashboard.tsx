@@ -4,6 +4,7 @@ import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
+import { HormoneCycleChart } from '@/components/HormoneCycleChart'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -149,6 +150,18 @@ export function Dashboard() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Hormone Cycle Chart */}
+      <div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Hormone Cycle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <HormoneCycleChart />
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Today's workout or pre-training message */}
       <div>
