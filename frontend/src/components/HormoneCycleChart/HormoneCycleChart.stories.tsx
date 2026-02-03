@@ -14,6 +14,13 @@ const meta = {
     },
   },
   tags: ['autodocs'],
+  args: {
+    currentDate: new Date(),
+    currentDay: 20,
+    cycleLength: 28,
+    daysUntilNextPeriod: 8,
+    onLogPeriod: () => {},
+  },
 } satisfies Meta<typeof HormoneCycleChart>;
 
 export default meta;
@@ -24,7 +31,7 @@ export const Default: Story = {
 };
 
 export const MenstruationPhase: Story = {
-  args: {},
+  args: { currentDay: 3, daysUntilNextPeriod: 25 },
   parameters: {
     docs: {
       description: {
@@ -35,7 +42,7 @@ export const MenstruationPhase: Story = {
 };
 
 export const FollicularPhase: Story = {
-  args: {},
+  args: { currentDay: 8, daysUntilNextPeriod: 20 },
   parameters: {
     docs: {
       description: {
@@ -46,7 +53,7 @@ export const FollicularPhase: Story = {
 };
 
 export const OvulationPhase: Story = {
-  args: {},
+  args: { currentDay: 14, daysUntilNextPeriod: 14 },
   parameters: {
     docs: {
       description: {
@@ -57,7 +64,7 @@ export const OvulationPhase: Story = {
 };
 
 export const LutealPhase: Story = {
-  args: {},
+  args: { currentDay: 20, daysUntilNextPeriod: 8 },
   parameters: {
     docs: {
       description: {
@@ -68,7 +75,7 @@ export const LutealPhase: Story = {
 };
 
 export const EndOfCycle: Story = {
-  args: {},
+  args: { currentDay: 27, daysUntilNextPeriod: 1 },
   parameters: {
     docs: {
       description: {
@@ -79,11 +86,11 @@ export const EndOfCycle: Story = {
 };
 
 export const CustomDate: Story = {
-  args: {},
+  args: { currentDate: new Date(2026, 5, 15), currentDay: 10, cycleLength: 32, daysUntilNextPeriod: 22 },
   parameters: {
     docs: {
       description: {
-        story: 'Example with a custom date configuration.',
+        story: 'Example with a custom date and a 32-day cycle length.',
       },
     },
   },

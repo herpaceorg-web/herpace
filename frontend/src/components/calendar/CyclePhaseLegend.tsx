@@ -19,7 +19,8 @@ export function CyclePhaseLegend() {
           {CYCLE_PHASES.map((phase) => (
             <div key={phase} className="flex items-center gap-2">
               <div
-                className={`w-3 h-3 rounded-full ${getCyclePhaseBadgeColor(phase)}`}
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: getCyclePhaseBadgeColor(phase) }}
                 aria-hidden="true"
               />
               <span className="text-sm">{getCyclePhaseName(phase)}</span>

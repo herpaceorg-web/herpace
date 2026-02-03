@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, CyclePositionDto, ReportPeriodResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
+import { HormoneCycleChart } from '@/components/HormoneCycleChart'
+import { Calendar } from '@/components/ui/calendar'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,6 +27,10 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [showSummaryModal, setShowSummaryModal] = useState(false)
   const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
+  const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
+  const [showLogPeriodModal, setShowLogPeriodModal] = useState(false)
+  const [logPeriodDate, setLogPeriodDate] = useState<Date | undefined>(undefined)
+  const [logPeriodRegenerationNote, setLogPeriodRegenerationNote] = useState(false)
 
   useEffect(() => {
     loadDashboardData()
@@ -48,6 +54,19 @@ export function Dashboard() {
     }
   }, [planSummary?.recalculationSummary])
 
+  // Fetch cycle position; returns null on 404 (cycle tracking disabled) without throwing
+  const fetchCyclePosition = async (): Promise<CyclePositionDto | null> => {
+    try {
+      return await api.get<CyclePositionDto>('/api/cycle/position')
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { status?: number } }
+        if (axiosError.response?.status === 404) return null
+      }
+      throw err
+    }
+  }
+
   const loadDashboardData = async () => {
     try {
       setIsLoading(true)
@@ -56,14 +75,16 @@ export function Dashboard() {
       // Get client's local date in ISO format (YYYY-MM-DD)
       const clientDate = new Date().toISOString().split('T')[0]
 
-      // Load plan summary and upcoming sessions in parallel
-      const [summary, sessionsResponse] = await Promise.all([
+      // Load plan summary, upcoming sessions, and cycle position in parallel
+      const [summary, sessionsResponse, cyclePos] = await Promise.all([
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
-        api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7')
+        api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7'),
+        fetchCyclePosition()
       ])
 
       setPlanSummary(summary)
       setUpcomingSessions(sessionsResponse.sessions)
+      setCyclePosition(cyclePos)
 
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -91,6 +112,23 @@ export function Dashboard() {
       console.error('Failed to dismiss summary:', err)
       // Still close the modal even if API call fails
       setShowSummaryModal(false)
+    }
+  }
+
+  const handleLogPeriod = async () => {
+    if (!logPeriodDate) return
+    try {
+      const isoDate = logPeriodDate.toISOString().split('T')[0] + 'T00:00:00Z'
+      const response = await api.post<ReportPeriodResponse>('/api/cycle/report', { periodStartDate: isoDate })
+      setShowLogPeriodModal(false)
+      setLogPeriodDate(undefined)
+      if (response.triggeredRegeneration) {
+        setLogPeriodRegenerationNote(true)
+        setTimeout(() => setLogPeriodRegenerationNote(false), 8000)
+      }
+      await loadDashboardData()
+    } catch (err) {
+      console.error('Failed to log period:', err)
     }
   }
 
@@ -136,6 +174,26 @@ export function Dashboard() {
           {planSummary.daysUntilRace} days until race day
         </p>
       </div>
+
+      {/* Hormone Cycle Chart — shown only when cycle tracking is enabled */}
+      {cyclePosition && (
+        <HormoneCycleChart
+          currentDate={new Date()}
+          currentDay={cyclePosition.currentDayInCycle}
+          cycleLength={cyclePosition.cycleLength}
+          daysUntilNextPeriod={cyclePosition.daysUntilNextPeriod}
+          onLogPeriod={() => setShowLogPeriodModal(true)}
+        />
+      )}
+
+      {/* Period logged — plan regeneration note */}
+      {logPeriodRegenerationNote && (
+        <Alert className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-900">
+          <AlertDescription>
+            Your period has been logged. Your training plan is being adapted to your updated cycle.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Recalculation status banner */}
       {planSummary.hasPendingRecalculation && (
@@ -258,6 +316,34 @@ export function Dashboard() {
         onOpenChange={setShowLogWorkoutModal}
         onWorkoutLogged={loadDashboardData}
       />
+
+      {/* Log Period Modal */}
+      <Dialog open={showLogPeriodModal} onOpenChange={(open) => {
+        setShowLogPeriodModal(open)
+        if (!open) setLogPeriodDate(undefined)
+      }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Log Period Start</DialogTitle>
+            <DialogDescription>
+              Select the date your most recent period started.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center py-2">
+            <Calendar
+              mode="single"
+              selected={logPeriodDate}
+              onSelect={setLogPeriodDate}
+              disabled={(date) => date > new Date(new Date().setHours(23, 59, 59, 999))}
+              initialFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLogPeriodModal(false)}>Cancel</Button>
+            <Button onClick={handleLogPeriod} disabled={!logPeriodDate}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

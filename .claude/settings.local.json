@@ -74,7 +74,8 @@
       "Bash(npx shadcn@latest add:*)",
       "Bash(npx tsc:*)",
       "Bash(timeout /t 5 /nobreak)",
-      "Bash(gcloud logging read:*)"
+      "Bash(gcloud logging read:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

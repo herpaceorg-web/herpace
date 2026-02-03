@@ -10,6 +10,17 @@ import { CalendarDays, Snowflake, Sprout, Sun, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
+import { CyclePhase } from "@/types/api";
+import { CYCLE_PHASE_COLORS } from "@/utils/cyclePhases";
+
+/** Convert a phase badge hex (#RRGGBB) to rgba at a given opacity */
+function phaseColorAt(phase: CyclePhase, opacity: number): string {
+  const hex = CYCLE_PHASE_COLORS[phase].badge;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
 
 interface HormoneData {
   day: number;
@@ -208,11 +219,22 @@ const PhaseChart: React.FC<PhaseChartProps> = ({ data, phaseType }) => {
   );
 };
 
-export const HormoneCycleChart: React.FC = () => {
+export interface HormoneCycleChartProps {
+  currentDate: Date;
+  currentDay: number;
+  cycleLength: number;
+  daysUntilNextPeriod: number;
+  onLogPeriod: () => void;
+}
+
+export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({
+  currentDate,
+  currentDay,
+  cycleLength,
+  daysUntilNextPeriod,
+  onLogPeriod,
+}) => {
   const hormoneData = generateHormoneData();
-  const currentDay = 20;
-  const daysUntilPeriod = 8;
-  const currentDate = new Date(2026, 0, 20); // Friday Jan 20
 
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString("en-US", {
@@ -243,12 +265,13 @@ export const HormoneCycleChart: React.FC = () => {
                 </div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Next Period in</span>
-                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{daysUntilPeriod} Days</span>
+                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{daysUntilNextPeriod} Days</span>
                 </div>
               </div>
             </div>
             <button
               className="flex items-center justify-center gap-2 h-10 px-6 py-2.5 bg-[#45423a] text-background text-base font-medium leading-6 rounded-lg shadow-[inset_0px_2px_3px_0px_#3d3826]"
+              onClick={onLogPeriod}
             >
               <CalendarDays className="h-4 w-4" />
               Log Period
@@ -263,7 +286,7 @@ export const HormoneCycleChart: React.FC = () => {
                 {/* Follicular Phase Header */}
                 <div className="flex h-7 border-b border-border bg-background relative z-10">
                   {/* Menstruation */}
-                  <div className="w-[26%] bg-[rgba(78,109,128,0.6)] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-lg">
+                  <div className="w-[26%] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-lg" style={{ backgroundColor: phaseColorAt(CyclePhase.Menstrual, 0.6) }}>
                     <Snowflake className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
                     <span className="text-xs font-medium text-[#29271b] whitespace-nowrap">Menstruation</span>
                   </div>
@@ -280,7 +303,7 @@ export const HormoneCycleChart: React.FC = () => {
                   </div>
 
                   {/* Ovulation */}
-                  <div className="w-[17%] bg-[rgba(217,119,6,0.7)] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-tr-lg">
+                  <div className="w-[17%] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed rounded-tr-lg" style={{ backgroundColor: phaseColorAt(CyclePhase.Ovulatory, 0.7), borderColor: phaseColorAt(CyclePhase.Ovulatory, 0.2) }}>
                     <Sun className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
                     <span className="text-xs font-medium text-[#29271b] whitespace-nowrap">Ovulation</span>
                   </div>
@@ -290,21 +313,24 @@ export const HormoneCycleChart: React.FC = () => {
                 <PhaseChart data={follicularData} phaseType="follicular" />
 
                 {/* Menstruation Overlay */}
-                <div className="absolute left-0 top-7 bottom-0 w-[26%] bg-[rgba(78,109,128,0.1)] rounded-bl-lg">
+                <div className="absolute left-0 top-7 bottom-0 w-[26%] rounded-bl-lg" style={{ backgroundColor: phaseColorAt(CyclePhase.Menstrual, 0.1) }}>
                   <svg className="absolute right-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
-                    <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(78,109,128,0.2)" strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
+                    <line x1="0" y1="0" x2="0" y2="100%" stroke={phaseColorAt(CyclePhase.Menstrual, 0.2)} strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
                   </svg>
-                  <Badge variant="secondary" className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 font-manrope text-xs font-normal h-auto py-1 px-2 bg-[#4E6D80] hover:bg-[#4E6D80] text-white backdrop-blur-sm border-0 whitespace-nowrap">
+                  <Badge variant="secondary" className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 font-manrope text-xs font-normal h-auto py-1 px-2 text-white backdrop-blur-sm border-0 whitespace-nowrap" style={{ backgroundColor: CYCLE_PHASE_COLORS[CyclePhase.Menstrual].badge }}>
                     3-7 Days
                   </Badge>
                 </div>
 
+                {/* Follicular Overlay */}
+                <div className="absolute top-7 bottom-0" style={{ left: '26%', right: '17%', backgroundColor: phaseColorAt(CyclePhase.Follicular, 0.1) }} />
+
                 {/* Ovulation Overlay */}
-                <div className="absolute right-0 top-7 bottom-0 w-[17%] bg-[rgba(227,146,25,0.1)] rounded-br-lg">
+                <div className="absolute right-0 top-7 bottom-0 w-[17%] rounded-br-lg" style={{ backgroundColor: phaseColorAt(CyclePhase.Ovulatory, 0.1) }}>
                   <svg className="absolute left-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
-                    <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(217,119,6,0.2)" strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
+                    <line x1="0" y1="0" x2="0" y2="100%" stroke={phaseColorAt(CyclePhase.Ovulatory, 0.2)} strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
                   </svg>
-                  <Badge variant="secondary" className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 font-manrope text-xs font-normal h-auto py-1 px-2 bg-[#D97706] hover:bg-[#D97706] text-white backdrop-blur-sm border-0 whitespace-nowrap">
+                  <Badge variant="secondary" className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 font-manrope text-xs font-normal h-auto py-1 px-2 text-white backdrop-blur-sm border-0 whitespace-nowrap" style={{ backgroundColor: CYCLE_PHASE_COLORS[CyclePhase.Ovulatory].badge }}>
                     1-2 Days
                   </Badge>
                 </div>
@@ -327,12 +353,15 @@ export const HormoneCycleChart: React.FC = () => {
 
                 {/* Luteal Phase Chart */}
                 <PhaseChart data={lutealData} phaseType="luteal" />
+
+                {/* Luteal Overlay */}
+                <div className="absolute left-0 top-7 bottom-0 right-0" style={{ backgroundColor: phaseColorAt(CyclePhase.Luteal, 0.1) }} />
               </div>
             </div>
 
             {/* Cycle Days */}
             <div className="flex items-center justify-between px-3 w-full">
-              {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+              {Array.from({ length: cycleLength }, (_, i) => i + 1).map((day) => (
                 <div
                   key={day}
                   className={cn(

@@ -317,3 +317,27 @@ export interface PlanDetailResponse {
   createdAt: string
   sessions: SessionSummary[]
 }
+
+// Cycle tracking DTOs
+export interface CyclePositionDto {
+  currentDayInCycle: number
+  cycleLength: number
+  currentPhase: CyclePhase
+  lastPeriodStart: string
+  nextPredictedPeriod: string
+  daysUntilNextPeriod: number
+  phaseDescription: string
+  phaseGuidance: string
+}
+
+export interface ReportPeriodRequest {
+  periodStartDate: string
+}
+
+export interface ReportPeriodResponse {
+  success: boolean
+  message: string
+  triggeredRegeneration: boolean
+  daysDifference: number | null
+  updatedCyclePosition: CyclePositionDto | null
+}

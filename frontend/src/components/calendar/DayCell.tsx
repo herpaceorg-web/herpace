@@ -30,9 +30,6 @@ export function DayCell({ date, session, cyclePhase, isCurrentMonth, onClick }: 
   const isCompleted = !!session?.completedAt
   const isSkipped = !!session?.isSkipped
 
-  // Build background class based on cycle phase
-  const bgClass = cyclePhase !== undefined ? getCyclePhaseColor(cyclePhase) : 'bg-white'
-
   // Determine if cell should be interactive
   const isClickable = hasSession && onClick
 
@@ -40,11 +37,11 @@ export function DayCell({ date, session, cyclePhase, isCurrentMonth, onClick }: 
     <div
       className={cn(
         'min-h-20 sm:min-h-24 border rounded p-1 sm:p-2 transition-colors',
-        bgClass,
         !isCurrentMonth && 'opacity-40',
         isClickable && 'cursor-pointer hover:ring-2 hover:ring-primary',
         'flex flex-col'
       )}
+      style={{ backgroundColor: cyclePhase !== undefined ? getCyclePhaseColor(cyclePhase) : '#ffffff' }}
       onClick={isClickable ? onClick : undefined}
       title={session ? `${session.sessionName}${session.durationMinutes ? ` - ${session.durationMinutes} min` : ''}` : undefined}
     >
