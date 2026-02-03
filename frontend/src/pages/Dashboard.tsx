@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
-import { SessionCard } from '@/components/session/SessionCard'
+import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -154,7 +154,7 @@ export function Dashboard() {
       <div>
         <h2 className="text-2xl font-semibold mb-4">Today's Workout</h2>
         {planSummary.todaysSession ? (
-          <SessionCard
+          <WorkoutSessionCard
             session={planSummary.todaysSession}
             cyclePhaseTips={planSummary.cyclePhaseTips}
             onSessionUpdated={loadDashboardData}
@@ -215,7 +215,7 @@ export function Dashboard() {
         {upcomingSessions.length > 0 ? (
           <div className="space-y-4">
             {upcomingSessions.map((session) => (
-              <SessionCard key={session.id} session={session} onSessionUpdated={loadDashboardData} />
+              <WorkoutSessionCard key={session.id} session={session} onSessionUpdated={loadDashboardData} />
             ))}
           </div>
         ) : (

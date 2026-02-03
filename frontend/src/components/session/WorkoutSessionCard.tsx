@@ -1,10 +1,16 @@
 import * as React from 'react'
+import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
+import { CyclePhase } from '@/types/api'
+import { CompleteSessionDialog } from './CompleteSessionDialog'
+import { api } from '@/lib/api-client'
 
 export interface SessionStep {
   number: number
@@ -19,7 +25,13 @@ export interface SessionContentProps {
 }
 
 export interface WorkoutSessionCardProps {
-  sessionName: string
+  // Support both legacy props format and new SessionDetailDto format
+  session?: SessionDetailDto
+  cyclePhaseTips?: CyclePhaseTipsDto
+  onSessionUpdated?: () => void
+
+  // Legacy props (for Storybook)
+  sessionName?: string
   distance?: number
   distanceUnit?: 'km' | 'mi'
   durationMinutes?: number
@@ -30,24 +42,108 @@ export interface WorkoutSessionCardProps {
   }[]
   sessionProgress?: string
   warmupContent?: React.ReactNode
-  sessionContent: SessionContentProps
+  sessionContent?: SessionContentProps
   recoverContent?: React.ReactNode
   onMenuClick?: () => void
 }
 
-export function WorkoutSessionCard({
-  sessionName,
-  distance,
-  distanceUnit = 'mi',
-  durationMinutes,
-  zone,
-  cyclePhases,
-  sessionProgress,
-  warmupContent,
-  sessionContent,
-  recoverContent,
-  onMenuClick,
-}: WorkoutSessionCardProps) {
+// Cycle phase icon mapping
+const cyclePhaseIcons: Record<CyclePhase, React.ReactNode> = {
+  [CyclePhase.Menstrual]: <Snowflake className="h-4 w-4" />,
+  [CyclePhase.Follicular]: <Sprout className="h-4 w-4" />,
+  [CyclePhase.Ovulatory]: <Sun className="h-4 w-4" />,
+  [CyclePhase.Luteal]: <Leaf className="h-4 w-4" />,
+}
+
+const cyclePhaseLabels: Record<CyclePhase, string> = {
+  [CyclePhase.Menstrual]: 'Menstrual',
+  [CyclePhase.Follicular]: 'Follicular',
+  [CyclePhase.Ovulatory]: 'Ovulatory',
+  [CyclePhase.Luteal]: 'Luteal',
+}
+
+export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
+  const [isSkipping, setIsSkipping] = useState(false)
+  const [localSession, setLocalSession] = useState(props.session)
+
+  // Determine if we're using session DTO or legacy props
+  const isSessionMode = !!props.session
+
+  // Extract values from either session or legacy props
+  const sessionName = isSessionMode ? localSession!.sessionName : props.sessionName!
+  const distance = isSessionMode ? localSession!.distance : props.distance
+  const distanceUnit = props.distanceUnit || 'mi'
+  const durationMinutes = isSessionMode ? localSession!.durationMinutes : props.durationMinutes
+  const zone = props.zone // Zone info not in session DTO, use legacy prop
+
+  // Build cycle phases from session
+  const cyclePhases = isSessionMode && localSession!.cyclePhase !== undefined
+    ? [{
+        phaseName: `${cyclePhaseLabels[localSession!.cyclePhase]} Phase`,
+        icon: cyclePhaseIcons[localSession!.cyclePhase]
+      }]
+    : props.cyclePhases
+
+  // Parse session description into workout content
+  const sessionContent: SessionContentProps = isSessionMode
+    ? {
+        heading: 'Workout Details',
+        steps: localSession!.sessionDescription
+          ? [{
+              number: 1,
+              title: 'Session',
+              instructions: [localSession!.sessionDescription]
+            }]
+          : []
+      }
+    : props.sessionContent!
+
+  const warmupContent = props.warmupContent
+  const recoverContent = props.recoverContent
+  const sessionProgress = props.sessionProgress
+
+  const handleSkip = async () => {
+    if (!isSessionMode || !localSession) return
+
+    setIsSkipping(true)
+    try {
+      const response = await api.put<{ skipReason?: string }, SessionCompletionResponse>(
+        `/api/sessions/${localSession.id}/skip`,
+        {}
+      )
+
+      console.log('Session skipped successfully:', response)
+      setLocalSession({ ...localSession, isSkipped: true })
+      props.onSessionUpdated?.()
+    } catch (error) {
+      console.error('Error skipping session:', error)
+      alert('Failed to skip session. Please try again.')
+    } finally {
+      setIsSkipping(false)
+    }
+  }
+
+  const handleComplete = async (data: CompleteSessionRequest) => {
+    if (!isSessionMode || !localSession) return
+
+    const response = await api.put<CompleteSessionRequest, SessionCompletionResponse>(
+      `/api/sessions/${localSession.id}/complete`,
+      data
+    )
+
+    console.log('Session completed successfully:', response)
+    setLocalSession({
+      ...localSession,
+      isCompleted: true,
+      actualDistance: data.actualDistance,
+      actualDuration: data.actualDuration,
+      rpe: data.rpe,
+      userNotes: data.userNotes
+    })
+
+    props.onSessionUpdated?.()
+  }
   return (
     <div className="w-full max-w-[760px]">
       {/* Phase tracking section */}
@@ -242,8 +338,75 @@ export function WorkoutSessionCard({
               </TabsContent>
             )}
           </Tabs>
+
+          {/* Completion status and action buttons (only in session mode) */}
+          {isSessionMode && localSession && (
+            <div className="mt-6 space-y-4">
+              {/* Completion status */}
+              {localSession.isCompleted && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-green-800">✓ Completed</p>
+                  {localSession.actualDistance && (
+                    <p className="text-xs text-green-700 mt-1">
+                      Actual: {localSession.actualDistance} km in {localSession.actualDuration} min
+                    </p>
+                  )}
+                  {localSession.rpe && (
+                    <p className="text-xs text-green-700">RPE: {localSession.rpe}/10</p>
+                  )}
+                </div>
+              )}
+
+              {localSession.isSkipped && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-800">Skipped</p>
+                </div>
+              )}
+
+              {/* Wellness Tip */}
+              {props.cyclePhaseTips && !localSession.isCompleted && !localSession.isSkipped && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+                  <p className="text-xs font-semibold text-purple-700 mb-1">
+                    {props.cyclePhaseTips.phase} Phase Tip
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {props.cyclePhaseTips.nutritionTips[0] ||
+                     props.cyclePhaseTips.restTips[0] ||
+                     'Stay mindful of your body during this phase'}
+                  </p>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {!localSession.isCompleted && !localSession.isSkipped && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)}>
+                    Complete Workout
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSkip}
+                    disabled={isSkipping}
+                  >
+                    {isSkipping ? 'Skipping...' : 'Skip'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Complete Session Dialog */}
+      {isSessionMode && localSession && (
+        <CompleteSessionDialog
+          session={localSession}
+          open={isCompleteDialogOpen}
+          onOpenChange={setIsCompleteDialogOpen}
+          onComplete={handleComplete}
+        />
+      )}
     </div>
   )
 }
