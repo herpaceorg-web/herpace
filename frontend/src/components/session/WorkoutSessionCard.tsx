@@ -440,7 +440,7 @@ function WarmupSteps({ steps }: { steps: SessionStep[] }) {
                       variant="outline"
                       className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
                     >
-                      <Clock className="h-3.5 w-3.5 mr-1.5" />
+                      <Timer className="h-3.5 w-3.5 mr-1.5" />
                       {step.duration} Min
                     </Badge>
                   )}
