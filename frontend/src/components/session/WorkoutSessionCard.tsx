@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
 import { CyclePhase } from '@/types/api'
@@ -224,9 +224,9 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 )}
               </div>
             </div>
-            {onMenuClick && (
+            {props.onMenuClick && (
               <button
-                onClick={onMenuClick}
+                onClick={props.onMenuClick}
                 className="text-[#3d3826] hover:bg-[#f3f0e7] rounded p-1 transition-colors"
                 aria-label="More options"
               >
