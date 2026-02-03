@@ -23,6 +23,25 @@ public class RaceService : IRaceService
     /// </summary>
     public async Task<Race> CreateRaceAsync(Race race)
     {
+        // Validate TrainingStartDate if provided
+        if (race.TrainingStartDate.HasValue)
+        {
+            // Must be at least tomorrow
+            var tomorrow = DateTime.UtcNow.Date.AddDays(1);
+            if (race.TrainingStartDate.Value.Date < tomorrow)
+            {
+                throw new InvalidOperationException(
+                    $"Training start date must be at least tomorrow ({tomorrow:yyyy-MM-dd}).");
+            }
+
+            // Must be before race date
+            if (race.TrainingStartDate.Value.Date >= race.RaceDate.Date)
+            {
+                throw new InvalidOperationException(
+                    "Training start date must be before the race date.");
+            }
+        }
+
         // FR-016: Validate race date is at least 7 days in the future
         if (!ValidateRaceDate(race.RaceDate))
         {
@@ -32,6 +51,7 @@ public class RaceService : IRaceService
         }
 
         race.Id = Guid.NewGuid();
+        race.TrainingStartDate ??= DateTime.UtcNow.Date.AddDays(1); // Default to tomorrow
         race.CreatedAt = DateTime.UtcNow;
         race.UpdatedAt = DateTime.UtcNow;
 

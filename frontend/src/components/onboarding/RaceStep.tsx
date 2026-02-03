@@ -29,7 +29,8 @@ const STANDARD_DISTANCES = {
 export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
   const resolvedDefaults: Partial<RaceFormValues> = defaultValues || {
     distanceType: 'FiveK' as const,
-    distance: 5
+    distance: 5,
+    trainingStartDate: new Date(Date.now() + 86400000) // Tomorrow
   }
 
   const {
@@ -44,6 +45,7 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
   })
 
   const raceDate = watch('raceDate')
+  const trainingStartDate = watch('trainingStartDate')
   const distanceType = watch('distanceType')
 
   // Update distance when distance type changes
@@ -121,6 +123,52 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
         </p>
         {errors.raceDate && (
           <p className="text-sm text-destructive">{errors.raceDate.message}</p>
+        )}
+      </div>
+
+      {/* Training Start Date */}
+      <div className="space-y-2">
+        <Label>Training Start Date *</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'w-full justify-start text-left font-normal',
+                !trainingStartDate && 'text-muted-foreground'
+              )}
+              disabled={isSubmitting}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {trainingStartDate ? format(trainingStartDate, 'PPP') : 'Pick a date'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={trainingStartDate}
+              onSelect={(date: Date | undefined) => date && setValue('trainingStartDate', date)}
+              disabled={(date: Date) => {
+                const tomorrow = new Date()
+                tomorrow.setDate(tomorrow.getDate() + 1)
+
+                // Can't select before tomorrow
+                if (date < tomorrow) return true
+
+                // Can't select on or after race date
+                if (raceDate && date >= raceDate) return true
+
+                return false
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <p className="text-xs text-muted-foreground">
+          When do you want to start training? Must be before your race date.
+        </p>
+        {errors.trainingStartDate && (
+          <p className="text-sm text-destructive">{errors.trainingStartDate.message}</p>
         )}
       </div>
 

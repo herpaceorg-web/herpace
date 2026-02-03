@@ -86,6 +86,16 @@ export const raceStepSchema = z.object({
     message: 'Race must be at least 7 days in the future'
   }),
 
+  trainingStartDate: z.date({
+    message: 'Please select a training start date',
+  }).refine((date) => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return date >= tomorrow
+  }, {
+    message: 'Training must start at least tomorrow'
+  }),
+
   distanceType: z.enum(['FiveK', 'TenK', 'HalfMarathon', 'Marathon', 'Custom'], {
     message: 'Please select a distance type'
   }),
@@ -135,7 +145,19 @@ export const raceStepSchema = z.object({
   raceCompletionGoal: z.string()
     .max(1000, 'Goal description must be less than 1000 characters')
     .optional(),
-})
+}).refine(
+  (data) => {
+    // Cross-field validation: trainingStartDate must be before raceDate
+    if (data.trainingStartDate && data.raceDate) {
+      return data.trainingStartDate < data.raceDate
+    }
+    return true
+  },
+  {
+    message: 'Training start date must be before race date',
+    path: ['trainingStartDate']
+  }
+)
 
 // Export the output type (after preprocessing) instead of input type
 export type RaceFormValues = z.output<typeof raceStepSchema>

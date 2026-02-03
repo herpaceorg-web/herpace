@@ -14,6 +14,7 @@ public class Race
     public string RaceName { get; set; } = string.Empty;
     public string? Location { get; set; } // Race location (e.g., "Boston, MA")
     public DateTime RaceDate { get; set; }
+    public DateTime? TrainingStartDate { get; set; } // User-selected start date for training
     public decimal Distance { get; set; } // In kilometers or miles based on runner's preference
     public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; } // Optional goal time (e.g., "3:45:00")

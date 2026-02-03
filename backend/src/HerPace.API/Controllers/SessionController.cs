@@ -358,6 +358,51 @@ public class SessionController : ControllerBase
     }
 
     /// <summary>
+    /// Logs an ad-hoc workout (not part of scheduled training plan).
+    /// POST /api/sessions/log-adhoc
+    /// </summary>
+    [HttpPost("log-adhoc")]
+    public async Task<IActionResult> LogAdHocWorkout([FromBody] LogAdHocWorkoutRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var runner = await _context.Runners.FirstOrDefaultAsync(r => r.UserId == userId);
+        if (runner == null)
+            return NotFound(new { message = "Runner profile not found" });
+
+        var activePlan = await _context.TrainingPlans
+            .FirstOrDefaultAsync(p => p.RunnerId == runner.Id && p.Status == PlanStatus.Active);
+
+        if (activePlan == null)
+            return NotFound(new { message = "No active training plan found" });
+
+        // Create an ad-hoc session
+        var adHocSession = new HerPace.Core.Entities.TrainingSession
+        {
+            Id = Guid.NewGuid(),
+            TrainingPlanId = activePlan.Id,
+            SessionName = "Ad-Hoc Workout",
+            WorkoutType = WorkoutType.Easy,
+            IntensityLevel = IntensityLevel.Moderate,
+            ScheduledDate = DateTime.UtcNow.Date,
+            CompletedAt = DateTime.UtcNow,
+            ActualDistance = request.ActualDistance,
+            ActualDuration = request.ActualDuration,
+            RPE = request.RPE,
+            UserNotes = request.UserNotes
+        };
+
+        _context.TrainingSessions.Add(adHocSession);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Ad-hoc workout logged for runner {RunnerId}", runner.Id);
+
+        return Ok(new { message = "Workout logged successfully" });
+    }
+
+    /// <summary>
     /// Helper method to extract runner ID from JWT claims.
     /// </summary>
     private Guid GetRunnerIdFromClaims()
@@ -372,4 +417,15 @@ public class SessionController : ControllerBase
         var runner = _context.Runners.FirstOrDefault(r => r.UserId == userId);
         return runner?.Id ?? Guid.Empty;
     }
+}
+
+/// <summary>
+/// Request to log an ad-hoc workout.
+/// </summary>
+public class LogAdHocWorkoutRequest
+{
+    public decimal? ActualDistance { get; set; }
+    public int? ActualDuration { get; set; }
+    public int RPE { get; set; }
+    public string? UserNotes { get; set; }
 }

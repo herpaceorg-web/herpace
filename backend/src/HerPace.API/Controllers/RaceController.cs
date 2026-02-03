@@ -59,6 +59,9 @@ public class RaceController : ControllerBase
             RaceName = request.RaceName,
             Location = request.Location,
             RaceDate = DateTime.SpecifyKind(request.RaceDate, DateTimeKind.Utc),
+            TrainingStartDate = request.TrainingStartDate.HasValue
+                ? DateTime.SpecifyKind(request.TrainingStartDate.Value, DateTimeKind.Utc)
+                : null,
             Distance = request.Distance,
             DistanceType = request.DistanceType,
             GoalTime = request.GoalTime,
@@ -83,6 +86,7 @@ public class RaceController : ControllerBase
                     RaceName = createdRace.RaceName,
                     Location = createdRace.Location,
                     RaceDate = createdRace.RaceDate,
+                    TrainingStartDate = createdRace.TrainingStartDate,
                     Distance = createdRace.Distance,
                     DistanceType = createdRace.DistanceType,
                     GoalTime = createdRace.GoalTime,
@@ -268,6 +272,7 @@ public class CreateRaceRequest
     public string RaceName { get; set; } = string.Empty;
     public string? Location { get; set; }
     public DateTime RaceDate { get; set; }
+    public DateTime? TrainingStartDate { get; set; }
     public decimal Distance { get; set; }
     public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; }
@@ -285,6 +290,7 @@ public class RaceResponse
     public string RaceName { get; set; } = string.Empty;
     public string? Location { get; set; }
     public DateTime RaceDate { get; set; }
+    public DateTime? TrainingStartDate { get; set; }
     public decimal Distance { get; set; }
     public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; }
@@ -308,6 +314,7 @@ public class RaceWithStatsResponse
     public string RaceName { get; set; } = string.Empty;
     public string? Location { get; set; }
     public DateTime RaceDate { get; set; }
+    public DateTime? TrainingStartDate { get; set; }
     public decimal Distance { get; set; }
     public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; }

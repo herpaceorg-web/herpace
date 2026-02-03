@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { SessionCard } from '@/components/session/SessionCard'
+import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSummaryModal, setShowSummaryModal] = useState(false)
+  const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
 
   useEffect(() => {
     loadDashboardData()
@@ -148,17 +150,53 @@ export function Dashboard() {
         </Alert>
       )}
 
-      {/* Today's workout */}
-      {planSummary.todaysSession && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Today's Workout</h2>
+      {/* Today's workout or pre-training message */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-4">Today's Workout</h2>
+        {planSummary.todaysSession ? (
           <SessionCard
             session={planSummary.todaysSession}
             cyclePhaseTips={planSummary.cyclePhaseTips}
             onSessionUpdated={loadDashboardData}
           />
-        </div>
-      )}
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
+                  No workout scheduled for today. Your training plan starts soon!
+                </p>
+
+                {planSummary.cyclePhaseTips && (
+                  <div className="mt-4 pt-4 border-t">
+                    <h3 className="font-semibold mb-2">Current Cycle Phase Tips</h3>
+                    <div className="text-sm space-y-2">
+                      <p><strong>Phase:</strong> {planSummary.cyclePhaseTips.phase}</p>
+                      {planSummary.cyclePhaseTips.nutritionTips.length > 0 && (
+                        <div>
+                          <strong>Nutrition:</strong>
+                          <ul className="list-disc ml-5">
+                            {planSummary.cyclePhaseTips.nutritionTips.map((tip, i) => (
+                              <li key={i}>{tip}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  variant="default"
+                  onClick={() => setShowLogWorkoutModal(true)}
+                >
+                  Log a Workout
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Upcoming sessions */}
       <div>
@@ -213,6 +251,13 @@ export function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Log Workout Modal */}
+      <LogWorkoutModal
+        open={showLogWorkoutModal}
+        onOpenChange={setShowLogWorkoutModal}
+        onWorkoutLogged={loadDashboardData}
+      />
     </div>
   )
 }

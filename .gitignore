@@ -177,3 +177,11 @@ fix-production-permissions.csx
 backend/src/HerPace.API/appsettings.json
 backend/src/HerPace.API/appsettings.json
 frontend/claude-talk-to-figma-mcp/
+add-missing-race-columns.sql
+apply-missing-migration.ps1
+apply-race-columns-fix.ps1
+check-db-via-gcloud.ps1
+check-migration-status.ps1
+fix-migration-history.sql
+fix-ownership-via-gcloud.ps1
+fix-table-ownership.ps1

@@ -89,6 +89,7 @@ export function Onboarding() {
       const request: CreateRaceRequest = {
         raceName: data.raceName,
         raceDate: data.raceDate.toISOString(),
+        trainingStartDate: data.trainingStartDate.toISOString(),
         distance: Number(data.distance),
         distanceType: DistanceType[data.distanceType],
         location: data.location,

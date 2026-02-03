@@ -209,6 +209,7 @@ export interface ProfileResponse {
 export interface CreateRaceRequest {
   raceName: string
   raceDate: string
+  trainingStartDate?: string
   distance: number
   distanceType: number
   location?: string
@@ -222,6 +223,7 @@ export interface RaceResponse {
   runnerId: string
   raceName: string
   raceDate: string
+  trainingStartDate?: string
   distance: number
   distanceType: number
   location?: string
@@ -239,6 +241,7 @@ export interface RaceWithStatsResponse {
   runnerId: string
   raceName: string
   raceDate: string
+  trainingStartDate?: string
   distance: number
   distanceType: number
   location?: string

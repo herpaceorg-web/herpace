@@ -57,8 +57,8 @@ public class PlanGenerationService : IPlanGenerationService
 
         var runner = race.Runner;
 
-        // Calculate cycle phases for the date range (today to race date)
-        var startDate = DateTime.UtcNow.Date;
+        // Calculate cycle phases for the date range (training start date to race date)
+        var startDate = race.TrainingStartDate ?? DateTime.UtcNow.Date.AddDays(1);
         var endDate = race.RaceDate.Date;
 
         Dictionary<DateTime, CyclePhase>? cyclePhases = null;
