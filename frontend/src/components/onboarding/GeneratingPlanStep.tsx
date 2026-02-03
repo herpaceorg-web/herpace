@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 
 const LOADING_MESSAGES = [
   'Analyzing your profile...',
@@ -10,13 +11,29 @@ const LOADING_MESSAGES = [
 
 export function GeneratingPlanStep() {
   const [messageIndex, setMessageIndex] = useState(0)
+  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Rotate messages every 3 seconds
+    const messageInterval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length)
-    }, 3000) // Rotate messages every 3 seconds
+    }, 3000)
 
-    return () => clearInterval(interval)
+    // Smoothly increment progress from 0 to 100 over ~120 seconds
+    // Update every 100ms for smooth animation
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        // Increment by ~0.083% each 100ms to reach 100% in 120 seconds
+        const increment = 100 / (120 * 10)
+        const newProgress = prev + increment
+        return newProgress >= 100 ? 100 : newProgress
+      })
+    }, 100)
+
+    return () => {
+      clearInterval(messageInterval)
+      clearInterval(progressInterval)
+    }
   }, [])
 
   return (
@@ -33,6 +50,14 @@ export function GeneratingPlanStep() {
         </h3>
         <p className="text-sm text-muted-foreground max-w-md">
           We're creating your personalized training plan using AI. This may take up to 2 minutes.
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full max-w-md space-y-2">
+        <Progress value={progress} className="h-2" />
+        <p className="text-xs text-center text-muted-foreground">
+          {Math.round(progress)}% complete
         </p>
       </div>
 
