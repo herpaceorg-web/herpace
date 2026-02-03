@@ -175,7 +175,7 @@ export function Onboarding() {
 
           {/* Error Alert */}
           {error && currentStep !== 3 && (
-            <Alert variant="destructive" className="mb-6">
+            <Alert variant="error" className="mb-6">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -201,7 +201,7 @@ export function Onboarding() {
               <div>
                 {error ? (
                   <div className="space-y-4">
-                    <Alert variant="destructive">
+                    <Alert variant="error">
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                     <button

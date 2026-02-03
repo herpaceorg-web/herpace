@@ -165,7 +165,7 @@ export default function RaceDetail() {
 
   if (error) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="error">
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     )
@@ -173,7 +173,7 @@ export default function RaceDetail() {
 
   if (!race) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="error">
         <AlertDescription>Race not found.</AlertDescription>
       </Alert>
     )

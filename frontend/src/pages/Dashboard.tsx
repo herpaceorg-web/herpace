@@ -106,7 +106,7 @@ export function Dashboard() {
 
   if (error) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="error">
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     )

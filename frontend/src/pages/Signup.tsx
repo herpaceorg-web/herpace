@@ -116,7 +116,7 @@ export function Signup() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="error">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}

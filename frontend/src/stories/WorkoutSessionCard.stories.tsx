@@ -33,7 +33,7 @@ export const FigmaDesign: Story = {
       },
     ],
     sessionProgress: 'Session 5/15 This Phase',
-    warmupContent: {
+    warmupContent: ({
       props: {
         steps: [
           {
@@ -62,7 +62,7 @@ export const FigmaDesign: Story = {
           },
         ],
       },
-    },
+    } as any),
     sessionContent: {
       heading: 'Session',
       steps: [
