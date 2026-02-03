@@ -7,6 +7,10 @@ export default {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			petrona: ['Petrona', 'serif'],
+  			manrope: ['Manrope', 'sans-serif'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

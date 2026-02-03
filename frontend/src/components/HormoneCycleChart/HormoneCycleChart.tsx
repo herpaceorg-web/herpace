@@ -6,9 +6,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Snowflake, Sprout, Sun, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Badge } from "@/components/ui/badge";
 
 interface HormoneData {
   day: number;
@@ -24,28 +25,28 @@ const generateHormoneData = (): HormoneData[] => {
   for (let day = 1; day <= 28; day++) {
     // Estrogen: Low at start, rises during follicular, peaks at ovulation, moderate in luteal
     const estrogen =
-      day <= 5 ? 20 + day * 2 :
-      day <= 13 ? 30 + (day - 5) * 8 :
-      day === 14 ? 120 :
-      day <= 16 ? 100 - (day - 14) * 15 :
-      day <= 22 ? 70 + (day - 16) * 3 :
-      85 - (day - 22) * 10;
+      day <= 10 ? 25 :
+      day <= 12 ? 25 + Math.pow((day - 10) / 2, 2) * 45 :
+      day === 13 ? 95 :
+      day === 14 ? 100 :
+      day <= 16 ? 100 - Math.pow((day - 14) / 2, 2) * 35 :
+      day <= 21 ? 65 + Math.pow((day - 16) / 5, 1.5) * 20 :
+      85 - Math.pow((day - 21) / 7, 1.2) * 60;
 
     // Progesterone: Very low until ovulation, then rises significantly in luteal phase
     const progesterone =
-      day <= 14 ? 10 + Math.random() * 5 :
-      day <= 21 ? 15 + (day - 14) * 12 :
-      95 - (day - 21) * 10;
+      day <= 13 ? 10 :
+      day <= 21 ? 10 + Math.pow((day - 13) / 8, 1.8) * 100 :
+      day <= 23 ? 110 :
+      110 - Math.pow((day - 23) / 5, 1.5) * 90;
 
-    // FSH: Peak early follicular phase, smaller peak around ovulation
+    // FSH: Single smooth peak at ovulation
     const fsh =
-      day <= 3 ? 40 + day * 15 :
-      day <= 7 ? 85 - (day - 3) * 10 :
-      day <= 12 ? 35 + (day - 7) * 3 :
-      day === 13 ? 55 :
-      day === 14 ? 52 :
-      day <= 28 ? 50 - (day - 14) * 2 :
-      20;
+      day <= 10 ? 25 :
+      day <= 13 ? 25 + Math.pow((day - 10) / 3, 1.5) * 60 :
+      day <= 15 ? 85 :
+      day <= 18 ? 85 - Math.pow((day - 15) / 3, 1.3) * 50 :
+      35 - Math.pow((day - 18) / 10, 0.8) * 10;
 
     // LH: Sharp peak at ovulation (day 13-14)
     const lh =
@@ -69,10 +70,10 @@ const generateHormoneData = (): HormoneData[] => {
 };
 
 const HORMONE_COLORS = {
-  estrogen: "#efa910",
-  progesterone: "#b55a2d",
-  fsh: "#677344",
-  lh: "#597d93",
+  estrogen: "#efa910",  // Yellow
+  progesterone: "#a14139",  // Red
+  fsh: "#677344",  // Green
+  lh: "#597d93",  // Blue
 };
 
 const chartConfig = {
@@ -121,20 +122,20 @@ const PhaseChart: React.FC<PhaseChartProps> = ({ data, phaseType }) => {
         >
           <defs>
             <linearGradient id={`${phaseType}Estrogen`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={HORMONE_COLORS.estrogen} stopOpacity={0.2} />
-              <stop offset="95%" stopColor={HORMONE_COLORS.estrogen} stopOpacity={0.01} />
+              <stop offset="0%" stopColor={HORMONE_COLORS.estrogen} stopOpacity={0.5} />
+              <stop offset="100%" stopColor={HORMONE_COLORS.estrogen} stopOpacity={0} />
             </linearGradient>
             <linearGradient id={`${phaseType}Progesterone`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={HORMONE_COLORS.progesterone} stopOpacity={0.2} />
-              <stop offset="95%" stopColor={HORMONE_COLORS.progesterone} stopOpacity={0.01} />
+              <stop offset="0%" stopColor={HORMONE_COLORS.progesterone} stopOpacity={0.5} />
+              <stop offset="100%" stopColor={HORMONE_COLORS.progesterone} stopOpacity={0} />
             </linearGradient>
             <linearGradient id={`${phaseType}FSH`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={HORMONE_COLORS.fsh} stopOpacity={0.2} />
-              <stop offset="95%" stopColor={HORMONE_COLORS.fsh} stopOpacity={0.01} />
+              <stop offset="0%" stopColor={HORMONE_COLORS.fsh} stopOpacity={0.5} />
+              <stop offset="100%" stopColor={HORMONE_COLORS.fsh} stopOpacity={0} />
             </linearGradient>
             <linearGradient id={`${phaseType}LH`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={HORMONE_COLORS.lh} stopOpacity={0.2} />
-              <stop offset="95%" stopColor={HORMONE_COLORS.lh} stopOpacity={0.01} />
+              <stop offset="0%" stopColor={HORMONE_COLORS.lh} stopOpacity={0.5} />
+              <stop offset="100%" stopColor={HORMONE_COLORS.lh} stopOpacity={0} />
             </linearGradient>
           </defs>
 
@@ -158,40 +159,44 @@ const PhaseChart: React.FC<PhaseChartProps> = ({ data, phaseType }) => {
           />
 
           <Area
-            type="natural"
+            type="basis"
             dataKey="estrogen"
             name="Estrogen"
             stroke={HORMONE_COLORS.estrogen}
+            strokeOpacity={0.4}
             fill={`url(#${phaseType}Estrogen)`}
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4 }}
           />
           <Area
-            type="natural"
+            type="basis"
             dataKey="progesterone"
             name="Progesterone"
             stroke={HORMONE_COLORS.progesterone}
+            strokeOpacity={0.4}
             fill={`url(#${phaseType}Progesterone)`}
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4 }}
           />
           <Area
-            type="natural"
+            type="basis"
             dataKey="fsh"
             name="FSH"
             stroke={HORMONE_COLORS.fsh}
+            strokeOpacity={0.4}
             fill={`url(#${phaseType}FSH)`}
             strokeWidth={2}
             dot={false}
             activeDot={{ r: 4 }}
           />
           <Area
-            type="natural"
+            type="basis"
             dataKey="lh"
             name="LH"
             stroke={HORMONE_COLORS.lh}
+            strokeOpacity={0.4}
             fill={`url(#${phaseType}LH)`}
             strokeWidth={2}
             dot={false}
@@ -217,9 +222,9 @@ export const HormoneCycleChart: React.FC = () => {
     });
   };
 
-  // Split data for the two phases
-  const follicularData = hormoneData.slice(0, 14);
-  const lutealData = hormoneData.slice(14, 28);
+  // Split data for two separate containers
+  const follicularData = hormoneData.slice(0, 14); // Days 1-14
+  const lutealData = hormoneData.slice(13); // Days 14-28 (overlap day 14 for continuity)
 
   return (
     <div className="w-full max-w-[1336px] bg-gradient-to-b from-muted to-background border border-border p-3 rounded-2xl shadow-[1px_1px_24px_0px_rgba(69,66,58,0.04)]">
@@ -233,12 +238,12 @@ export const HormoneCycleChart: React.FC = () => {
               </h2>
               <div className="flex gap-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
-                  <span className="text-xs font-medium leading-4 text-[#696863]">Cycle Day</span>
-                  <span className="text-2xl font-semibold leading-7 font-['Petrona']">{currentDay}</span>
+                  <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Cycle Day</span>
+                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{currentDay}</span>
                 </div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
-                  <span className="text-xs font-medium leading-4 text-[#696863]">Next Period in</span>
-                  <span className="text-2xl font-semibold leading-7 font-['Petrona']">{daysUntilPeriod} Days</span>
+                  <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Next Period in</span>
+                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{daysUntilPeriod} Days</span>
                 </div>
               </div>
             </div>
@@ -252,64 +257,75 @@ export const HormoneCycleChart: React.FC = () => {
 
           {/* Phase Charts Container */}
           <div className="flex flex-col gap-2 w-full">
-            <div className="flex gap-2 px-3 w-full">
-              {/* Follicular Phase */}
-              <div className="relative flex-1 border border-border rounded-lg bg-background overflow-hidden">
-                {/* Phase Header */}
-                <div className="flex items-center justify-center gap-2 h-7 px-2.5 py-1.5 border-b border-border bg-background">
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 2v12M4 6l4-4 4 4M4 10l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span className="text-sm font-medium leading-5">Follicular Phase</span>
-                  <div className="ml-auto bg-muted px-2 py-0.5 rounded-md">
-                    <span className="text-xs font-normal leading-4 whitespace-nowrap">Avg. Length 12 - 14 Days</span>
+            <div className="relative flex gap-2 px-3 w-full">
+              {/* Follicular Phase Container */}
+              <div className="relative w-1/2 border border-border rounded-lg bg-background overflow-hidden">
+                {/* Follicular Phase Header */}
+                <div className="flex h-7 border-b border-border bg-background relative z-10">
+                  {/* Menstruation */}
+                  <div className="w-[26%] bg-[rgba(78,109,128,0.6)] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-lg">
+                    <Snowflake className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
+                    <span className="text-xs font-medium text-[#29271b] whitespace-nowrap">Menstruation</span>
+                  </div>
+
+                  {/* Follicular Phase */}
+                  <div className="flex-1 flex items-center justify-center px-2.5 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <Sprout className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-manrope text-sm font-medium leading-5 text-[#45423A]">Follicular Phase</span>
+                      <Badge variant="secondary" className="font-manrope text-xs font-normal h-5 px-2 bg-[#F3F0E7] hover:bg-[#F3F0E7] text-[#45423A] border-0">
+                        12-14 Days
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Ovulation */}
+                  <div className="w-[17%] bg-[rgba(217,119,6,0.7)] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-tr-lg">
+                    <Sun className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
+                    <span className="text-xs font-medium text-[#29271b] whitespace-nowrap">Ovulation</span>
                   </div>
                 </div>
 
-                {/* Chart */}
+                {/* Follicular Phase Chart */}
                 <PhaseChart data={follicularData} phaseType="follicular" />
 
                 {/* Menstruation Overlay */}
-                <div className="absolute left-0 top-0 bottom-0 w-[23.7%] bg-[rgba(78,109,128,0.1)] border-r border-dashed border-[rgba(78,109,128,0.2)] rounded-l-lg overflow-hidden">
-                  <div className="flex items-center justify-center gap-1 h-7 px-1 py-1.5 border-b border-dashed border-[rgba(78,109,128,0.2)] bg-[rgba(78,109,128,0.6)]">
-                    <svg className="w-4 h-4 text-[#29271b]" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 2l1 4h4l-3 3 1 4-3-2-3 2 1-4-3-3h4l1-4z"/>
-                    </svg>
-                    <span className="text-xs font-medium leading-4 text-[#29271b]">Menstruation</span>
-                  </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-[50%] bg-[rgba(78,109,128,0.2)] px-2 py-0.5 rounded-md backdrop-blur-sm">
-                    <span className="text-xs font-normal leading-4">3 - 7 Days</span>
-                  </div>
+                <div className="absolute left-0 top-7 bottom-0 w-[26%] bg-[rgba(78,109,128,0.1)] rounded-bl-lg">
+                  <svg className="absolute right-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
+                    <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(78,109,128,0.2)" strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
+                  </svg>
+                  <Badge variant="secondary" className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 font-manrope text-xs font-normal h-auto py-1 px-2 bg-[#4E6D80] hover:bg-[#4E6D80] text-white backdrop-blur-sm border-0 whitespace-nowrap">
+                    3-7 Days
+                  </Badge>
                 </div>
 
                 {/* Ovulation Overlay */}
-                <div className="absolute right-0 top-0 bottom-0 w-[14%] bg-[rgba(227,146,25,0.1)] border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-r-lg overflow-hidden">
-                  <div className="flex items-center justify-center gap-1 h-7 px-1 py-1.5 border-b border-dashed border-[rgba(217,119,6,0.2)] bg-[rgba(217,119,6,0.7)]">
-                    <svg className="w-4 h-4 text-[#29271b]" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 2l2 6 6-2-6 2-2 6-2-6-6 2 6-2 2-6z"/>
-                    </svg>
-                    <span className="text-xs font-medium leading-4 text-[#29271b] whitespace-nowrap">Ovulation</span>
-                  </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-[50%] bg-[rgba(217,119,6,0.2)] px-2 py-0.5 rounded-md backdrop-blur-sm">
-                    <span className="text-xs font-normal leading-4 whitespace-nowrap">1 - 2 Days</span>
-                  </div>
+                <div className="absolute right-0 top-7 bottom-0 w-[17%] bg-[rgba(227,146,25,0.1)] rounded-br-lg">
+                  <svg className="absolute left-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
+                    <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(217,119,6,0.2)" strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
+                  </svg>
+                  <Badge variant="secondary" className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 font-manrope text-xs font-normal h-auto py-1 px-2 bg-[#D97706] hover:bg-[#D97706] text-white backdrop-blur-sm border-0 whitespace-nowrap">
+                    1-2 Days
+                  </Badge>
                 </div>
               </div>
 
-              {/* Luteal Phase */}
-              <div className="relative flex-1 border border-border rounded-lg bg-background overflow-hidden">
-                {/* Phase Header */}
-                <div className="flex items-center justify-center gap-2 h-7 px-2.5 py-1.5 border-b border-border bg-background">
-                  <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="5" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                  <span className="text-sm font-medium leading-5">Luteal Phase</span>
-                  <div className="ml-auto bg-muted px-2 py-0.5 rounded-md">
-                    <span className="text-xs font-normal leading-4 whitespace-nowrap">Avg. Length 12 - 14 Days</span>
+              {/* Luteal Phase Container */}
+              <div className="relative w-1/2 border border-border rounded-lg bg-background overflow-hidden">
+                {/* Luteal Phase Header */}
+                <div className="flex h-7 border-b border-border bg-background relative z-10">
+                  <div className="w-full flex items-center justify-center px-2.5 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <Leaf className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-manrope text-sm font-medium leading-5 text-[#45423A]">Luteal Phase</span>
+                      <Badge variant="secondary" className="font-manrope text-xs font-normal h-5 px-2 bg-[#F3F0E7] hover:bg-[#F3F0E7] text-[#45423A] border-0">
+                        12-14 Days
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 
-                {/* Chart */}
+                {/* Luteal Phase Chart */}
                 <PhaseChart data={lutealData} phaseType="luteal" />
               </div>
             </div>

@@ -1,5 +1,5 @@
-/* Import Manrope font */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+/* Import Manrope and Petrona fonts */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Petrona:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;

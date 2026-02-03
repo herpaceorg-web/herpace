@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ToastProvider } from '@/contexts/ToastContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { ToastContainer } from '@/components/ui/toast-container'
 import { Login } from '@/pages/Login'
 import { Signup } from '@/pages/Signup'
 import { Onboarding } from '@/pages/Onboarding'
@@ -17,71 +19,74 @@ import { RootRedirect } from '@/components/RootRedirect'
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
+      <ToastProvider>
+        <BrowserRouter>
+          <ToastContainer />
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute>
-                <Onboarding />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Dashboard />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/calendar"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Calendar />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <TrainingHistory />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history/:raceId"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <RaceDetail />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected routes */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Dashboard />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Calendar />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <TrainingHistory />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history/:raceId"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <RaceDetail />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Redirects */}
-          <Route path="/" element={<RootRedirect />} />
+            {/* Redirects */}
+            <Route path="/" element={<RootRedirect />} />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   )
 }
