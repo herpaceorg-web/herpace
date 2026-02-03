@@ -79,7 +79,7 @@ fi
 # Deploy Frontend
 echo -e "\n${CYAN}[*] Building and pushing frontend Docker image...${NC}"
 cd ../frontend
-gcloud builds submit --tag ${FRONTEND_IMAGE} .
+gcloud builds submit --config=cloudbuild.yaml
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}[+] Frontend image built and pushed${NC}"
