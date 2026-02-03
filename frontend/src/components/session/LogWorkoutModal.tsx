@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { apiClient } from '@/lib/api-client'
+import { api } from '@/lib/api-client'
 
 interface LogWorkoutModalProps {
   open: boolean
@@ -26,7 +26,7 @@ export function LogWorkoutModal({ open, onOpenChange, onWorkoutLogged }: LogWork
     setIsSubmitting(true)
 
     try {
-      await apiClient.post('/api/sessions/log-adhoc', {
+      await api.post('/api/sessions/log-adhoc', {
         actualDistance: Number(formData.distance) || null,
         actualDuration: Number(formData.duration) || null,
         rpe: Number(formData.rpe),
