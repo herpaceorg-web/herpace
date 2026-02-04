@@ -55,7 +55,9 @@ export function Dashboard() {
       setError(null)
 
       // Get client's local date in ISO format (YYYY-MM-DD)
-      const clientDate = new Date().toISOString().split('T')[0]
+      // Note: Don't use toISOString() as it converts to UTC which may be a different day
+      const now = new Date()
+      const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
       // Load plan summary and upcoming sessions in parallel
       const [summary, sessionsResponse] = await Promise.all([
