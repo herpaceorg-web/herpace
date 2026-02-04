@@ -35,6 +35,24 @@ export function Onboarding() {
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
+  // Helper function to format time strings to TimeSpan format (HH:MM:SS)
+  const formatTimeSpan = (time: string | undefined): string | undefined => {
+    if (!time?.trim()) return undefined
+
+    const trimmed = time.trim()
+    const parts = trimmed.split(':')
+
+    // Ensure HH:MM:SS format with leading zeros
+    if (parts.length === 3) {
+      const hours = parts[0].padStart(2, '0')
+      const minutes = parts[1].padStart(2, '0')
+      const seconds = parts[2].padStart(2, '0')
+      return `${hours}:${minutes}:${seconds}`
+    }
+
+    return trimmed
+  }
+
   // Handle profile form submission
   const handleProfileComplete = async (data: ProfileFormValues) => {
     setError(null)
@@ -52,11 +70,11 @@ export function Onboarding() {
         cycleLength: data.cycleLength,
         lastPeriodStart: data.lastPeriodStart?.toISOString(),
         lastPeriodEnd: data.lastPeriodEnd?.toISOString(),
-        // Convert empty strings to undefined for TimeSpan format (HH:MM:SS)
-        fiveKPR: data.fiveKPR?.trim() || undefined,
-        tenKPR: data.tenKPR?.trim() || undefined,
-        halfMarathonPR: data.halfMarathonPR?.trim() || undefined,
-        marathonPR: data.marathonPR?.trim() || undefined
+        // Format PR times to TimeSpan format (HH:MM:SS with leading zeros)
+        fiveKPR: formatTimeSpan(data.fiveKPR),
+        tenKPR: formatTimeSpan(data.tenKPR),
+        halfMarathonPR: formatTimeSpan(data.halfMarathonPR),
+        marathonPR: formatTimeSpan(data.marathonPR)
       }
 
       await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
