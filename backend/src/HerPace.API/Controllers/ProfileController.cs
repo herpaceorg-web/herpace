@@ -67,6 +67,7 @@ public class ProfileController : ControllerBase
             MarathonPR = request.MarathonPR,
             CycleLength = request.CycleLength,
             LastPeriodStart = request.LastPeriodStart.HasValue ? DateTime.SpecifyKind(request.LastPeriodStart.Value, DateTimeKind.Utc) : null,
+            LastPeriodEnd = request.LastPeriodEnd.HasValue ? DateTime.SpecifyKind(request.LastPeriodEnd.Value, DateTimeKind.Utc) : null,
             TypicalCycleRegularity = request.TypicalCycleRegularity,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -94,6 +95,7 @@ public class ProfileController : ControllerBase
                 MarathonPR = runner.MarathonPR,
                 CycleLength = runner.CycleLength,
                 LastPeriodStart = runner.LastPeriodStart,
+                LastPeriodEnd = runner.LastPeriodEnd,
                 TypicalCycleRegularity = runner.TypicalCycleRegularity,
                 CreatedAt = runner.CreatedAt
             });
@@ -130,6 +132,7 @@ public class ProfileController : ControllerBase
             MarathonPR = runner.MarathonPR,
             CycleLength = runner.CycleLength,
             LastPeriodStart = runner.LastPeriodStart,
+            LastPeriodEnd = runner.LastPeriodEnd,
             TypicalCycleRegularity = runner.TypicalCycleRegularity,
             CreatedAt = runner.CreatedAt
         });
@@ -166,6 +169,7 @@ public class CreateProfileRequest
     // Cycle information
     public int? CycleLength { get; set; } // 21-45 days
     public DateTime? LastPeriodStart { get; set; }
+    public DateTime? LastPeriodEnd { get; set; }
     public CycleRegularity TypicalCycleRegularity { get; set; } = CycleRegularity.Regular;
 }
 
@@ -189,6 +193,7 @@ public class ProfileResponse
 
     public int? CycleLength { get; set; }
     public DateTime? LastPeriodStart { get; set; }
+    public DateTime? LastPeriodEnd { get; set; }
     public CycleRegularity TypicalCycleRegularity { get; set; }
     public DateTime CreatedAt { get; set; }
 }

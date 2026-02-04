@@ -29,6 +29,7 @@ public class Runner
     // Menstrual Cycle Information
     public int? CycleLength { get; set; } // 21-45 days, nullable if DoNotTrack
     public DateTime? LastPeriodStart { get; set; } // Nullable if DoNotTrack
+    public DateTime? LastPeriodEnd { get; set; } // Optional end date for period tracking
     public CycleRegularity TypicalCycleRegularity { get; set; } = CycleRegularity.Regular;
 
     // Timestamps

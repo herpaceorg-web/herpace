@@ -205,6 +205,7 @@ export interface ProfileResponse {
   typicalCycleRegularity: number
   cycleLength?: number
   lastPeriodStart?: string
+  lastPeriodEnd?: string
   fiveKPR?: string
   tenKPR?: string
   halfMarathonPR?: string

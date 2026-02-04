@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import type { DateRange } from 'react-day-picker'
+import { useState } from 'react'
 
 interface ProfileStepProps {
   onComplete: (data: ProfileFormValues) => void
@@ -45,6 +47,25 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
   const showCycleFields = cycleRegularity !== 'DoNotTrack'
   const dateOfBirth = watch('dateOfBirth')
   const lastPeriodStart = watch('lastPeriodStart')
+  const lastPeriodEnd = watch('lastPeriodEnd')
+
+  // State for period date range picker
+  const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => {
+    if (defaultValues?.lastPeriodStart || defaultValues?.lastPeriodEnd) {
+      return {
+        from: defaultValues.lastPeriodStart,
+        to: defaultValues.lastPeriodEnd
+      }
+    }
+    return undefined
+  })
+
+  // Handler for period date range selection
+  const handlePeriodRangeSelect = (range: DateRange | undefined) => {
+    setPeriodRange(range)
+    setValue('lastPeriodStart', range?.from)
+    setValue('lastPeriodEnd', range?.to)
+  }
 
   return (
     <form onSubmit={handleSubmit(onComplete)} className="space-y-6">
@@ -204,35 +225,62 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
             )}
           </div>
 
-          {/* Last Period Start */}
+          {/* Last Period Date Range */}
           <div className="space-y-2">
-            <Label>Last Period Start Date *</Label>
+            <Label>Last Period (Optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Select when your period started. You can also select a range if it has ended.
+            </p>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
                     'w-full justify-start text-left font-normal',
-                    !lastPeriodStart && 'text-muted-foreground'
+                    !periodRange?.from && 'text-muted-foreground'
                   )}
                   disabled={isSubmitting}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {lastPeriodStart ? format(lastPeriodStart, 'PPP') : 'Pick a date'}
+                  {periodRange?.from ? (
+                    <>
+                      {format(periodRange.from, 'PPP')}
+                      {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (
+                        <> - {format(periodRange.to, 'PPP')}</>
+                      )}
+                    </>
+                  ) : (
+                    'Pick a date or date range'
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                  mode="single"
-                  selected={lastPeriodStart}
-                  onSelect={(date: Date | undefined) => setValue('lastPeriodStart', date)}
+                  mode="range"
+                  selected={periodRange}
+                  onSelect={handlePeriodRangeSelect}
                   disabled={(date: Date) => date > new Date()}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
+            {periodRange?.from && (
+              <div className="p-3 bg-muted rounded-lg text-sm">
+                <strong>Selected:</strong>{' '}
+                {periodRange.from.toLocaleDateString()}
+                {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (
+                  <> - {periodRange.to.toLocaleDateString()}</>
+                )}
+                {!periodRange.to && (
+                  <span className="text-muted-foreground"> (single day)</span>
+                )}
+              </div>
+            )}
             {errors.lastPeriodStart && (
               <p className="text-sm text-destructive">{errors.lastPeriodStart.message}</p>
+            )}
+            {errors.lastPeriodEnd && (
+              <p className="text-sm text-destructive">{errors.lastPeriodEnd.message}</p>
             )}
           </div>
         </>
