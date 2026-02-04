@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import { CyclePhase, CycleRegularity, WorkoutType } from '@/types/api'
@@ -26,6 +26,7 @@ export default function Calendar() {
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null)
   const [weekSessions, setWeekSessions] = useState<SessionDetailDto[]>([])
   const [isLoadingWeek, setIsLoadingWeek] = useState(false)
+  const weekSectionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadCalendarData()
@@ -118,15 +119,6 @@ export default function Calendar() {
     return d
   }
 
-  // Get the Saturday of the week for a given date
-  const getWeekEnd = (date: Date): Date => {
-    const weekStart = getWeekStart(date)
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 6)
-    weekEnd.setHours(23, 59, 59, 999)
-    return weekEnd
-  }
-
   // Handle clicking a calendar day
   const handleDayClick = async (date: Date) => {
     const weekStart = getWeekStart(date)
@@ -159,6 +151,11 @@ export default function Calendar() {
       )
 
       setWeekSessions(detailedSessions)
+
+      // Scroll to weekly sessions section after a brief delay to ensure rendering
+      setTimeout(() => {
+        weekSectionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
     } catch (error) {
       console.error('Failed to load week sessions:', error)
       setWeekSessions([])
@@ -334,7 +331,7 @@ export default function Calendar() {
 
           {/* Weekly Sessions Display */}
           {selectedWeekStart && (
-            <div className="mt-8 space-y-4">
+            <div ref={weekSectionsRef} className="mt-8 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-petrona text-foreground">
                   Week of {selectedWeekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}

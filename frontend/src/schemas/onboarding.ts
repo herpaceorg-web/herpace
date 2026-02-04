@@ -30,6 +30,7 @@ export const profileStepSchema = z.object({
   cycleLength: z.number().min(21).max(45).optional(),
 
   lastPeriodStart: z.date().optional(),
+  lastPeriodEnd: z.date().optional(),
 
   // PRs as time strings (HH:MM:SS format) or empty
   fiveKPR: z.string()
@@ -58,13 +59,25 @@ export const profileStepSchema = z.object({
 }).refine(
   (data) => {
     if (data.cycleRegularity !== 'DoNotTrack') {
-      return data.cycleLength !== undefined && data.lastPeriodStart !== undefined
+      return data.cycleLength !== undefined
     }
     return true
   },
   {
-    message: 'Cycle length and last period start are required when tracking cycle',
+    message: 'Cycle length is required when tracking cycle',
     path: ['cycleLength']
+  }
+).refine(
+  (data) => {
+    // If user provides an end date, they must also provide a start date
+    if (data.lastPeriodEnd !== undefined) {
+      return data.lastPeriodStart !== undefined
+    }
+    return true
+  },
+  {
+    message: 'Period start date is required when providing an end date',
+    path: ['lastPeriodStart']
   }
 )
 
