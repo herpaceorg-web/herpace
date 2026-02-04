@@ -217,6 +217,7 @@ export function Dashboard() {
       <div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-2xl font-semibold">Upcoming Sessions</h2>
+          {/* Buttons commented out - links available in navigation
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate('/calendar')}>
               View Full Calendar
@@ -225,6 +226,7 @@ export function Dashboard() {
               View Training History
             </Button>
           </div>
+          */}
         </div>
 
         {upcomingSessions.length > 0 ? (
