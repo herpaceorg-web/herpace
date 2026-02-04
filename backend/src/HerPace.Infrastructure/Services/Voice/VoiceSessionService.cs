@@ -25,7 +25,7 @@ public class VoiceSessionService : IVoiceSessionService
     private readonly string _liveModel;
 
     // Gemini Live API model for native audio
-    private const string DefaultLiveModel = "gemini-2.0-flash-live-001";
+    private const string DefaultLiveModel = "gemini-2.5-flash-native-audio-preview-12-2025";
 
     public VoiceSessionService(
         HttpClient httpClient,
@@ -70,7 +70,7 @@ public class VoiceSessionService : IVoiceSessionService
         return new VoiceSessionTokenResponse
         {
             Token = _apiKey,
-            WebSocketUrl = $"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key={_apiKey}",
+            WebSocketUrl = $"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key={_apiKey}",
             ExpiresAt = expiresAt,
             SessionContext = sessionContext,
             SystemInstruction = systemInstruction,

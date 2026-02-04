@@ -65,10 +65,25 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   // Handle WebSocket messages from Gemini
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
-      const message: GeminiServerContentMessage = JSON.parse(event.data)
+      console.log('WebSocket message received (raw):', event.data)
+      const message = JSON.parse(event.data) as GeminiServerContentMessage & {
+        error?: { message?: string; code?: number; status?: string }
+      }
+      console.log('WebSocket message parsed:', message)
+
+      // Handle error responses from Gemini
+      if (message.error) {
+        const errorMsg = message.error.message || `Gemini API error: ${message.error.status || message.error.code || 'Unknown error'}`
+        console.error('Gemini API error:', message.error)
+        setError(errorMsg)
+        onError?.(new Error(errorMsg))
+        updateState('error')
+        return
+      }
 
       // Handle setup complete
       if (message.setupComplete) {
+        console.log('Setup complete received, transitioning to listening state')
         updateState('listening')
         // Start audio capture
         audioProcessorRef.current?.start()
@@ -152,7 +167,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
         // Send setup message with model and system instruction
         const setupMessage = {
           setup: {
-            model: tokenResponse.model || 'models/gemini-2.0-flash-live-001',
+            model: tokenResponse.model || 'models/gemini-2.5-flash-native-audio-preview-12-2025',
             generationConfig: {
               responseModalities: 'audio',
               speechConfig: {
