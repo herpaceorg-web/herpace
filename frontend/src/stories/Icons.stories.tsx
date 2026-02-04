@@ -69,29 +69,11 @@ import {
   LineChart,
   PieChart,
 
-  // File/Document icons
-  File,
-  FileText,
-  Folder,
-  Image,
-
   // More icons
-  MapPin,
-  Navigation as NavigationIcon,
-  Compass,
   Zap,
-  Battery,
-  Wifi,
-  WifiOff,
-  Cloud,
-  CloudOff,
 
   // Social/Communication
-  MessageCircle,
-  MessageSquare,
   Send,
-  Phone,
-  Video,
 
   // Utility
   Filter,
@@ -100,7 +82,6 @@ import {
   RefreshCw,
   MoreVertical,
   MoreHorizontal,
-  HelpCircle,
 } from 'lucide-react'
 
 const IconGrid = ({ icons }: { icons: Array<{ name: string; icon: React.ComponentType<any> }> }) => {
@@ -312,13 +293,6 @@ export const Auth: Story = {
 
 export const CyclePhases: Story = {
   render: () => {
-    const cycleIcons = [
-      { name: 'Snowflake', icon: Snowflake },
-      { name: 'Sprout', icon: Sprout },
-      { name: 'Sun', icon: Sun },
-      { name: 'Leaf', icon: Leaf },
-    ]
-
     return (
       <div className="space-y-6">
         <div>

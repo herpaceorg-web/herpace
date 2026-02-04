@@ -12,5 +12,5 @@ images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/herpace-repo/herpace-frontend:latest'
 
 substitutions:
-  _VITE_API_BASE_URL: 'https://herpace-api-81066941589.us-central1.run.app'
+  _VITE_API_BASE_URL: 'https://herpace-api-p7ysuzeitq-uc.a.run.app'
   _REGION: 'us-central1'

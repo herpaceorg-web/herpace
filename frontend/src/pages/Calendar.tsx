@@ -304,7 +304,7 @@ export default function Calendar() {
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             components={{
-              DayButton: CustomDayButton,
+              DayButton: CustomDayButton as any,
             }}
             className="w-full"
           />

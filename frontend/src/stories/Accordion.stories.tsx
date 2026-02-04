@@ -14,6 +14,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
+  args: {
+    type: 'single',
+  },
   render: () => (
     <Accordion type="single" collapsible className="w-[450px]">
       <AccordionItem value="item-1">
@@ -42,6 +45,9 @@ export const Default: Story = {
 }
 
 export const TrainingWeek: Story = {
+  args: {
+    type: 'single',
+  },
   render: () => (
     <Accordion type="single" collapsible className="w-[500px]">
       <AccordionItem value="monday">
@@ -97,6 +103,9 @@ export const TrainingWeek: Story = {
 }
 
 export const RaceHistory: Story = {
+  args: {
+    type: 'single',
+  },
   render: () => (
     <Accordion type="single" collapsible className="w-[500px]">
       <AccordionItem value="race1">

@@ -150,8 +150,12 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "https://localhost:5001",
             "http://localhost:5000",
+<<<<<<< HEAD
+            "https://herpace-frontend-p7ysuzeitq-uc.a.run.app" // Cloud Run frontend URL
+=======
             "https://herpace-frontend-81066941589.us-central1.run.app", // Cloud Run frontend URL
             "https://herpace-frontend-p7ysuzeitq-uc.a.run.app" // Alternative Cloud Run URL format
+>>>>>>> abaeda1750ea17d51938b7b7fb79a77ce4267bb9
         )
         .AllowAnyMethod()
         .AllowAnyHeader()
