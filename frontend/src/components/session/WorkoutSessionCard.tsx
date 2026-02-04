@@ -102,8 +102,46 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
       }
     : props.sessionContent!
 
-  const warmupContent = props.warmupContent
-  const recoverContent = props.recoverContent
+  // Generate warmup content from session data
+  const warmupContent = React.useMemo(() => {
+    // Use legacy prop if provided (for Storybook backward compatibility)
+    if (props.warmupContent) return props.warmupContent
+
+    // Otherwise use session data if in session mode
+    if (isSessionMode && localSession?.warmUp) {
+      return (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+          <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+            {localSession.warmUp}
+          </p>
+        </div>
+      )
+    }
+
+    return undefined
+  }, [isSessionMode, localSession?.warmUp, props.warmupContent])
+
+  // Generate recovery content from session data
+  const recoverContent = React.useMemo(() => {
+    // Use legacy prop if provided (for Storybook backward compatibility)
+    if (props.recoverContent) return props.recoverContent
+
+    // Otherwise use session data if in session mode
+    if (isSessionMode && localSession?.recovery) {
+      return (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-[#3d3826]">Recovery</h3>
+          <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+            {localSession.recovery}
+          </p>
+        </div>
+      )
+    }
+
+    return undefined
+  }, [isSessionMode, localSession?.recovery, props.recoverContent])
+
   const sessionProgress = props.sessionProgress
 
   const handleSkip = async () => {
@@ -306,7 +344,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           </div>
 
           {/* Tabs for Warmup/Session/Recover */}
-          <Tabs defaultValue={warmupContent ? 'warmup' : 'session'} className="w-full">
+          <Tabs defaultValue="session" className="w-full">
             <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-6">
               {warmupContent && (
                 <TabsTrigger

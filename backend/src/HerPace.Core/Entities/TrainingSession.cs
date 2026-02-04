@@ -16,6 +16,7 @@ public class TrainingSession
     public DateTime ScheduledDate { get; set; }
     public WorkoutType WorkoutType { get; set; }
     public string? WarmUp { get; set; } // Warm-up instructions
+    public string? Recovery { get; set; } // Cool-down and recovery instructions
     public string? SessionDescription { get; set; } // Detailed workout description
 
     // Planned Workout

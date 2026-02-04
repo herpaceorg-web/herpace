@@ -30,6 +30,7 @@ public class TrainingSessionDto
     public DateTime ScheduledDate { get; set; }
     public WorkoutType WorkoutType { get; set; }
     public string? WarmUp { get; set; }
+    public string? Recovery { get; set; }
     public string? SessionDescription { get; set; }
     public int? DurationMinutes { get; set; }
     public decimal? Distance { get; set; }

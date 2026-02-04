@@ -171,6 +171,7 @@ public class FallbackPlanGenerator : IAIPlanGenerator
                     ScheduledDate = sessionDate,
                     WorkoutType = adjustedWorkoutType,
                     WarmUp = templateSession.WarmUp,
+                    Recovery = templateSession.Recovery,
                     SessionDescription = templateSession.SessionDescription + " - Adjusted based on recent performance.",
                     DurationMinutes = templateSession.DurationMinutes.HasValue
                         ? (int)(templateSession.DurationMinutes.Value * adjustmentFactor)
@@ -244,6 +245,7 @@ public class FallbackPlanGenerator : IAIPlanGenerator
                     ScheduledDate = sessionDate,
                     WorkoutType = adjustedWorkoutType,
                     WarmUp = templateSession.WarmUp,
+                    Recovery = templateSession.Recovery,
                     SessionDescription = templateSession.SessionDescription,
                     DurationMinutes = templateSession.DurationMinutes.HasValue
                         ? (int)(templateSession.DurationMinutes.Value * volumeMultiplier)
@@ -270,19 +272,19 @@ public class FallbackPlanGenerator : IAIPlanGenerator
             return new List<TemplateSession>
             {
                 new("Easy Run", DayOfWeek.Tuesday, WorkoutType.Easy, IntensityLevel.Low, 30, 5.0m,
-                    "5 min walk + 5 min easy jog", "Comfortable pace, conversational effort", "Zone 2"),
+                    "5 min walk + 5 min easy jog", "5 min easy walk, static stretches, hydrate", "Comfortable pace, conversational effort", "Zone 2"),
                 new("Recovery Run", DayOfWeek.Thursday, WorkoutType.Easy, IntensityLevel.Low, 25, 4.0m,
-                    "5 min walk", "Very easy effort, focus on form", "Zone 1-2"),
+                    "5 min walk", "5 min walk, gentle stretches", "Very easy effort, focus on form", "Zone 1-2"),
                 new("Long Run", DayOfWeek.Sunday, WorkoutType.Long, IntensityLevel.Low, 45, 7.0m,
-                    "10 min easy jog", "Build endurance at comfortable pace", "Zone 2"),
+                    "10 min easy jog", "10 min easy walk, thorough stretches, refuel within 30 min", "Build endurance at comfortable pace", "Zone 2"),
                 new("Rest Day", DayOfWeek.Monday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                    null, "Complete rest or light stretching", null),
+                    null, null, "Complete rest or light stretching", null),
                 new("Rest Day", DayOfWeek.Wednesday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                    null, "Complete rest or active recovery (walk)", null),
+                    null, null, "Complete rest or active recovery (walk)", null),
                 new("Rest Day", DayOfWeek.Friday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                    null, "Complete rest day", null),
+                    null, null, "Complete rest day", null),
                 new("Rest Day", DayOfWeek.Saturday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                    null, "Rest before long run", null)
+                    null, null, "Rest before long run", null)
             };
         }
 
@@ -290,19 +292,19 @@ public class FallbackPlanGenerator : IAIPlanGenerator
         return new List<TemplateSession>
         {
             new("Easy Run", DayOfWeek.Monday, WorkoutType.Easy, IntensityLevel.Low, 40, 6.0m,
-                "10 min easy jog", "Relaxed pace, recovery focus", "Zone 2"),
+                "10 min easy jog", "10 min easy walk, static stretches, hydrate", "Relaxed pace, recovery focus", "Zone 2"),
             new("Interval Training", DayOfWeek.Wednesday, WorkoutType.Interval, IntensityLevel.High, 50, 8.0m,
-                "15 min easy + dynamic drills", "8x400m @ 5K pace with 90s recovery jog", "Zone 4-5"),
+                "15 min easy + dynamic drills", "15 min easy cool-down jog, thorough stretches, refuel with carbs + protein within 30 min", "8x400m @ 5K pace with 90s recovery jog", "Zone 4-5"),
             new("Tempo Run", DayOfWeek.Friday, WorkoutType.Tempo, IntensityLevel.Moderate, 45, 7.0m,
-                "10 min easy jog", "20 min at comfortably hard pace (threshold)", "Zone 3-4"),
+                "10 min easy jog", "10 min easy cool-down, focus on leg stretches, hydrate and refuel", "20 min at comfortably hard pace (threshold)", "Zone 3-4"),
             new("Long Run", DayOfWeek.Sunday, WorkoutType.Long, IntensityLevel.Low, 75, 12.0m,
-                "15 min easy jog", "Build endurance at steady, comfortable pace", "Zone 2-3"),
+                "15 min easy jog", "15 min easy walk, comprehensive stretches (quads, hamstrings, calves, IT band), hydrate well, refuel within 45 min", "Build endurance at steady, comfortable pace", "Zone 2-3"),
             new("Rest Day", DayOfWeek.Tuesday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                null, "Complete rest or active recovery", null),
+                null, null, "Complete rest or active recovery", null),
             new("Rest Day", DayOfWeek.Thursday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                null, "Recovery day between hard efforts", null),
+                null, null, "Recovery day between hard efforts", null),
             new("Rest Day", DayOfWeek.Saturday, WorkoutType.Rest, IntensityLevel.Low, null, null,
-                null, "Rest before long run", null)
+                null, null, "Rest before long run", null)
         };
     }
 
@@ -430,6 +432,7 @@ public class FallbackPlanGenerator : IAIPlanGenerator
         int? DurationMinutes,
         decimal? Distance,
         string? WarmUp,
+        string? Recovery,
         string? SessionDescription,
         string? HRZones);
 }
