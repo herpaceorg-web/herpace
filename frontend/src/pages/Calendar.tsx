@@ -153,7 +153,7 @@ export default function Calendar() {
         ref={ref}
         variant="ghost"
         className={cn(
-          'h-auto w-full min-h-24 p-2 flex flex-col items-start justify-start rounded-none border border-border relative',
+          'h-auto w-full min-h-24 p-2 rounded-none border border-border relative block',
           bgClass,
           modifiers.outside && 'opacity-40',
           modifiers.today && 'ring-2 ring-primary ring-inset',
@@ -161,60 +161,61 @@ export default function Calendar() {
         )}
         {...props}
       >
-        {/* Day number with status indicator */}
-        <div className="w-full flex items-center justify-between mb-1">
-          <span className="text-sm font-medium">{day.date.getDate()}</span>
-
-          {/* Status indicators in top-right */}
-          {isCompleted && (
-            <div className="text-green-600 text-sm font-bold" title="Completed">✓</div>
-          )}
-          {!isCompleted && isSkipped && (
-            <div className="text-gray-500 text-sm" title="Skipped">–</div>
-          )}
-        </div>
-
-        {/* Session content stacked vertically */}
-        {hasSession && (
-          <div className="w-full flex flex-col gap-1">
-            {/* Session name */}
-            <p
-              className={cn(
-                'text-sm font-semibold leading-tight text-left w-full',
-                isRest && 'text-gray-500',
-                !isRest && 'text-gray-900'
-              )}
-            >
-              {session.sessionName}
-            </p>
-
-            {/* Duration and Distance (only for non-rest days) */}
-            {!isRest && (session.durationMinutes || session.distance) && (
-              <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                {session.durationMinutes && (
-                  <span>{session.durationMinutes} min</span>
-                )}
-                {session.durationMinutes && session.distance && <span>•</span>}
-                {session.distance && (
-                  <span>{session.distance} mi</span>
-                )}
-              </div>
+        <div className="flex flex-col items-start justify-start w-full">
+          {/* Day number with status indicator */}
+          <div className="w-full flex items-center gap-1 mb-1">
+            <span className="text-sm font-medium">{day.date.getDate()}</span>
+            {/* Status indicators */}
+            {isCompleted && (
+              <span className="text-green-600 text-sm font-bold" title="Completed">✓</span>
             )}
-
-            {/* Intensity pill */}
-            {!isCompleted && !isSkipped && !isRest && session.intensityLevel !== undefined && (
-              <div
-                className={cn(
-                  'px-2 py-1 rounded-full text-[10px] font-medium self-start mt-0.5',
-                  intensityColors[session.intensityLevel]
-                )}
-                title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
-              >
-                {intensityLabels[session.intensityLevel]}
-              </div>
+            {!isCompleted && isSkipped && (
+              <span className="text-gray-500 text-sm" title="Skipped">–</span>
             )}
           </div>
-        )}
+
+          {/* Session content stacked vertically */}
+          {hasSession && (
+            <div className="w-full flex flex-col gap-1">
+              {/* Session name */}
+              <p
+                className={cn(
+                  'text-sm font-semibold leading-tight text-left w-full',
+                  isRest && 'text-gray-500',
+                  !isRest && 'text-gray-900'
+                )}
+              >
+                {session.sessionName}
+              </p>
+
+              {/* Duration and Distance (only for non-rest days) */}
+              {!isRest && (session.durationMinutes || session.distance) && (
+                <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                  {session.durationMinutes && (
+                    <span>{session.durationMinutes} min</span>
+                  )}
+                  {session.durationMinutes && session.distance && <span>•</span>}
+                  {session.distance && (
+                    <span>{session.distance} mi</span>
+                  )}
+                </div>
+              )}
+
+              {/* Intensity pill */}
+              {!isCompleted && !isSkipped && !isRest && session.intensityLevel !== undefined && (
+                <div
+                  className={cn(
+                    'px-2 py-1 rounded-full text-[10px] font-medium self-start mt-0.5',
+                    intensityColors[session.intensityLevel]
+                  )}
+                  title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
+                >
+                  {intensityLabels[session.intensityLevel]}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </Button>
     )
   })
