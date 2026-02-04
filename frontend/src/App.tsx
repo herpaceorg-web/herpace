@@ -9,7 +9,7 @@ import { Signup } from '@/pages/Signup'
 import { Onboarding } from '@/pages/Onboarding'
 import { Dashboard } from '@/pages/Dashboard'
 import Calendar from '@/pages/Calendar'
-import TrainingHistory from '@/pages/TrainingHistory'
+// import TrainingHistory from '@/pages/TrainingHistory'
 import RaceDetail from '@/pages/RaceDetail'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
@@ -58,6 +58,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* History routes commented out for hackathon MVP
             <Route
               path="/history"
               element={
@@ -78,6 +79,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            */}
 
             {/* Redirects */}
             <Route path="/" element={<RootRedirect />} />

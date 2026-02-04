@@ -52,6 +52,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 Calendar
               </Link>
+{/* History link commented out for hackathon MVP
               <Link
                 to="/history"
                 className={cn(
@@ -63,6 +64,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 History
               </Link>
+              */}
             </nav>
           </div>
 

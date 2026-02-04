@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
 import { CyclePhase } from '@/types/api'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
+import { VoiceModal } from '@/components/voice/VoiceModal'
 import { api } from '@/lib/api-client'
+import type { VoiceSessionContextDto } from '@/types/voice'
 
 export interface SessionStep {
   number: number
@@ -64,6 +66,7 @@ const cyclePhaseLabels: Record<CyclePhase, string> = {
 
 export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(props.session)
 
@@ -490,6 +493,15 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => setIsVoiceModalOpen(true)}
+                    className="bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700"
+                  >
+                    <Mic className="h-4 w-4 mr-1" />
+                    Voice
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={handleSkip}
                     disabled={isSkipping}
                   >
@@ -509,6 +521,34 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           open={isCompleteDialogOpen}
           onOpenChange={setIsCompleteDialogOpen}
           onComplete={handleComplete}
+        />
+      )}
+
+      {/* Voice Modal */}
+      {isSessionMode && localSession && (
+        <VoiceModal
+          open={isVoiceModalOpen}
+          onOpenChange={setIsVoiceModalOpen}
+          sessionId={localSession.id}
+          sessionContext={{
+            sessionId: localSession.id,
+            sessionName: localSession.sessionName,
+            workoutType: localSession.workoutType,
+            plannedDistance: localSession.distance ?? undefined,
+            plannedDuration: localSession.durationMinutes ?? undefined,
+            cyclePhase: localSession.cyclePhase ?? undefined,
+            phaseGuidance: localSession.phaseGuidance ?? undefined,
+            workoutTips: localSession.workoutTips || [],
+            intensityLevel: localSession.intensityLevel,
+            hrZones: localSession.hrZones ?? undefined
+          } as VoiceSessionContextDto}
+          onComplete={(response) => {
+            setLocalSession({
+              ...localSession,
+              isCompleted: true
+            })
+            props.onSessionUpdated?.()
+          }}
         />
       )}
     </div>

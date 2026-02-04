@@ -9,6 +9,7 @@ using HerPace.Infrastructure.Data;
 using HerPace.Infrastructure.Services;
 using HerPace.Infrastructure.Services.Cycle;
 using HerPace.Infrastructure.Services.Plan;
+using HerPace.Infrastructure.Services.Voice;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -107,6 +108,12 @@ builder.Services.AddScoped<IPlanRegenerationService, PlanRegenerationService>();
 builder.Services.AddScoped<ISessionCompletionService, SessionCompletionService>();
 builder.Services.AddScoped<IPlanAdaptationService, PlanAdaptationService>();
 
+// Register Voice Session Service for Gemini Live API integration
+builder.Services.AddHttpClient<VoiceSessionService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30); // Token generation should be quick
+});
+builder.Services.AddScoped<IVoiceSessionService, VoiceSessionService>();
 
 // Configure AI Provider (Gemini or Fallback)
 var aiProvider = builder.Configuration["AI:Provider"] ?? "Gemini";
