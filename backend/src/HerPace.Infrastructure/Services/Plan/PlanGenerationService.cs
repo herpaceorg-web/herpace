@@ -1,7 +1,9 @@
+using System.Text.Json;
 using HerPace.Core.DTOs;
 using HerPace.Core.Entities;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
+using HerPace.Infrastructure.AI;
 using HerPace.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,17 +19,20 @@ public class PlanGenerationService : IPlanGenerationService
     private readonly HerPaceDbContext _context;
     private readonly IAIPlanGenerator _aiPlanGenerator;
     private readonly ICyclePhaseCalculator _cyclePhaseCalculator;
+    private readonly WorkoutTipsGenerator _workoutTipsGenerator;
     private readonly ILogger<PlanGenerationService> _logger;
 
     public PlanGenerationService(
         HerPaceDbContext context,
         IAIPlanGenerator aiPlanGenerator,
         ICyclePhaseCalculator cyclePhaseCalculator,
-        ILogger<PlanGenerationService> logger)
+        WorkoutTipsGenerator workoutTipsGenerator,
+        ILogger<PlanGenerationService> _logger)
     {
         _context = context;
         _aiPlanGenerator = aiPlanGenerator;
         _cyclePhaseCalculator = cyclePhaseCalculator;
+        _workoutTipsGenerator = workoutTipsGenerator;
         _logger = logger;
     }
 
@@ -158,6 +163,30 @@ public class PlanGenerationService : IPlanGenerationService
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         }).ToList();
+
+        // Generate workout tips for all sessions
+        try
+        {
+            _logger.LogInformation("Generating workout tips for {SessionCount} sessions", sessions.Count);
+            var raceGoal = $"{race.RaceName} on {race.RaceDate:yyyy-MM-dd}";
+            var sessionTips = await _workoutTipsGenerator.GenerateTipsForSessionsAsync(sessions, raceGoal);
+
+            // Apply tips to sessions
+            foreach (var session in sessions)
+            {
+                if (sessionTips.TryGetValue(session.Id, out var tips) && tips.Any())
+                {
+                    session.WorkoutTips = JsonSerializer.Serialize(tips);
+                }
+            }
+
+            _logger.LogInformation("Successfully generated tips for {Count} sessions", sessionTips.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to generate workout tips, continuing without tips");
+            // Continue without tips - not critical for plan generation
+        }
 
         trainingPlan.Sessions = sessions;
 

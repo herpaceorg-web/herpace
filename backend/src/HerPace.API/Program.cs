@@ -115,6 +115,11 @@ builder.Services.AddHttpClient<GeminiPlanGenerator>(client =>
     client.Timeout = TimeSpan.FromMinutes(5); // Allow up to 5 minutes for AI plan generation
 }); // Register HttpClient for Gemini API
 
+builder.Services.AddHttpClient<WorkoutTipsGenerator>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(2); // Allow up to 2 minutes for tips generation
+}); // Register HttpClient for Workout Tips Generator
+
 builder.Services.AddScoped<IAIPlanGenerator>(sp =>
 {
     var logger = sp.GetRequiredService<ILoggerFactory>();

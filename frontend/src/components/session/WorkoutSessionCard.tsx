@@ -144,10 +144,47 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
     props.onSessionUpdated?.()
   }
+  // Format date for display
+  const sessionDate = isSessionMode && localSession ? new Date(localSession.scheduledDate) : new Date()
+  const dayOfWeek = sessionDate.toLocaleDateString('en-US', { weekday: 'short' })
+  const monthDay = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+  // Build session progress text
+  const progressText = isSessionMode && localSession?.sessionNumberInPhase && localSession?.totalSessionsInPhase
+    ? `Session ${localSession.sessionNumberInPhase}/${localSession.totalSessionsInPhase} This Phase`
+    : sessionProgress
+
+  // Build menstruation day text
+  const menstruationText = isSessionMode && localSession?.menstruationDay
+    ? `Menstruation Day ${localSession.menstruationDay}`
+    : null
+
+  // Combine workout tips with legacy cycle phase tips
+  const allTips = React.useMemo(() => {
+    const tips: string[] = []
+
+    // Add workout tips from session
+    if (isSessionMode && localSession?.workoutTips) {
+      tips.push(...localSession.workoutTips)
+    }
+
+    // Add cycle phase tips if available and not already in workout tips
+    if (props.cyclePhaseTips && !isSessionMode) {
+      if (props.cyclePhaseTips.nutritionTips.length > 0) {
+        tips.push(...props.cyclePhaseTips.nutritionTips)
+      }
+      if (props.cyclePhaseTips.restTips.length > 0) {
+        tips.push(...props.cyclePhaseTips.restTips)
+      }
+    }
+
+    return tips
+  }, [isSessionMode, localSession, props.cyclePhaseTips])
+
   return (
     <div className="w-full max-w-[760px]">
       {/* Phase tracking section */}
-      {(cyclePhases && cyclePhases.length > 0) || sessionProgress ? (
+      {(cyclePhases && cyclePhases.length > 0) || menstruationText || progressText ? (
         <div className="bg-[#fefdfb] border border-[#ebe8e2] rounded-t-lg px-2 pb-3 flex items-center gap-3 flex-wrap mb-[-12px] w-fit">
           {cyclePhases?.map((phase, index) => (
             <React.Fragment key={index}>
@@ -162,14 +199,25 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               </div>
             </React.Fragment>
           ))}
-          {sessionProgress && (
+          {menstruationText && (
             <>
               {cyclePhases && cyclePhases.length > 0 && (
                 <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
               )}
+              <div className="flex items-center gap-2 text-sm text-[#ed7c7c] font-medium">
+                <Snowflake className="h-4 w-4" />
+                <p className="leading-[20px]">{menstruationText}</p>
+              </div>
+            </>
+          )}
+          {progressText && (
+            <>
+              {((cyclePhases && cyclePhases.length > 0) || menstruationText) && (
+                <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
+              )}
               <div className="flex items-center justify-center px-2 py-0.5">
                 <p className="text-[#696863] text-xs font-normal leading-[16px]">
-                  {sessionProgress}
+                  {progressText}
                 </p>
               </div>
             </>
@@ -187,13 +235,33 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         )}
       >
         <CardContent className="p-4">
-          {/* Header with session name and metrics */}
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex flex-col gap-2 flex-1">
-              <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
-                {sessionName}
-              </h2>
-              {/* Metrics badges */}
+          {/* Header with date icon, session name, and metrics */}
+          <div className="flex gap-4 items-start mb-6">
+            {/* Date icon */}
+            <div className="flex-shrink-0 flex flex-col items-center justify-center bg-[#f3f0e7] rounded-lg p-2 min-w-[60px]">
+              <Calendar className="h-5 w-5 text-[#3d3826] mb-1" />
+              <div className="text-[#3d3826] text-xs font-semibold">{dayOfWeek}</div>
+              <div className="text-[#696863] text-xs">{monthDay}</div>
+            </div>
+
+            {/* Session name and metrics */}
+            <div className="flex-1 flex flex-col gap-2">
+              <div className="flex justify-between items-start gap-4">
+                <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
+                  {sessionName}
+                </h2>
+                {props.onMenuClick && (
+                  <button
+                    onClick={props.onMenuClick}
+                    className="text-[#3d3826] hover:bg-[#f3f0e7] rounded p-1 transition-colors"
+                    aria-label="More options"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Metrics badges on right */}
               <div className="flex gap-2 flex-wrap">
                 {distance && (
                   <Badge
@@ -224,15 +292,6 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 )}
               </div>
             </div>
-            {props.onMenuClick && (
-              <button
-                onClick={props.onMenuClick}
-                className="text-[#3d3826] hover:bg-[#f3f0e7] rounded p-1 transition-colors"
-                aria-label="More options"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            )}
           </div>
 
           {/* Tabs for Warmup/Session/Recover */}
@@ -278,57 +337,98 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
             <TabsContent value="session" className="mt-0">
               <div className="bg-[#f3f0e7] rounded-lg p-4">
-                {sessionContent.heading && (
-                  <h3 className="text-sm font-medium text-[#3d3826] mb-4">
-                    {sessionContent.heading}
-                  </h3>
-                )}
-                <div className="space-y-8">
-                  {sessionContent.steps.map((step, stepIndex) => (
-                    <div key={step.number} className="relative">
-                      <div className="flex gap-4">
-                        {/* Step number indicator */}
-                        <div className="flex-shrink-0 relative">
-                          <div className="w-[38px] h-[38px] rounded-full bg-[#45423a] text-white flex items-center justify-center text-lg font-medium">
-                            {step.number}
-                          </div>
-                          {/* Connecting line to next step */}
-                          {stepIndex < sessionContent.steps.length - 1 && (
-                            <div className="absolute top-[45px] left-[18px] w-0.5 h-[calc(100%+16px)] bg-[rgba(71,72,87,0.2)]" />
-                          )}
-                        </div>
+                {/* Show workout tips if available */}
+                {allTips.length > 0 ? (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-[#3d3826]">
+                      Workout Tips
+                    </h3>
+                    <ul className="space-y-3">
+                      {allTips.map((tip, index) => (
+                        <li
+                          key={index}
+                          className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                        >
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
 
-                        {/* Step content */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h4 className="text-base font-normal text-[#141414]">
-                              {step.title}
-                            </h4>
-                            {step.duration && (
-                              <Badge
-                                variant="outline"
-                                className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
-                              >
-                                <Timer className="h-3.5 w-3.5 mr-1.5" />
-                                {step.duration} Min
-                              </Badge>
-                            )}
-                          </div>
-                          <ul className="space-y-1">
-                            {step.instructions.map((instruction, index) => (
-                              <li
-                                key={index}
-                                className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
-                              >
-                                {instruction}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                    {/* Show session description if available */}
+                    {sessionContent.steps.length > 0 && sessionContent.steps[0].instructions.length > 0 && (
+                      <div className="mt-6 pt-4 border-t border-[#ebe8e2]">
+                        <h3 className="text-sm font-medium text-[#3d3826] mb-3">
+                          Session Details
+                        </h3>
+                        <ul className="space-y-2">
+                          {sessionContent.steps[0].instructions.map((instruction, index) => (
+                            <li
+                              key={index}
+                              className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                            >
+                              {instruction}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
+                    )}
+                  </div>
+                ) : (
+                  // Fallback to original step display if no tips
+                  <>
+                    {sessionContent.heading && (
+                      <h3 className="text-sm font-medium text-[#3d3826] mb-4">
+                        {sessionContent.heading}
+                      </h3>
+                    )}
+                    <div className="space-y-8">
+                      {sessionContent.steps.map((step, stepIndex) => (
+                        <div key={step.number} className="relative">
+                          <div className="flex gap-4">
+                            {/* Step number indicator */}
+                            <div className="flex-shrink-0 relative">
+                              <div className="w-[38px] h-[38px] rounded-full bg-[#45423a] text-white flex items-center justify-center text-lg font-medium">
+                                {step.number}
+                              </div>
+                              {/* Connecting line to next step */}
+                              {stepIndex < sessionContent.steps.length - 1 && (
+                                <div className="absolute top-[45px] left-[18px] w-0.5 h-[calc(100%+16px)] bg-[rgba(71,72,87,0.2)]" />
+                              )}
+                            </div>
+
+                            {/* Step content */}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="text-base font-normal text-[#141414]">
+                                  {step.title}
+                                </h4>
+                                {step.duration && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                                  >
+                                    <Timer className="h-3.5 w-3.5 mr-1.5" />
+                                    {step.duration} Min
+                                  </Badge>
+                                )}
+                              </div>
+                              <ul className="space-y-1">
+                                {step.instructions.map((instruction, index) => (
+                                  <li
+                                    key={index}
+                                    className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                                  >
+                                    {instruction}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             </TabsContent>
 
@@ -363,19 +463,6 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 </div>
               )}
 
-              {/* Wellness Tip */}
-              {props.cyclePhaseTips && !localSession.isCompleted && !localSession.isSkipped && (
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
-                  <p className="text-xs font-semibold text-purple-700 mb-1">
-                    {props.cyclePhaseTips.phase} Phase Tip
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    {props.cyclePhaseTips.nutritionTips[0] ||
-                     props.cyclePhaseTips.restTips[0] ||
-                     'Stay mindful of your body during this phase'}
-                  </p>
-                </div>
-              )}
 
               {/* Action buttons */}
               {!localSession.isCompleted && !localSession.isSkipped && (

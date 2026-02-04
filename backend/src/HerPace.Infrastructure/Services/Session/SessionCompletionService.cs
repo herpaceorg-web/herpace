@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HerPace.Core.DTOs;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
@@ -167,6 +168,41 @@ public class SessionCompletionService : ISessionCompletionService
 
     private SessionDetailDto MapToSessionDetailDto(Core.Entities.TrainingSession session)
     {
+        // Parse workout tips from JSON
+        var workoutTips = new List<string>();
+        if (!string.IsNullOrEmpty(session.WorkoutTips))
+        {
+            try
+            {
+                var parsedTips = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
+                if (parsedTips != null)
+                {
+                    workoutTips = parsedTips;
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse WorkoutTips JSON for session {SessionId}", session.Id);
+            }
+        }
+
+        // Calculate session progress in phase (requires additional query)
+        int? sessionNumberInPhase = null;
+        int? totalSessionsInPhase = null;
+        if (session.CyclePhase.HasValue)
+        {
+            var phaseProgress = CalculatePhaseProgress(session);
+            sessionNumberInPhase = phaseProgress.SessionNumber;
+            totalSessionsInPhase = phaseProgress.TotalSessions;
+        }
+
+        // Calculate menstruation day if in menstrual phase
+        int? menstruationDay = null;
+        if (session.CyclePhase == CyclePhase.Menstrual)
+        {
+            menstruationDay = CalculateMenstruationDay(session);
+        }
+
         return new SessionDetailDto
         {
             Id = session.Id,
@@ -181,6 +217,10 @@ public class SessionCompletionService : ISessionCompletionService
             HRZones = session.HRZones,
             CyclePhase = session.CyclePhase,
             PhaseGuidance = session.PhaseGuidance,
+            SessionNumberInPhase = sessionNumberInPhase,
+            TotalSessionsInPhase = totalSessionsInPhase,
+            MenstruationDay = menstruationDay,
+            WorkoutTips = workoutTips,
             CompletedAt = session.CompletedAt,
             ActualDistance = session.ActualDistance,
             ActualDuration = session.ActualDuration,
@@ -191,5 +231,50 @@ public class SessionCompletionService : ISessionCompletionService
             WasModified = session.WasModified,
             IsCompleted = session.CompletedAt.HasValue && !session.IsSkipped
         };
+    }
+
+    private (int SessionNumber, int TotalSessions) CalculatePhaseProgress(Core.Entities.TrainingSession session)
+    {
+        if (!session.CyclePhase.HasValue)
+        {
+            return (0, 0);
+        }
+
+        // Get all sessions in the same plan with the same cycle phase
+        var sessionsInPhase = _context.TrainingSessions
+            .Where(s => s.TrainingPlanId == session.TrainingPlanId &&
+                       s.CyclePhase == session.CyclePhase)
+            .OrderBy(s => s.ScheduledDate)
+            .ToList();
+
+        var totalSessions = sessionsInPhase.Count;
+        var sessionNumber = sessionsInPhase.FindIndex(s => s.Id == session.Id) + 1;
+
+        return (sessionNumber, totalSessions);
+    }
+
+    private int? CalculateMenstruationDay(Core.Entities.TrainingSession session)
+    {
+        // Get the runner to access cycle information
+        var runner = _context.Runners
+            .FirstOrDefault(r => r.Id == session.TrainingPlan.RunnerId);
+
+        if (runner == null || !runner.LastPeriodStart.HasValue || !runner.CycleLength.HasValue)
+        {
+            return null;
+        }
+
+        // Calculate which day of menstruation this session falls on
+        // Menstrual phase is typically days 1-5 of the cycle
+        var daysSinceLastPeriod = (session.ScheduledDate.Date - runner.LastPeriodStart.Value.Date).Days;
+        var currentDayInCycle = (daysSinceLastPeriod % runner.CycleLength.Value) + 1;
+
+        // Only return day number if within menstrual phase (typically days 1-5)
+        if (currentDayInCycle <= 5)
+        {
+            return currentDayInCycle;
+        }
+
+        return null;
     }
 }

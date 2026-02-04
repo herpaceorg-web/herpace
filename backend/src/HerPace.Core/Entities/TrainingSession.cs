@@ -27,6 +27,7 @@ public class TrainingSession
     // Cycle-Aware Information
     public CyclePhase? CyclePhase { get; set; } // Null if cycle tracking disabled
     public string? PhaseGuidance { get; set; } // AI-generated guidance based on cycle phase
+    public string? WorkoutTips { get; set; } // JSON array of workout-specific tips (3 tips combining pacing, technique, and hormone guidance)
 
     // Session Tracking & Actual Workout (for User Story 2)
     public DateTime? CompletedAt { get; set; }

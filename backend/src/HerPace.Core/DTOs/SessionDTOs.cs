@@ -47,6 +47,10 @@ public class SessionDetailDto
     public string? HRZones { get; set; }
     public CyclePhase? CyclePhase { get; set; }
     public string? PhaseGuidance { get; set; }
+    public int? SessionNumberInPhase { get; set; } // Which session number in current cycle phase (e.g., 5)
+    public int? TotalSessionsInPhase { get; set; } // Total sessions in this phase (e.g., 15)
+    public int? MenstruationDay { get; set; } // Day of period if in menstrual phase (e.g., 1, 2, 3)
+    public List<string> WorkoutTips { get; set; } = new(); // AI-generated tips (3 tips combining pacing, technique, and hormone guidance)
 
     // Completion data
     public DateTime? CompletedAt { get; set; }

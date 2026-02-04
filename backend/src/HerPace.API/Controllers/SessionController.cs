@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Hangfire;
 using HerPace.Core.DTOs;
 using HerPace.Core.Enums;
@@ -273,33 +274,83 @@ public class SessionController : ControllerBase
         }
 
         // Get today's session using date-only comparison
-        var todaysSession = activePlan.Sessions
+        var todaysSessionEntity = activePlan.Sessions
             .Where(s => s.ScheduledDate.Date == today)
-            .Select(s => new SessionDetailDto
-            {
-                Id = s.Id,
-                SessionName = s.SessionName,
-                ScheduledDate = s.ScheduledDate,
-                WorkoutType = s.WorkoutType,
-                WarmUp = s.WarmUp,
-                SessionDescription = s.SessionDescription,
-                DurationMinutes = s.DurationMinutes,
-                Distance = s.Distance,
-                IntensityLevel = s.IntensityLevel,
-                HRZones = s.HRZones,
-                CyclePhase = s.CyclePhase,
-                PhaseGuidance = s.PhaseGuidance,
-                CompletedAt = s.CompletedAt,
-                ActualDistance = s.ActualDistance,
-                ActualDuration = s.ActualDuration,
-                RPE = s.RPE,
-                UserNotes = s.UserNotes,
-                IsSkipped = s.IsSkipped,
-                SkipReason = s.SkipReason,
-                WasModified = s.WasModified,
-                IsCompleted = s.CompletedAt.HasValue && !s.IsSkipped
-            })
             .FirstOrDefault();
+
+        SessionDetailDto? todaysSession = null;
+        if (todaysSessionEntity != null)
+        {
+            // Parse workout tips
+            var workoutTips = new List<string>();
+            if (!string.IsNullOrEmpty(todaysSessionEntity.WorkoutTips))
+            {
+                try
+                {
+                    var parsedTips = JsonSerializer.Deserialize<List<string>>(todaysSessionEntity.WorkoutTips);
+                    if (parsedTips != null) workoutTips = parsedTips;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse WorkoutTips for session {SessionId}", todaysSessionEntity.Id);
+                }
+            }
+
+            // Calculate session progress in phase
+            int? sessionNumberInPhase = null;
+            int? totalSessionsInPhase = null;
+            if (todaysSessionEntity.CyclePhase.HasValue)
+            {
+                var sessionsInPhase = activePlan.Sessions
+                    .Where(s => s.CyclePhase == todaysSessionEntity.CyclePhase)
+                    .OrderBy(s => s.ScheduledDate)
+                    .ToList();
+                totalSessionsInPhase = sessionsInPhase.Count;
+                sessionNumberInPhase = sessionsInPhase.FindIndex(s => s.Id == todaysSessionEntity.Id) + 1;
+            }
+
+            // Calculate menstruation day
+            int? menstruationDay = null;
+            if (todaysSessionEntity.CyclePhase == CyclePhase.Menstrual)
+            {
+                var runner = await _context.Runners.FirstOrDefaultAsync(r => r.Id == activePlan.RunnerId);
+                if (runner?.LastPeriodStart.HasValue == true && runner.CycleLength.HasValue)
+                {
+                    var daysSinceLastPeriod = (todaysSessionEntity.ScheduledDate.Date - runner.LastPeriodStart.Value.Date).Days;
+                    var currentDayInCycle = (daysSinceLastPeriod % runner.CycleLength.Value) + 1;
+                    if (currentDayInCycle <= 5) menstruationDay = currentDayInCycle;
+                }
+            }
+
+            todaysSession = new SessionDetailDto
+            {
+                Id = todaysSessionEntity.Id,
+                SessionName = todaysSessionEntity.SessionName,
+                ScheduledDate = todaysSessionEntity.ScheduledDate,
+                WorkoutType = todaysSessionEntity.WorkoutType,
+                WarmUp = todaysSessionEntity.WarmUp,
+                SessionDescription = todaysSessionEntity.SessionDescription,
+                DurationMinutes = todaysSessionEntity.DurationMinutes,
+                Distance = todaysSessionEntity.Distance,
+                IntensityLevel = todaysSessionEntity.IntensityLevel,
+                HRZones = todaysSessionEntity.HRZones,
+                CyclePhase = todaysSessionEntity.CyclePhase,
+                PhaseGuidance = todaysSessionEntity.PhaseGuidance,
+                SessionNumberInPhase = sessionNumberInPhase,
+                TotalSessionsInPhase = totalSessionsInPhase,
+                MenstruationDay = menstruationDay,
+                WorkoutTips = workoutTips,
+                CompletedAt = todaysSessionEntity.CompletedAt,
+                ActualDistance = todaysSessionEntity.ActualDistance,
+                ActualDuration = todaysSessionEntity.ActualDuration,
+                RPE = todaysSessionEntity.RPE,
+                UserNotes = todaysSessionEntity.UserNotes,
+                IsSkipped = todaysSessionEntity.IsSkipped,
+                SkipReason = todaysSessionEntity.SkipReason,
+                WasModified = todaysSessionEntity.WasModified,
+                IsCompleted = todaysSessionEntity.CompletedAt.HasValue && !todaysSessionEntity.IsSkipped
+            };
+        }
 
         // Get recalculation summary if not viewed
         var recalculationSummary = activePlan.RecalculationSummaryViewedAt == null

@@ -128,6 +128,10 @@ export interface SessionDetailDto {
   intensityLevel: IntensityLevel
   cyclePhase?: CyclePhase
   sessionDescription?: string
+  sessionNumberInPhase?: number
+  totalSessionsInPhase?: number
+  menstruationDay?: number
+  workoutTips?: string[]
   isCompleted: boolean
   isSkipped: boolean
   actualDistance?: number
