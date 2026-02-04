@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
@@ -19,7 +18,6 @@ import {
 import { Loader2, Sparkles } from 'lucide-react'
 
 export function Dashboard() {
-  const navigate = useNavigate()
   const [planSummary, setPlanSummary] = useState<PlanSummaryDto | null>(null)
   const [upcomingSessions, setUpcomingSessions] = useState<SessionDetailDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
