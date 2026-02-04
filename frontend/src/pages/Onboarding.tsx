@@ -51,11 +51,12 @@ export function Onboarding() {
         cycleRegularity: CycleRegularity[data.cycleRegularity],
         cycleLength: data.cycleLength,
         lastPeriodStart: data.lastPeriodStart?.toISOString(),
-        // Convert time strings to TimeSpan format for backend
-        fiveKPR: data.fiveKPR || undefined,
-        tenKPR: data.tenKPR || undefined,
-        halfMarathonPR: data.halfMarathonPR || undefined,
-        marathonPR: data.marathonPR || undefined
+        lastPeriodEnd: data.lastPeriodEnd?.toISOString(),
+        // Convert empty strings to undefined for TimeSpan format (HH:MM:SS)
+        fiveKPR: data.fiveKPR?.trim() || undefined,
+        tenKPR: data.tenKPR?.trim() || undefined,
+        halfMarathonPR: data.halfMarathonPR?.trim() || undefined,
+        marathonPR: data.marathonPR?.trim() || undefined
       }
 
       await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)

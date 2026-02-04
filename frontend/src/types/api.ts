@@ -188,7 +188,8 @@ export interface CreateProfileRequest {
   cycleRegularity: number
   cycleLength?: number
   lastPeriodStart?: string
-  fiveKPR?: string // TimeSpan format
+  lastPeriodEnd?: string
+  fiveKPR?: string // TimeSpan format (HH:MM:SS)
   tenKPR?: string
   halfMarathonPR?: string
   marathonPR?: string
