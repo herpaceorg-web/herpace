@@ -27,7 +27,7 @@ public class PlanGenerationService : IPlanGenerationService
         IAIPlanGenerator aiPlanGenerator,
         ICyclePhaseCalculator cyclePhaseCalculator,
         WorkoutTipsGenerator workoutTipsGenerator,
-        ILogger<PlanGenerationService> _logger)
+        ILogger<PlanGenerationService> logger)
     {
         _context = context;
         _aiPlanGenerator = aiPlanGenerator;

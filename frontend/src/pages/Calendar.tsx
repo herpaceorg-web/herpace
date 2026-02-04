@@ -134,15 +134,15 @@ export default function Calendar() {
 
     // Intensity colors and labels
     const intensityColors = {
-      [IntensityLevel.Low]: 'bg-blue-500',
-      [IntensityLevel.Moderate]: 'bg-yellow-500',
-      [IntensityLevel.High]: 'bg-red-500',
+      [IntensityLevel.Low]: 'bg-blue-500 text-white',
+      [IntensityLevel.Moderate]: 'bg-yellow-500 text-white',
+      [IntensityLevel.High]: 'bg-red-500 text-white',
     }
 
     const intensityLabels = {
-      [IntensityLevel.Low]: 'L',
-      [IntensityLevel.Moderate]: 'M',
-      [IntensityLevel.High]: 'H',
+      [IntensityLevel.Low]: 'Low Intensity',
+      [IntensityLevel.Moderate]: 'Moderate Intensity',
+      [IntensityLevel.High]: 'High Intensity',
     }
 
     // Cycle phase background
@@ -161,35 +161,14 @@ export default function Calendar() {
         )}
         {...props}
       >
-        {/* Day number and status indicators */}
-        <div className="w-full flex justify-between items-start mb-1">
+        {/* Day number */}
+        <div className="w-full flex justify-between items-start mb-2">
           <span className="text-sm font-medium">{day.date.getDate()}</span>
-
-          {/* Status indicators */}
-          {isCompleted && (
-            <div className="text-green-600 text-sm" title="Completed">✓</div>
-          )}
-          {!isCompleted && isSkipped && (
-            <div className="text-gray-500 text-sm" title="Skipped">–</div>
-          )}
-          {!isCompleted && !isSkipped && hasSession && !isRest && session.intensityLevel !== undefined && (
-            <div
-              className={cn(
-                'w-4 h-4 rounded-full flex items-center justify-center',
-                intensityColors[session.intensityLevel]
-              )}
-              title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
-            >
-              <span className="text-white text-[8px] font-bold">
-                {intensityLabels[session.intensityLevel]}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Session info */}
         {hasSession && (
-          <div className="flex-1 flex flex-col items-start justify-start w-full">
+          <div className="flex-1 flex flex-col items-start justify-start w-full gap-1.5">
             <p
               className={cn(
                 'text-xs font-semibold leading-tight text-left line-clamp-2',
@@ -199,12 +178,34 @@ export default function Calendar() {
             >
               {session.sessionName}
             </p>
+
+            {/* Intensity pill (under workout title) */}
+            {!isCompleted && !isSkipped && !isRest && session.intensityLevel !== undefined && (
+              <div
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-[10px] font-medium',
+                  intensityColors[session.intensityLevel]
+                )}
+                title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
+              >
+                {intensityLabels[session.intensityLevel]}
+              </div>
+            )}
+
             {session.durationMinutes && !isRest && (
               <p className="text-[10px] text-muted-foreground">
                 {session.durationMinutes} min
               </p>
             )}
           </div>
+        )}
+
+        {/* Status indicators (bottom-right corner) */}
+        {isCompleted && (
+          <div className="absolute bottom-1 right-1 text-green-600 text-xs font-bold" title="Completed">✓</div>
+        )}
+        {!isCompleted && isSkipped && (
+          <div className="absolute bottom-1 right-1 text-gray-500 text-xs" title="Skipped">–</div>
         )}
       </Button>
     )

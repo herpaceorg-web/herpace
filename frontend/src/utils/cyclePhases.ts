@@ -120,19 +120,20 @@ export function getCyclePhaseName(phase: CyclePhase): string {
 
 /**
  * Get cycle phase background color class (Tailwind)
+ * Colors match the HormoneCycleChart component on the dashboard
  */
 export function getCyclePhaseColor(phase: CyclePhase): string {
   switch (phase) {
     case CyclePhase.Menstrual:
-      return 'bg-red-100'
+      return 'bg-cyan-100' // Blue/teal tint matching menstruation
     case CyclePhase.Follicular:
-      return 'bg-green-100'
+      return 'bg-green-100' // Green for follicular phase
     case CyclePhase.Ovulatory:
-      return 'bg-orange-100'
+      return 'bg-orange-100' // Orange for ovulation
     case CyclePhase.Luteal:
-      return 'bg-blue-100'
+      return 'bg-purple-100' // Purple for luteal phase
     default:
-      return 'bg-gray-50'
+      return 'bg-background'
   }
 }
 
