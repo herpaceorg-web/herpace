@@ -154,7 +154,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           setup: {
             model: tokenResponse.model || 'models/gemini-2.0-flash-live-001',
             generationConfig: {
-              responseModalities: ['AUDIO'],
+              responseModalities: 'audio',
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
