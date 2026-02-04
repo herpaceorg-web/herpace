@@ -1,32 +1,49 @@
 import { CyclePhase } from '@/types/api'
-import { getCyclePhaseBadgeColor, getCyclePhaseName } from '@/utils/cyclePhases'
+import { Sprout, Sun, Leaf, Snowflake } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
 
-const CYCLE_PHASES = [
-  CyclePhase.Menstrual,
-  CyclePhase.Follicular,
-  CyclePhase.Ovulatory,
-  CyclePhase.Luteal,
+const CYCLE_PHASE_ITEMS = [
+  {
+    phase: CyclePhase.Follicular,
+    icon: Sprout,
+    label: 'Follicular Phase',
+  },
+  {
+    phase: CyclePhase.Ovulatory,
+    icon: Sun,
+    label: 'Ovulation',
+  },
+  {
+    phase: CyclePhase.Luteal,
+    icon: Leaf,
+    label: 'Luteal Phase',
+  },
+  {
+    phase: CyclePhase.Menstrual,
+    icon: Snowflake,
+    label: 'Menstruation',
+  },
 ]
 
 export function CyclePhaseLegend() {
   return (
-    <div className="bg-muted/50 rounded-lg p-4">
-      <div className="flex flex-wrap items-center gap-4">
-        <span className="text-sm font-medium text-muted-foreground">
-          Cycle Phases:
-        </span>
-        <div className="flex flex-wrap gap-4">
-          {CYCLE_PHASES.map((phase) => (
-            <div key={phase} className="flex items-center gap-2">
-              <div
-                className={`w-3 h-3 rounded-full ${getCyclePhaseBadgeColor(phase)}`}
-                aria-hidden="true"
-              />
-              <span className="text-sm">{getCyclePhaseName(phase)}</span>
+    <div className="flex items-center gap-4 flex-wrap">
+      {CYCLE_PHASE_ITEMS.map((item, index) => {
+        const Icon = item.icon
+        return (
+          <div key={item.phase} className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Icon className="w-5 h-5 text-foreground" />
+              <span className="text-sm font-normal text-foreground whitespace-nowrap">
+                {item.label}
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
+            {index < CYCLE_PHASE_ITEMS.length - 1 && (
+              <Separator orientation="vertical" className="h-4" />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

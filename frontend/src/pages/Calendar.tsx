@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import { CyclePhase, CycleRegularity, IntensityLevel, WorkoutType } from '@/types/api'
+import { CyclePhase, CycleRegularity, WorkoutType } from '@/types/api'
 import type { PlanDetailResponse, ProfileResponse, SessionSummary } from '@/types/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Calendar as CalendarComponent } from '@/components/ui/calendar'
+import { CalendarDay } from '@/components/calendar/CalendarDay'
 import { CyclePhaseLegend } from '@/components/calendar/CyclePhaseLegend'
-import { generateCyclePhasesForRange, formatDateKey, getCyclePhaseColor } from '@/utils/cyclePhases'
+import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { DayButton } from 'react-day-picker'
-import { cn } from '@/lib/utils'
-import * as React from 'react'
 
 export default function Calendar() {
   const navigate = useNavigate()
@@ -118,107 +115,34 @@ export default function Calendar() {
       new Date(planEndDate.getFullYear(), planEndDate.getMonth(), 1)
     : false
 
-  // Custom day renderer that shows session info and cycle phases
-  const CustomDayButton = React.forwardRef<
-    HTMLButtonElement,
-    React.ComponentProps<typeof DayButton>
-  >(({ day, modifiers, ...props }, ref) => {
-    const dateKey = formatDateKey(day.date)
-    const session = sessionsByDate.get(dateKey)
-    const cyclePhase = cyclePhases.get(dateKey)
+  // Generate days for current month view
+  const generateMonthDays = () => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
 
-    const hasSession = !!session
-    const isRest = session?.workoutType === WorkoutType.Rest
-    const isCompleted = !!session?.completedAt
-    const isSkipped = !!session?.isSkipped
+    const days: (Date | null)[] = []
 
-    // Intensity colors and labels
-    const intensityColors = {
-      [IntensityLevel.Low]: 'bg-blue-500 text-white',
-      [IntensityLevel.Moderate]: 'bg-yellow-500 text-white',
-      [IntensityLevel.High]: 'bg-red-500 text-white',
+    // Add empty cells for days before month starts (Sunday = 0)
+    const firstDayOfWeek = firstDay.getDay()
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push(null)
     }
 
-    const intensityLabels = {
-      [IntensityLevel.Low]: 'Low Intensity',
-      [IntensityLevel.Moderate]: 'Moderate Intensity',
-      [IntensityLevel.High]: 'High Intensity',
+    // Add all days in month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day))
     }
 
-    // Cycle phase background
-    const bgClass = cyclePhase !== undefined ? getCyclePhaseColor(cyclePhase) : 'bg-background'
+    return days
+  }
 
-    return (
-      <Button
-        ref={ref}
-        variant="ghost"
-        className={cn(
-          'h-auto w-full min-h-24 p-2 flex flex-col items-start justify-start rounded-none border border-border relative',
-          bgClass,
-          modifiers.outside && 'opacity-40',
-          modifiers.today && 'ring-2 ring-primary ring-inset',
-          'hover:opacity-90'
-        )}
-        {...props}
-      >
-        {/* Day number with status indicator */}
-        <div className="w-full flex items-center justify-between mb-1">
-          <span className="text-sm font-medium">{day.date.getDate()}</span>
+  const monthDays = generateMonthDays()
+  const hasCycleTracking = profile?.typicalCycleRegularity !== CycleRegularity.DoNotTrack && cyclePhases.size > 0
 
-          {/* Status indicators in top-right */}
-          {isCompleted && (
-            <div className="text-green-600 text-sm font-bold" title="Completed">✓</div>
-          )}
-          {!isCompleted && isSkipped && (
-            <div className="text-gray-500 text-sm" title="Skipped">–</div>
-          )}
-        </div>
-
-        {/* Session content stacked vertically */}
-        {hasSession && (
-          <div className="w-full flex flex-col gap-1">
-            {/* Session name */}
-            <p
-              className={cn(
-                'text-sm font-semibold leading-tight text-left w-full',
-                isRest && 'text-gray-500',
-                !isRest && 'text-gray-900'
-              )}
-            >
-              {session.sessionName}
-            </p>
-
-            {/* Duration and Distance (only for non-rest days) */}
-            {!isRest && (session.durationMinutes || session.distance) && (
-              <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                {session.durationMinutes && (
-                  <span>{session.durationMinutes} min</span>
-                )}
-                {session.durationMinutes && session.distance && <span>•</span>}
-                {session.distance && (
-                  <span>{session.distance} mi</span>
-                )}
-              </div>
-            )}
-
-            {/* Intensity pill */}
-            {!isCompleted && !isSkipped && !isRest && session.intensityLevel !== undefined && (
-              <div
-                className={cn(
-                  'px-2 py-1 rounded-full text-[10px] font-medium self-start mt-0.5',
-                  intensityColors[session.intensityLevel]
-                )}
-                title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
-              >
-                {intensityLabels[session.intensityLevel]}
-              </div>
-            )}
-          </div>
-        )}
-      </Button>
-    )
-  })
-  CustomDayButton.displayName = 'CustomDayButton'
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   if (isLoading) {
     return (
@@ -231,7 +155,7 @@ export default function Calendar() {
 
   if (error) {
     return (
-      <Alert variant="error">
+      <Alert variant="destructive">
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     )
@@ -252,71 +176,98 @@ export default function Calendar() {
     )
   }
 
-  const hasCycleTracking =
-    profile?.typicalCycleRegularity !== CycleRegularity.DoNotTrack &&
-    cyclePhases.size > 0
-
-  // Format race date
   const raceDate = new Date(plan.raceDate).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   })
 
-  // Format current month display
   const currentMonthLabel = currentMonth.toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric'
   })
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg p-6">
-        <h1 className="text-3xl font-bold mb-2">Training Calendar</h1>
-        <p className="text-lg opacity-90">
-          {plan.planName} • {plan.raceName} on {raceDate}
-        </p>
-      </div>
-
-      {/* Cycle Phase Legend */}
-      {hasCycleTracking && <CyclePhaseLegend />}
-
-      {/* Calendar with Navigation */}
+    <div className="space-y-8 max-w-7xl mx-auto">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{currentMonthLabel}</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handlePrevMonth}
-                disabled={isPrevDisabled}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleNextMonth}
-                disabled={isNextDisabled}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className="space-y-4">
+            {/* Plan info */}
+            <div>
+              <h1 className="text-2xl font-petrona text-foreground mb-1">Training Calendar</h1>
+              <p className="text-xs font-normal" style={{ color: '#696863' }}>
+                {plan.planName} • {plan.raceName} on {raceDate}
+              </p>
+            </div>
+
+            {/* Month navigation */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-petrona text-foreground">{currentMonthLabel}</h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePrevMonth}
+                  disabled={isPrevDisabled}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleNextMonth}
+                  disabled={isNextDisabled}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <CalendarComponent
-            mode="single"
-            month={currentMonth}
-            onMonthChange={setCurrentMonth}
-            components={{
-              DayButton: CustomDayButton as any,
-            }}
-            className="w-full"
-          />
+        <CardContent className="space-y-4">
+          {/* Cycle Phase Legend - centered, below month and above weekday labels */}
+          {hasCycleTracking && (
+            <div className="flex justify-center py-2">
+              <CyclePhaseLegend />
+            </div>
+          )}
+
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 gap-2">
+            {weekDays.map((day) => (
+              <div key={day} className="text-center text-xs font-normal p-2" style={{ color: '#696863' }}>
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid with CalendarDay components */}
+          <div className="grid grid-cols-7 gap-2">
+            {monthDays.map((date, index) => {
+              if (!date) {
+                return <div key={`empty-${index}`} />
+              }
+
+              const dateKey = formatDateKey(date)
+              const session = sessionsByDate.get(dateKey)
+              const cyclePhase = cyclePhases.get(dateKey)
+
+              return (
+                <CalendarDay
+                  key={dateKey}
+                  dayNumber={date.getDate()}
+                  sessionName={session?.sessionName}
+                  distance={session?.distance}
+                  durationMinutes={session?.durationMinutes}
+                  intensityLevel={session?.intensityLevel}
+                  workoutType={session?.workoutType}
+                  cyclePhase={cyclePhase}
+                  isRest={session?.workoutType === WorkoutType.Rest}
+                  zone={session?.cyclePhase !== undefined ? `Zone ${session.cyclePhase}` : undefined}
+                />
+              )
+            })}
+          </div>
         </CardContent>
       </Card>
     </div>
