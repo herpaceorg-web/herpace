@@ -81,7 +81,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+      <main className="p-8">
         {children}
       </main>
     </div>

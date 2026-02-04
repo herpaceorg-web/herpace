@@ -188,8 +188,7 @@ export default function Calendar() {
   })
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
-      <Card className="max-w-none">
+    <Card className="max-w-none">
         <CardHeader>
           <div className="space-y-4">
             {/* Plan info */}
@@ -270,6 +269,5 @@ export default function Calendar() {
           </div>
         </CardContent>
       </Card>
-    </div>
   )
 }
