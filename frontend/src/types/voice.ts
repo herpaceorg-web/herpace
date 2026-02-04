@@ -37,6 +37,8 @@ export interface VoiceSessionTokenResponse {
   webSocketUrl: string
   expiresAt: string
   sessionContext?: VoiceSessionContextDto
+  systemInstruction?: string
+  model?: string
 }
 
 // Request to complete a session via voice

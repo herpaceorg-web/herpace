@@ -57,18 +57,24 @@ public class VoiceSessionService : IVoiceSessionService
             sessionContext = await GetSessionContextAsync(sessionId.Value, runnerId);
         }
 
-        // Build system instruction
+        // Build system instruction for the frontend to use
         var systemInstruction = BuildSystemInstruction(sessionContext);
 
-        // Generate ephemeral token via Gemini API
-        var tokenResponse = await CreateEphemeralTokenAsync(systemInstruction);
+        // Note: The ephemeral token REST API is not publicly available.
+        // For now, we return the API key directly for use in the WebSocket URL.
+        // The frontend will include the system instruction in the setup message.
+        // In production, consider using a server-side WebSocket proxy for better security.
+
+        var expiresAt = DateTime.UtcNow.AddMinutes(30);
 
         return new VoiceSessionTokenResponse
         {
-            Token = tokenResponse.Token,
-            WebSocketUrl = $"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key={tokenResponse.Token}",
-            ExpiresAt = tokenResponse.ExpiresAt,
-            SessionContext = sessionContext
+            Token = _apiKey,
+            WebSocketUrl = $"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key={_apiKey}",
+            ExpiresAt = expiresAt,
+            SessionContext = sessionContext,
+            SystemInstruction = systemInstruction,
+            Model = $"models/{_liveModel}"
         };
     }
 
@@ -193,36 +199,36 @@ public class VoiceSessionService : IVoiceSessionService
         var newSessionExpireTime = now.AddMinutes(2);
 
         // Build the request to create an ephemeral token
-        // Using v1alpha API endpoint for auth tokens
-        var tokenEndpoint = $"https://generativelanguage.googleapis.com/v1alpha/authTokens";
+        // Using v1alpha API endpoint for auth tokens with API key as query parameter
+        var tokenEndpoint = $"https://generativelanguage.googleapis.com/v1alpha/authTokens?key={_apiKey}";
 
         var requestBody = new
         {
             config = new
             {
                 uses = 1,
-                expireTime = expireTime.ToString("o"),
-                newSessionExpireTime = newSessionExpireTime.ToString("o"),
-                liveConnectConstraints = new
+                expire_time = expireTime.ToString("o"),
+                new_session_expire_time = newSessionExpireTime.ToString("o"),
+                live_connect_constraints = new
                 {
                     model = $"models/{_liveModel}",
                     config = new
                     {
-                        responseModalities = new[] { "AUDIO" },
-                        systemInstruction = new
+                        response_modalities = new[] { "AUDIO" },
+                        system_instruction = new
                         {
                             parts = new[]
                             {
                                 new { text = systemInstruction }
                             }
                         },
-                        speechConfig = new
+                        speech_config = new
                         {
-                            voiceConfig = new
+                            voice_config = new
                             {
-                                prebuiltVoiceConfig = new
+                                prebuilt_voice_config = new
                                 {
-                                    voiceName = "Aoede"  // Warm, friendly female voice
+                                    voice_name = "Aoede"  // Warm, friendly female voice
                                 }
                             }
                         }
@@ -233,14 +239,12 @@ public class VoiceSessionService : IVoiceSessionService
 
         var jsonRequest = JsonSerializer.Serialize(requestBody, new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         });
 
         _logger.LogDebug("Creating ephemeral token with request: {Request}", jsonRequest);
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
-        httpRequest.Headers.Add("x-goog-api-key", _apiKey);
         httpRequest.Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.SendAsync(httpRequest);
@@ -258,7 +262,7 @@ public class VoiceSessionService : IVoiceSessionService
 
         var tokenResponse = JsonSerializer.Deserialize<EphemeralTokenResponse>(responseJson, new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         });
 
         if (string.IsNullOrEmpty(tokenResponse?.Token))
@@ -275,5 +279,6 @@ public class VoiceSessionService : IVoiceSessionService
     {
         public string? Token { get; set; }
         public string? ExpireTime { get; set; }
+        public string? Name { get; set; }
     }
 }
