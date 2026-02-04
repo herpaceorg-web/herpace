@@ -46,8 +46,6 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
   const cycleRegularity = watch('cycleRegularity')
   const showCycleFields = cycleRegularity !== 'DoNotTrack'
   const dateOfBirth = watch('dateOfBirth')
-  const lastPeriodStart = watch('lastPeriodStart')
-  const lastPeriodEnd = watch('lastPeriodEnd')
 
   // State for period date range picker
   const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => {
