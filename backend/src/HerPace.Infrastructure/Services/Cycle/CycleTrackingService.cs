@@ -80,14 +80,8 @@ public class CycleTrackingService : ICycleTrackingService
         };
     }
 
-    public async Task<ReportPeriodResponse> ReportPeriodStartAsync(Guid runnerId, DateTime periodStartDate)
+    public async Task<ReportPeriodResponse> ReportPeriodStartAsync(Guid runnerId, ReportPeriodRequest request)
     {
-        // Validate period start date
-        if (periodStartDate > DateTime.UtcNow)
-        {
-            throw new ArgumentException("Period start date cannot be in the future", nameof(periodStartDate));
-        }
-
         var runner = await _context.Runners
             .FirstOrDefaultAsync(r => r.Id == runnerId);
 
@@ -96,9 +90,13 @@ public class CycleTrackingService : ICycleTrackingService
             throw new InvalidOperationException($"Runner {runnerId} not found");
         }
 
+        // Extract dates from request
+        var periodStartDate = request.PeriodStartDate;
+        var periodEndDate = request.PeriodEndDate;
+
         // Get the previous cycle log to calculate prediction accuracy
         var previousLog = await _context.CycleLogs
-            .Where(cl => cl.RunnerId == runnerId)
+            .Where(cl => cl.RunnerId == runnerId && cl.ActualPeriodStart.HasValue)
             .OrderByDescending(cl => cl.ActualPeriodStart)
             .FirstOrDefaultAsync();
 
@@ -109,53 +107,64 @@ public class CycleTrackingService : ICycleTrackingService
         // Calculate actual cycle length (days since last reported period)
         int actualCycleLength = runner.CycleLength ?? 28; // Default to 28 if not set
 
-        if (previousLog != null)
+        // Only do cycle tracking if we have a start date
+        if (periodStartDate.HasValue)
         {
-            // Calculate predicted period start based on previous actual period
-            predictedPeriodStart = previousLog.ActualPeriodStart.AddDays(runner.CycleLength ?? 28);
+            if (previousLog?.ActualPeriodStart != null)
+            {
+                // Calculate predicted period start based on previous actual period
+                predictedPeriodStart = previousLog.ActualPeriodStart.Value.AddDays(runner.CycleLength ?? 28);
 
-            // Calculate difference
-            daysDifference = (periodStartDate.Date - predictedPeriodStart.Value.Date).Days;
+                // Calculate difference
+                daysDifference = (periodStartDate.Value.Date - predictedPeriodStart.Value.Date).Days;
 
-            // Was prediction accurate? (within ±2 days)
-            wasPredictionAccurate = Math.Abs(daysDifference.Value) <= 2;
+                // Was prediction accurate? (within ±2 days)
+                wasPredictionAccurate = Math.Abs(daysDifference.Value) <= 2;
 
-            // Calculate actual cycle length
-            actualCycleLength = (periodStartDate.Date - previousLog.ActualPeriodStart.Date).Days;
+                // Calculate actual cycle length
+                actualCycleLength = (periodStartDate.Value.Date - previousLog.ActualPeriodStart.Value.Date).Days;
 
-            _logger.LogInformation(
-                "Period report for runner {RunnerId}: Predicted {PredictedDate}, Actual {ActualDate}, Difference {DaysDifference} days",
-                runnerId, predictedPeriodStart, periodStartDate, daysDifference);
+                _logger.LogInformation(
+                    "Period report for runner {RunnerId}: Predicted {PredictedDate}, Actual {ActualDate}, Difference {DaysDifference} days",
+                    runnerId, predictedPeriodStart, periodStartDate, daysDifference);
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "First period report for runner {RunnerId}: {ActualDate}",
+                    runnerId, periodStartDate);
+            }
+
+            // Update runner's last period start
+            runner.LastPeriodStart = periodStartDate;
+
+            // Optionally adjust cycle length based on actual cycle
+            if (previousLog?.ActualPeriodStart != null && actualCycleLength != runner.CycleLength)
+            {
+                _logger.LogInformation(
+                    "Updating cycle length for runner {RunnerId} from {OldLength} to {NewLength} based on actual cycle",
+                    runnerId, runner.CycleLength, actualCycleLength);
+
+                // Only update if the difference is reasonable (not an anomaly)
+                if (actualCycleLength >= 21 && actualCycleLength <= 45)
+                {
+                    runner.CycleLength = actualCycleLength;
+                }
+            }
         }
         else
         {
             _logger.LogInformation(
-                "First period report for runner {RunnerId}: {ActualDate}",
-                runnerId, periodStartDate);
+                "Period end only reported for runner {RunnerId}: {EndDate}. Cycle tracking not updated.",
+                runnerId, periodEndDate);
         }
 
-        // Update runner's last period start
-        runner.LastPeriodStart = periodStartDate;
-
-        // Optionally adjust cycle length based on actual cycle
-        if (previousLog != null && actualCycleLength != runner.CycleLength)
-        {
-            _logger.LogInformation(
-                "Updating cycle length for runner {RunnerId} from {OldLength} to {NewLength} based on actual cycle",
-                runnerId, runner.CycleLength, actualCycleLength);
-
-            // Only update if the difference is reasonable (not an anomaly)
-            if (actualCycleLength >= 21 && actualCycleLength <= 45)
-            {
-                runner.CycleLength = actualCycleLength;
-            }
-        }
-
-        // Determine if regeneration is needed
+        // Determine if regeneration is needed (only if we have start date)
         bool triggeredRegeneration = false;
         Guid? affectedTrainingPlanId = null;
 
-        if (daysDifference.HasValue && ShouldTriggerRegeneration(predictedPeriodStart!.Value, periodStartDate))
+        if (periodStartDate.HasValue && daysDifference.HasValue && predictedPeriodStart.HasValue
+            && ShouldTriggerRegeneration(predictedPeriodStart.Value, periodStartDate.Value))
         {
             // Find active training plan
             var activePlan = await _context.TrainingPlans
@@ -175,7 +184,7 @@ public class CycleTrackingService : ICycleTrackingService
                     {
                         var regeneratedCount = await _planRegenerationService.RegenerateNext4WeeksAsync(
                             activePlan.Id,
-                            periodStartDate,
+                            periodStartDate.Value,
                             runner.CycleLength ?? actualCycleLength);
 
                         triggeredRegeneration = regeneratedCount > 0;
@@ -214,6 +223,7 @@ public class CycleTrackingService : ICycleTrackingService
             Id = Guid.NewGuid(),
             RunnerId = runnerId,
             ActualPeriodStart = periodStartDate,
+            ActualPeriodEnd = periodEndDate,
             ReportedAt = DateTime.UtcNow,
             PredictedPeriodStart = predictedPeriodStart,
             DaysDifference = daysDifference,
@@ -226,15 +236,23 @@ public class CycleTrackingService : ICycleTrackingService
         _context.CycleLogs.Add(cycleLog);
         await _context.SaveChangesAsync();
 
-        // Get updated cycle position
-        var updatedPosition = await GetCurrentCyclePositionAsync(runnerId);
+        // Get updated cycle position (only if we have start date)
+        var updatedPosition = periodStartDate.HasValue ? await GetCurrentCyclePositionAsync(runnerId) : null;
+
+        var message = periodStartDate.HasValue && periodEndDate.HasValue
+            ? (triggeredRegeneration
+                ? "Period recorded (with date range) and training plan updated for the next 4 weeks based on your actual cycle."
+                : "Period recorded successfully (with date range).")
+            : periodStartDate.HasValue
+                ? (triggeredRegeneration
+                    ? "Period start recorded and training plan updated for the next 4 weeks based on your actual cycle."
+                    : "Period start recorded successfully.")
+                : "Period end recorded successfully.";
 
         return new ReportPeriodResponse
         {
             Success = true,
-            Message = triggeredRegeneration
-                ? "Period recorded and training plan updated for the next 4 weeks based on your actual cycle."
-                : "Period recorded successfully.",
+            Message = message,
             TriggeredRegeneration = triggeredRegeneration,
             DaysDifference = daysDifference,
             UpdatedCyclePosition = updatedPosition
@@ -249,6 +267,7 @@ public class CycleTrackingService : ICycleTrackingService
             .Select(cl => new CycleAccuracyDto
             {
                 ActualPeriodStart = cl.ActualPeriodStart,
+                ActualPeriodEnd = cl.ActualPeriodEnd,
                 PredictedPeriodStart = cl.PredictedPeriodStart,
                 DaysDifference = cl.DaysDifference,
                 WasAccurate = cl.WasPredictionAccurate,

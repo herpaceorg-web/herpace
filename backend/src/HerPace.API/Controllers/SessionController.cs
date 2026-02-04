@@ -42,15 +42,13 @@ public class SessionController : ControllerBase
     [HttpGet("upcoming")]
     [ProducesResponseType(typeof(UpcomingSessionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUpcomingSessions([FromQuery] int count = 7)
     {
-        var runnerId = GetRunnerIdFromClaims();
-        if (runnerId == Guid.Empty)
+        try
         {
-            return Unauthorized("Invalid user claims");
-        }
-
-        _logger.LogInformation("Getting {Count} upcoming sessions for runner {RunnerId}", count, runnerId);
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Getting {Count} upcoming sessions for runner {RunnerId}", count, runnerId);
 
         var sessions = await _sessionCompletionService.GetUpcomingSessionsAsync(runnerId, count);
 
@@ -84,6 +82,12 @@ public class SessionController : ControllerBase
         };
 
         return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -96,13 +100,10 @@ public class SessionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetSession(Guid id)
     {
-        var runnerId = GetRunnerIdFromClaims();
-        if (runnerId == Guid.Empty)
+        try
         {
-            return Unauthorized("Invalid user claims");
-        }
-
-        _logger.LogInformation("Getting session {SessionId} for runner {RunnerId}", id, runnerId);
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Getting session {SessionId} for runner {RunnerId}", id, runnerId);
 
         var session = await _sessionCompletionService.GetSessionDetailAsync(id, runnerId);
 
@@ -112,6 +113,12 @@ public class SessionController : ControllerBase
         }
 
         return Ok(session);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -129,13 +136,10 @@ public class SessionController : ControllerBase
         Guid id,
         [FromBody] CompleteSessionRequest request)
     {
-        var runnerId = GetRunnerIdFromClaims();
-        if (runnerId == Guid.Empty)
+        try
         {
-            return Unauthorized("Invalid user claims");
-        }
-
-        _logger.LogInformation("Completing session {SessionId} for runner {RunnerId}", id, runnerId);
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Completing session {SessionId} for runner {RunnerId}", id, runnerId);
 
         var result = await _sessionCompletionService.CompleteSessionAsync(id, runnerId, request);
 
@@ -157,6 +161,12 @@ public class SessionController : ControllerBase
         };
 
         return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -174,13 +184,10 @@ public class SessionController : ControllerBase
         Guid id,
         [FromBody] SkipSessionRequest request)
     {
-        var runnerId = GetRunnerIdFromClaims();
-        if (runnerId == Guid.Empty)
+        try
         {
-            return Unauthorized("Invalid user claims");
-        }
-
-        _logger.LogInformation("Skipping session {SessionId} for runner {RunnerId}", id, runnerId);
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Skipping session {SessionId} for runner {RunnerId}", id, runnerId);
 
         var result = await _sessionCompletionService.SkipSessionAsync(id, runnerId, request);
 
@@ -202,6 +209,12 @@ public class SessionController : ControllerBase
         };
 
         return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -214,13 +227,10 @@ public class SessionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetPlanSummary([FromQuery] string? clientDate = null)
     {
-        var runnerId = GetRunnerIdFromClaims();
-        if (runnerId == Guid.Empty)
+        try
         {
-            return Unauthorized("Invalid user claims");
-        }
-
-        _logger.LogInformation("Getting plan summary for runner {RunnerId} with clientDate {ClientDate}", runnerId, clientDate);
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Getting plan summary for runner {RunnerId} with clientDate {ClientDate}", runnerId, clientDate);
 
         // Find active plan with race and sessions
         var activePlan = await _context.TrainingPlans
@@ -317,6 +327,12 @@ public class SessionController : ControllerBase
         };
 
         return Ok(planSummary);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -328,13 +344,10 @@ public class SessionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> DismissSummary()
     {
-        var runnerId = GetRunnerIdFromClaims();
-        if (runnerId == Guid.Empty)
+        try
         {
-            return Unauthorized("Invalid user claims");
-        }
-
-        _logger.LogInformation("Dismissing recalculation summary for runner {RunnerId}", runnerId);
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Dismissing recalculation summary for runner {RunnerId}", runnerId);
 
         // Find active plan
         var activePlan = await _context.TrainingPlans
@@ -355,6 +368,12 @@ public class SessionController : ControllerBase
         _logger.LogInformation("Recalculation summary dismissed for plan {PlanId}", activePlan.Id);
 
         return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -404,18 +423,24 @@ public class SessionController : ControllerBase
 
     /// <summary>
     /// Helper method to extract runner ID from JWT claims.
+    /// Throws InvalidOperationException if profile not found.
     /// </summary>
     private Guid GetRunnerIdFromClaims()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            return Guid.Empty;
+            throw new UnauthorizedAccessException("User ID not found in token");
         }
 
         // Look up the Runner entity to get the Runner.Id (not User.Id)
         var runner = _context.Runners.FirstOrDefault(r => r.UserId == userId);
-        return runner?.Id ?? Guid.Empty;
+        if (runner == null)
+        {
+            throw new InvalidOperationException("Runner profile not found. Please create a profile first.");
+        }
+
+        return runner.Id;
     }
 }
 

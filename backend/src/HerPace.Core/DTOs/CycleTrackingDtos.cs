@@ -2,10 +2,11 @@ using HerPace.Core.Enums;
 
 namespace HerPace.Core.DTOs;
 
-// Request to report period
+// Request to report period (at least one date must be provided)
 public class ReportPeriodRequest
 {
-    public DateTime PeriodStartDate { get; set; }
+    public DateTime? PeriodStartDate { get; set; }
+    public DateTime? PeriodEndDate { get; set; }
 }
 
 // Response after reporting
@@ -34,7 +35,8 @@ public class CyclePositionDto
 // Cycle accuracy history
 public class CycleAccuracyDto
 {
-    public DateTime ActualPeriodStart { get; set; }
+    public DateTime? ActualPeriodStart { get; set; }
+    public DateTime? ActualPeriodEnd { get; set; }
     public DateTime? PredictedPeriodStart { get; set; }
     public int? DaysDifference { get; set; }
     public bool WasAccurate { get; set; }

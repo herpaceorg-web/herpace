@@ -6,7 +6,8 @@ public class CycleLog
     public Guid RunnerId { get; set; }
 
     // Period reporting
-    public DateTime ActualPeriodStart { get; set; }
+    public DateTime? ActualPeriodStart { get; set; }
+    public DateTime? ActualPeriodEnd { get; set; }
     public DateTime ReportedAt { get; set; }
 
     // Prediction tracking

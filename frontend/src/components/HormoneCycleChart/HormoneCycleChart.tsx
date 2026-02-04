@@ -10,6 +10,17 @@ import { CalendarDays, Snowflake, Sprout, Sun, Leaf } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import type { DateRange } from "react-day-picker";
 
 interface HormoneData {
   day: number;
@@ -209,6 +220,9 @@ const PhaseChart: React.FC<PhaseChartProps> = ({ data, phaseType }) => {
 };
 
 export const HormoneCycleChart: React.FC = () => {
+  const [isLogPeriodOpen, setIsLogPeriodOpen] = React.useState(false);
+  const [periodRange, setPeriodRange] = React.useState<DateRange | undefined>();
+
   const hormoneData = generateHormoneData();
   const currentDay = 20;
   const daysUntilPeriod = 8;
@@ -220,6 +234,26 @@ export const HormoneCycleChart: React.FC = () => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleLogPeriod = async () => {
+    if (!periodRange?.from) return;
+
+    // If only one date selected, use the same date for start and end
+    const startDate = periodRange.from;
+    const endDate = periodRange.to || periodRange.from;
+
+    console.log('Logging period:', {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    });
+
+    // TODO: Make API call to log period
+    // await api.post('/api/periods', { startDate, endDate });
+
+    // Close modal and reset
+    setIsLogPeriodOpen(false);
+    setPeriodRange(undefined);
   };
 
   // Split data for two separate containers
@@ -247,12 +281,13 @@ export const HormoneCycleChart: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button
-              className="flex items-center justify-center gap-2 h-10 px-6 py-2.5 bg-[#45423a] text-background text-base font-medium leading-6 rounded-lg shadow-[inset_0px_2px_3px_0px_#3d3826]"
+            <Button
+              onClick={() => setIsLogPeriodOpen(true)}
+              className="flex items-center justify-center gap-2 h-10 px-6 py-2.5 bg-[#45423a] text-background text-base font-medium leading-6 rounded-lg shadow-[inset_0px_2px_3px_0px_#3d3826] hover:bg-[#45423a]/90"
             >
               <CalendarDays className="h-4 w-4" />
               Log Period
-            </button>
+            </Button>
           </div>
 
           {/* Phase Charts Container */}
@@ -370,6 +405,50 @@ export const HormoneCycleChart: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Log Period Dialog */}
+      <Dialog open={isLogPeriodOpen} onOpenChange={setIsLogPeriodOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Log Period</DialogTitle>
+            <DialogDescription>
+              Select the date your period started. You can also select a range if it has already ended.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Calendar
+              mode="range"
+              selected={periodRange}
+              onSelect={setPeriodRange}
+              disabled={{ after: new Date() }}
+              className="rounded-md border"
+            />
+            {periodRange?.from && (
+              <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+                <strong>Selected Period:</strong>{' '}
+                {periodRange.from.toLocaleDateString()}
+                {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (
+                  <> - {periodRange.to.toLocaleDateString()}</>
+                )}
+                {!periodRange.to && (
+                  <span className="text-muted-foreground"> (single day)</span>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLogPeriodOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleLogPeriod}
+              disabled={!periodRange?.from}
+            >
+              Log Period
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
