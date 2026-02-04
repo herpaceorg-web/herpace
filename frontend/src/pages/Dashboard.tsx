@@ -30,6 +30,7 @@ export function Dashboard() {
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
   const [showLogPeriodModal, setShowLogPeriodModal] = useState(false)
   const [logPeriodDate, setLogPeriodDate] = useState<Date | undefined>(undefined)
+  const [logPeriodEndDate, setLogPeriodEndDate] = useState<Date | undefined>(undefined)
   const [logPeriodRegenerationNote, setLogPeriodRegenerationNote] = useState(false)
 
   useEffect(() => {
@@ -116,12 +117,24 @@ export function Dashboard() {
   }
 
   const handleLogPeriod = async () => {
-    if (!logPeriodDate) return
+    // Require at least one date
+    if (!logPeriodDate && !logPeriodEndDate) return
+
     try {
-      const isoDate = logPeriodDate.toISOString().split('T')[0] + 'T00:00:00Z'
-      const response = await api.post<ReportPeriodResponse>('/api/cycle/report', { periodStartDate: isoDate })
+      const request: { periodStartDate?: string; periodEndDate?: string } = {}
+
+      if (logPeriodDate) {
+        request.periodStartDate = logPeriodDate.toISOString().split('T')[0] + 'T00:00:00Z'
+      }
+
+      if (logPeriodEndDate) {
+        request.periodEndDate = logPeriodEndDate.toISOString().split('T')[0] + 'T00:00:00Z'
+      }
+
+      const response = await api.post<ReportPeriodResponse>('/api/cycle/report', request)
       setShowLogPeriodModal(false)
       setLogPeriodDate(undefined)
+      setLogPeriodEndDate(undefined)
       if (response.triggeredRegeneration) {
         setLogPeriodRegenerationNote(true)
         setTimeout(() => setLogPeriodRegenerationNote(false), 8000)
@@ -320,27 +333,57 @@ export function Dashboard() {
       {/* Log Period Modal */}
       <Dialog open={showLogPeriodModal} onOpenChange={(open) => {
         setShowLogPeriodModal(open)
-        if (!open) setLogPeriodDate(undefined)
+        if (!open) {
+          setLogPeriodDate(undefined)
+          setLogPeriodEndDate(undefined)
+        }
       }}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Log Period Start</DialogTitle>
+            <DialogTitle>Log Period</DialogTitle>
             <DialogDescription>
-              Select the date your most recent period started.
+              Select the start date, end date, or both for your period. At least one date is required.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center py-2">
-            <Calendar
-              mode="single"
-              selected={logPeriodDate}
-              onSelect={setLogPeriodDate}
-              disabled={(date) => date > new Date(new Date().setHours(23, 59, 59, 999))}
-              initialFocus
-            />
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Period Start Date (Optional)</label>
+              <div className="flex justify-center border rounded-md p-2">
+                <Calendar
+                  mode="single"
+                  selected={logPeriodDate}
+                  onSelect={setLogPeriodDate}
+                  disabled={(date) => {
+                    const today = new Date(new Date().setHours(23, 59, 59, 999))
+                    if (date > today) return true
+                    // If end date is selected, start must be before or equal to end
+                    if (logPeriodEndDate && date > logPeriodEndDate) return true
+                    return false
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Period End Date (Optional)</label>
+              <div className="flex justify-center border rounded-md p-2">
+                <Calendar
+                  mode="single"
+                  selected={logPeriodEndDate}
+                  onSelect={setLogPeriodEndDate}
+                  disabled={(date) => {
+                    const today = new Date(new Date().setHours(23, 59, 59, 999))
+                    if (date > today) return true
+                    // If start date is selected, end must be after or equal to start
+                    if (logPeriodDate && date < logPeriodDate) return true
+                    return false
+                  }}
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLogPeriodModal(false)}>Cancel</Button>
-            <Button onClick={handleLogPeriod} disabled={!logPeriodDate}>Confirm</Button>
+            <Button onClick={handleLogPeriod} disabled={!logPeriodDate && !logPeriodEndDate}>Confirm</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

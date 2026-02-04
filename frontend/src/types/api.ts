@@ -331,7 +331,8 @@ export interface CyclePositionDto {
 }
 
 export interface ReportPeriodRequest {
-  periodStartDate: string
+  periodStartDate?: string
+  periodEndDate?: string
 }
 
 export interface ReportPeriodResponse {
