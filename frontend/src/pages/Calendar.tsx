@@ -118,15 +118,6 @@ export default function Calendar() {
     return d
   }
 
-  // Get the Saturday of the week for a given date
-  const getWeekEnd = (date: Date): Date => {
-    const weekStart = getWeekStart(date)
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 6)
-    weekEnd.setHours(23, 59, 59, 999)
-    return weekEnd
-  }
-
   // Handle clicking a calendar day
   const handleDayClick = async (date: Date) => {
     const weekStart = getWeekStart(date)
