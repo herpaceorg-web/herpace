@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BrowserRouter } from 'react-router-dom';
 import { CyclePhase, CycleRegularity, IntensityLevel, WorkoutType, PlanStatus } from '@/types/api';
-import type { PlanDetailResponse, ProfileResponse, SessionSummary } from '@/types/api';
+import type { PlanDetailResponse, ProfileResponse, SessionSummary, SessionDetailDto } from '@/types/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDay } from '@/components/calendar/CalendarDay';
 import { CyclePhaseLegend } from '@/components/calendar/CyclePhaseLegend';
+import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard';
 import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
@@ -24,6 +25,9 @@ const TrainingCalendar = ({
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date(plan.startDate));
   const [cyclePhases, setCyclePhases] = useState<Map<string, CyclePhase>>(new Map());
   const [sessionsByDate, setSessionsByDate] = useState<Map<string, SessionSummary>>(new Map());
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null);
+  const [weekSessions, setWeekSessions] = useState<SessionDetailDto[]>([]);
+  const [isLoadingWeek, setIsLoadingWeek] = useState(false);
 
   const planStartDate = new Date(plan.startDate);
   const planEndDate = new Date(plan.raceDate);
@@ -66,6 +70,89 @@ const TrainingCalendar = ({
       newDate.setMonth(newDate.getMonth() + 1);
       return newDate;
     });
+  };
+
+  // Get the Sunday of the week for a given date
+  const getWeekStart = (date: Date): Date => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day; // Sunday = 0, so diff to Sunday is just the day value
+    d.setDate(d.getDate() - diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  // Handle clicking a calendar day
+  const handleDayClick = (date: Date) => {
+    const weekStart = getWeekStart(date);
+    setSelectedWeekStart(weekStart);
+    setIsLoadingWeek(true);
+
+    // Simulate API loading delay
+    setTimeout(() => {
+      // Get all sessions for the week
+      const sessionsInWeek: SessionDetailDto[] = [];
+
+      // Iterate through the week (7 days) and collect sessions
+      for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(weekStart);
+        currentDate.setDate(weekStart.getDate() + i);
+        const dateKey = formatDateKey(currentDate);
+        const session = sessionsByDate.get(dateKey);
+        if (session) {
+          // Convert SessionSummary to SessionDetailDto with mock data
+          const detailedSession: SessionDetailDto = {
+            ...session,
+            warmUp: session.workoutType !== WorkoutType.Rest
+              ? "5-10 minutes of easy jogging\nDynamic stretches: leg swings, high knees, butt kicks\n3-4 strides (short, controlled accelerations)"
+              : undefined,
+            recovery: session.workoutType !== WorkoutType.Rest
+              ? "5-10 minutes of easy jogging\nStatic stretching: focus on calves, hamstrings, quads, and hip flexors\nHydrate and refuel within 30 minutes"
+              : undefined,
+            sessionDescription: session.workoutType !== WorkoutType.Rest
+              ? "Maintain a steady, comfortable pace throughout the run. Focus on consistent effort and good form."
+              : undefined,
+            sessionNumberInPhase: Math.floor(Math.random() * 5) + 1,
+            totalSessionsInPhase: 6,
+            menstruationDay: session.cyclePhase === CyclePhase.Menstrual ? Math.floor(Math.random() * 5) + 1 : undefined,
+            workoutTips: session.workoutType !== WorkoutType.Rest ? [
+              "Start slow and gradually build into your pace",
+              "Focus on maintaining good running form throughout",
+              "Listen to your body and adjust intensity if needed"
+            ] : undefined,
+            phaseGuidance: session.cyclePhase !== undefined
+              ? getPhaseGuidance(session.cyclePhase)
+              : undefined,
+            isCompleted: !!session.completedAt,
+          };
+          sessionsInWeek.push(detailedSession);
+        }
+      }
+
+      // Sort by scheduled date
+      sessionsInWeek.sort((a, b) =>
+        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+      );
+
+      setWeekSessions(sessionsInWeek);
+      setIsLoadingWeek(false);
+    }, 500);
+  };
+
+  // Helper to get phase guidance text
+  const getPhaseGuidance = (phase: CyclePhase): string => {
+    switch (phase) {
+      case CyclePhase.Menstrual:
+        return "Your body is in a recovery phase. Focus on gentle movement and listen to your energy levels.";
+      case CyclePhase.Follicular:
+        return "Rising estrogen levels support strength and endurance. Great time for challenging workouts!";
+      case CyclePhase.Ovulatory:
+        return "Peak performance window! Your body is primed for high-intensity efforts.";
+      case CyclePhase.Luteal:
+        return "Energy may fluctuate. Prioritize recovery and adjust intensity based on how you feel.";
+      default:
+        return "";
+    }
   };
 
   const isPrevDisabled = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1) <=
@@ -190,10 +277,56 @@ const TrainingCalendar = ({
                   cyclePhase={cyclePhase}
                   isRest={session?.workoutType === WorkoutType.Rest}
                   zone={session?.cyclePhase !== undefined ? `Zone ${session.cyclePhase}` : undefined}
+                  onClick={() => handleDayClick(date)}
                 />
               );
             })}
           </div>
+
+          {/* Weekly Sessions Display */}
+          {selectedWeekStart && (
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-petrona text-foreground">
+                  Week of {selectedWeekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedWeekStart(null);
+                    setWeekSessions([]);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+
+              {isLoadingWeek ? (
+                <div className="space-y-4">
+                  <div className="h-48 bg-muted animate-pulse rounded-lg"></div>
+                  <div className="h-48 bg-muted animate-pulse rounded-lg"></div>
+                </div>
+              ) : weekSessions.length > 0 ? (
+                <div className="space-y-6">
+                  {weekSessions.map((session) => (
+                    <WorkoutSessionCard
+                      key={session.id}
+                      session={session}
+                      onSessionUpdated={() => {
+                        // In Storybook, just log the update
+                        console.log('Session updated:', session.id);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No training sessions scheduled for this week.
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -368,7 +501,7 @@ export const WithCycleTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Training calendar with CalendarDay components showing detailed session information for each day.',
+        story: 'Training calendar with CalendarDay components showing detailed session information for each day. Click any day to view all sessions for that week below the calendar.',
       },
     },
   },
@@ -383,7 +516,7 @@ export const WithoutCycleTracking: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Training calendar without cycle phase tracking, focusing on workout sessions.',
+        story: 'Training calendar without cycle phase tracking, focusing on workout sessions. Click any day to view all sessions for that week below the calendar.',
       },
     },
   },

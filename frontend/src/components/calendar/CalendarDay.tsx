@@ -15,6 +15,7 @@ export interface CalendarDayProps {
   rpe?: string;
   isRest?: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
@@ -30,6 +31,7 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
       rpe,
       isRest = false,
       className,
+      onClick,
     },
     ref
   ) => {
@@ -96,9 +98,11 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
     return (
       <div
         ref={ref}
+        onClick={onClick}
         className={cn(
           'bg-muted border border-border rounded-lg p-4 flex flex-col gap-4',
           'min-h-[160px] w-full',
+          onClick && 'cursor-pointer hover:bg-muted/80 transition-colors',
           className
         )}
       >
