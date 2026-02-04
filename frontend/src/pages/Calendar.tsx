@@ -153,7 +153,7 @@ export default function Calendar() {
         ref={ref}
         variant="ghost"
         className={cn(
-          'h-auto w-full min-h-24 p-3 flex flex-col items-start justify-start rounded-none border border-border relative',
+          'h-auto w-full min-h-24 p-2 flex flex-col items-start justify-start rounded-none border border-border relative',
           bgClass,
           modifiers.outside && 'opacity-40',
           modifiers.today && 'ring-2 ring-primary ring-inset',
@@ -161,39 +161,51 @@ export default function Calendar() {
         )}
         {...props}
       >
-        {/* Top row: Day number and session name aligned */}
-        <div className="w-full flex items-center justify-between gap-2 mb-2">
-          <span className="text-sm font-medium shrink-0">{day.date.getDate()}</span>
+        {/* Day number with status indicator */}
+        <div className="w-full flex items-center justify-between mb-1">
+          <span className="text-sm font-medium">{day.date.getDate()}</span>
 
-          {hasSession && (
+          {/* Status indicators in top-right */}
+          {isCompleted && (
+            <div className="text-green-600 text-sm font-bold" title="Completed">✓</div>
+          )}
+          {!isCompleted && isSkipped && (
+            <div className="text-gray-500 text-sm" title="Skipped">–</div>
+          )}
+        </div>
+
+        {/* Session content stacked vertically */}
+        {hasSession && (
+          <div className="w-full flex flex-col gap-1">
+            {/* Session name */}
             <p
               className={cn(
-                'text-sm font-semibold leading-tight text-right flex-1 line-clamp-1',
+                'text-sm font-semibold leading-tight text-left w-full',
                 isRest && 'text-gray-500',
                 !isRest && 'text-gray-900'
               )}
             >
               {session.sessionName}
             </p>
-          )}
 
-          {/* Status indicators in top-right */}
-          {isCompleted && (
-            <div className="text-green-600 text-sm font-bold shrink-0" title="Completed">✓</div>
-          )}
-          {!isCompleted && isSkipped && (
-            <div className="text-gray-500 text-sm shrink-0" title="Skipped">–</div>
-          )}
-        </div>
+            {/* Duration and Distance (only for non-rest days) */}
+            {!isRest && (session.durationMinutes || session.distance) && (
+              <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                {session.durationMinutes && (
+                  <span>{session.durationMinutes} min</span>
+                )}
+                {session.durationMinutes && session.distance && <span>•</span>}
+                {session.distance && (
+                  <span>{session.distance} mi</span>
+                )}
+              </div>
+            )}
 
-        {/* Bottom section: Intensity, duration, and distance */}
-        {hasSession && !isRest && (
-          <div className="w-full flex flex-col gap-1.5">
             {/* Intensity pill */}
-            {!isCompleted && !isSkipped && session.intensityLevel !== undefined && (
+            {!isCompleted && !isSkipped && !isRest && session.intensityLevel !== undefined && (
               <div
                 className={cn(
-                  'px-2 py-1 rounded-full text-[10px] font-medium self-start',
+                  'px-2 py-1 rounded-full text-[10px] font-medium self-start mt-0.5',
                   intensityColors[session.intensityLevel]
                 )}
                 title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
@@ -201,19 +213,6 @@ export default function Calendar() {
                 {intensityLabels[session.intensityLevel]}
               </div>
             )}
-
-            {/* Duration and Distance */}
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              {session.durationMinutes && (
-                <span>{session.durationMinutes} min</span>
-              )}
-              {session.distance && (
-                <>
-                  {session.durationMinutes && <span>•</span>}
-                  <span>{session.distance} mi</span>
-                </>
-              )}
-            </div>
           </div>
         )}
       </Button>
