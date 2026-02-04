@@ -119,27 +119,37 @@ export function getCyclePhaseName(phase: CyclePhase): string {
 }
 
 /**
- * Canonical phase colors shared across Calendar and HormoneCycleChart.
- * badge  = solid hex used for legend dots, badges, and opacity-derived overlays.
- * background = low-opacity tint used for calendar day cells and chart overlays.
- */
-export const CYCLE_PHASE_COLORS: Record<CyclePhase, { badge: string; background: string }> = {
-  [CyclePhase.Menstrual]:  { badge: '#4E6D80', background: 'rgba(78, 109, 128, 0.15)' },
-  [CyclePhase.Follicular]: { badge: '#5A7E5E', background: 'rgba(90, 126, 94, 0.15)' },
-  [CyclePhase.Ovulatory]:  { badge: '#D97706', background: 'rgba(217, 119, 6, 0.15)' },
-  [CyclePhase.Luteal]:     { badge: '#7E6A8A', background: 'rgba(126, 106, 138, 0.15)' },
-}
-
-/**
- * Get cycle phase background color (rgba tint for cell/overlay fills)
+ * Get cycle phase background color class (Tailwind)
  */
 export function getCyclePhaseColor(phase: CyclePhase): string {
-  return CYCLE_PHASE_COLORS[phase]?.background ?? 'rgba(0, 0, 0, 0.05)'
+  switch (phase) {
+    case CyclePhase.Menstrual:
+      return 'bg-red-100'
+    case CyclePhase.Follicular:
+      return 'bg-green-100'
+    case CyclePhase.Ovulatory:
+      return 'bg-orange-100'
+    case CyclePhase.Luteal:
+      return 'bg-blue-100'
+    default:
+      return 'bg-gray-50'
+  }
 }
 
 /**
- * Get cycle phase badge color (solid hex for legend dots / badges)
+ * Get cycle phase badge color (darker for legend/badges)
  */
 export function getCyclePhaseBadgeColor(phase: CyclePhase): string {
-  return CYCLE_PHASE_COLORS[phase]?.badge ?? '#888888'
+  switch (phase) {
+    case CyclePhase.Menstrual:
+      return 'bg-red-500'
+    case CyclePhase.Follicular:
+      return 'bg-green-500'
+    case CyclePhase.Ovulatory:
+      return 'bg-orange-500'
+    case CyclePhase.Luteal:
+      return 'bg-blue-500'
+    default:
+      return 'bg-gray-500'
+  }
 }
