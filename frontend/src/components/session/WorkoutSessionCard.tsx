@@ -539,10 +539,9 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
             cyclePhase: localSession.cyclePhase ?? undefined,
             phaseGuidance: localSession.phaseGuidance ?? undefined,
             workoutTips: localSession.workoutTips || [],
-            intensityLevel: localSession.intensityLevel,
-            hrZones: localSession.hrZones ?? undefined
+            intensityLevel: localSession.intensityLevel
           } as VoiceSessionContextDto}
-          onComplete={(response) => {
+          onComplete={() => {
             setLocalSession({
               ...localSession,
               isCompleted: true

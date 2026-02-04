@@ -84,7 +84,7 @@ export function createAudioProcessor(
     const pcmData = float32ToInt16(inputBuffer)
 
     // Convert to base64
-    const base64 = arrayBufferToBase64(pcmData.buffer)
+    const base64 = arrayBufferToBase64(pcmData.buffer as ArrayBuffer)
 
     onAudioData(base64)
   }
