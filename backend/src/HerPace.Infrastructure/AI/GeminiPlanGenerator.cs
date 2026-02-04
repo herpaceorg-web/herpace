@@ -437,6 +437,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 **Session Details Required**:
 - sessionName: Descriptive name (e.g., ""Easy Recovery Run"", ""Long Run"", ""Interval Training"")
 - warmUp: Brief warm-up instructions (e.g., ""10 min easy jog + dynamic stretches"")
+- recovery: Post-workout cool-down and recovery instructions (e.g., ""10 min easy walk, static stretches focusing on quads/hamstrings/calves, rehydrate within 20 min, refuel with carbs + protein within 30-60 min"")
 - sessionDescription: Detailed workout description (e.g., ""8x400m @ 5K pace with 90s recovery"")
 - hrZones: Heart rate zones if applicable (e.g., ""Zone 2-3"", ""Zone 4-5"")
 - durationMinutes: Estimated workout duration (null for Rest days)
@@ -458,6 +459,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
       ""scheduledDate"": ""2026-01-27"",
       ""workoutType"": 0,
       ""warmUp"": ""5-10 min easy jog"",
+      ""recovery"": ""5 min easy walk cool-down, static stretches (quads, hamstrings, calves), rehydrate and refuel within 30 min"",
       ""sessionDescription"": ""Relaxed pace, focus on form and recovery"",
       ""durationMinutes"": 30,
       ""distance"": 5.0,
@@ -547,6 +549,7 @@ Based on the pattern above, adjust the next {request.SessionsToRecalculate} sess
       ""scheduledDate"": ""{request.RecalculationStartDate:yyyy-MM-dd}"",
       ""workoutType"": 0,
       ""warmUp"": ""5-10 min easy jog"",
+      ""recovery"": ""5 min easy walk cool-down, static stretches (quads, hamstrings, calves), rehydrate and refuel within 30 min"",
       ""sessionDescription"": ""Adjusted based on recent performance"",
       ""durationMinutes"": 30,
       ""distance"": 5.0,

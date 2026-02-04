@@ -123,6 +123,8 @@ export interface SessionDetailDto {
   sessionName: string
   scheduledDate: string
   workoutType: WorkoutType
+  warmUp?: string
+  recovery?: string
   distance?: number
   durationMinutes?: number
   intensityLevel: IntensityLevel
