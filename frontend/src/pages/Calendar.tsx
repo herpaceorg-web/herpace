@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import { CyclePhase, CycleRegularity, WorkoutType } from '@/types/api'
-import type { PlanDetailResponse, ProfileResponse, SessionSummary } from '@/types/api'
+import type { PlanDetailResponse, ProfileResponse, SessionSummary, SessionDetailDto } from '@/types/api'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { CalendarDay } from '@/components/calendar/CalendarDay'
 import { CyclePhaseLegend } from '@/components/calendar/CyclePhaseLegend'
+import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -22,6 +23,9 @@ export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [planStartDate, setPlanStartDate] = useState<Date | null>(null)
   const [planEndDate, setPlanEndDate] = useState<Date | null>(null)
+  const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null)
+  const [weekSessions, setWeekSessions] = useState<SessionDetailDto[]>([])
+  const [isLoadingWeek, setIsLoadingWeek] = useState(false)
 
   useEffect(() => {
     loadCalendarData()
@@ -102,6 +106,65 @@ export default function Calendar() {
       newDate.setMonth(newDate.getMonth() + 1)
       return newDate
     })
+  }
+
+  // Get the Sunday of the week for a given date
+  const getWeekStart = (date: Date): Date => {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = day // Sunday = 0, so diff to Sunday is just the day value
+    d.setDate(d.getDate() - diff)
+    d.setHours(0, 0, 0, 0)
+    return d
+  }
+
+  // Get the Saturday of the week for a given date
+  const getWeekEnd = (date: Date): Date => {
+    const weekStart = getWeekStart(date)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+    weekEnd.setHours(23, 59, 59, 999)
+    return weekEnd
+  }
+
+  // Handle clicking a calendar day
+  const handleDayClick = async (date: Date) => {
+    const weekStart = getWeekStart(date)
+    setSelectedWeekStart(weekStart)
+    setIsLoadingWeek(true)
+
+    try {
+      // Get all session IDs for the week
+      const sessionsInWeek: string[] = []
+
+      // Iterate through the week (7 days) and collect session IDs
+      for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(weekStart)
+        currentDate.setDate(weekStart.getDate() + i)
+        const dateKey = formatDateKey(currentDate)
+        const session = sessionsByDate.get(dateKey)
+        if (session) {
+          sessionsInWeek.push(session.id)
+        }
+      }
+
+      // Fetch detailed session data for all sessions in the week
+      const detailedSessions = await Promise.all(
+        sessionsInWeek.map(id => api.get<SessionDetailDto>(`/api/sessions/${id}`))
+      )
+
+      // Sort by scheduled date
+      detailedSessions.sort((a, b) =>
+        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+      )
+
+      setWeekSessions(detailedSessions)
+    } catch (error) {
+      console.error('Failed to load week sessions:', error)
+      setWeekSessions([])
+    } finally {
+      setIsLoadingWeek(false)
+    }
   }
 
   // Check if navigation buttons should be disabled
@@ -263,10 +326,53 @@ export default function Calendar() {
                   cyclePhase={cyclePhase}
                   isRest={session?.workoutType === WorkoutType.Rest}
                   zone={session?.cyclePhase !== undefined ? `Zone ${session.cyclePhase}` : undefined}
+                  onClick={() => handleDayClick(date)}
                 />
               )
             })}
           </div>
+
+          {/* Weekly Sessions Display */}
+          {selectedWeekStart && (
+            <div className="mt-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-petrona text-foreground">
+                  Week of {selectedWeekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedWeekStart(null)
+                    setWeekSessions([])
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+
+              {isLoadingWeek ? (
+                <div className="space-y-4">
+                  <div className="h-48 bg-muted animate-pulse rounded-lg"></div>
+                  <div className="h-48 bg-muted animate-pulse rounded-lg"></div>
+                </div>
+              ) : weekSessions.length > 0 ? (
+                <div className="space-y-6">
+                  {weekSessions.map((session) => (
+                    <WorkoutSessionCard
+                      key={session.id}
+                      session={session}
+                      onSessionUpdated={loadCalendarData}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No training sessions scheduled for this week.
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
   )
