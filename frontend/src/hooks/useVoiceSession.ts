@@ -148,8 +148,31 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
 
       ws.onopen = () => {
         console.log('WebSocket connected to Gemini Live API')
-        // The setup is done server-side via ephemeral token constraints
-        // Just wait for setupComplete message
+
+        // Send setup message with model and system instruction
+        const setupMessage = {
+          setup: {
+            model: tokenResponse.model || 'models/gemini-2.0-flash-live-001',
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: 'Aoede'
+                  }
+                }
+              }
+            },
+            ...(tokenResponse.systemInstruction && {
+              systemInstruction: {
+                parts: [{ text: tokenResponse.systemInstruction }]
+              }
+            })
+          }
+        }
+
+        console.log('Sending setup message:', setupMessage.setup.model)
+        ws.send(JSON.stringify(setupMessage))
       }
 
       ws.onmessage = handleMessage

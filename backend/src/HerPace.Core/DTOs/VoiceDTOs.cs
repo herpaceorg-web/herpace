@@ -20,7 +20,7 @@ public class VoiceSessionTokenRequest
 public class VoiceSessionTokenResponse
 {
     /// <summary>
-    /// The ephemeral token for authenticating with Gemini Live API.
+    /// The token for authenticating with Gemini Live API.
     /// </summary>
     public string Token { get; set; } = string.Empty;
 
@@ -38,6 +38,16 @@ public class VoiceSessionTokenResponse
     /// Context about the training session for the voice interaction.
     /// </summary>
     public VoiceSessionContextDto? SessionContext { get; set; }
+
+    /// <summary>
+    /// The system instruction to include in the WebSocket setup message.
+    /// </summary>
+    public string? SystemInstruction { get; set; }
+
+    /// <summary>
+    /// The model to use for the Live API session.
+    /// </summary>
+    public string? Model { get; set; }
 }
 
 /// <summary>
