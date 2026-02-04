@@ -10,7 +10,7 @@ import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard';
 import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 // Mock training calendar component using CalendarDay components
 const TrainingCalendar = ({
@@ -28,6 +28,7 @@ const TrainingCalendar = ({
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date | null>(null);
   const [weekSessions, setWeekSessions] = useState<SessionDetailDto[]>([]);
   const [isLoadingWeek, setIsLoadingWeek] = useState(false);
+  const weekSectionsRef = useRef<HTMLDivElement>(null);
 
   const planStartDate = new Date(plan.startDate);
   const planEndDate = new Date(plan.raceDate);
@@ -136,6 +137,11 @@ const TrainingCalendar = ({
 
       setWeekSessions(sessionsInWeek);
       setIsLoadingWeek(false);
+
+      // Scroll to weekly sessions section after rendering
+      setTimeout(() => {
+        weekSectionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }, 500);
   };
 
@@ -285,7 +291,7 @@ const TrainingCalendar = ({
 
           {/* Weekly Sessions Display */}
           {selectedWeekStart && (
-            <div className="mt-8 space-y-4">
+            <div ref={weekSectionsRef} className="mt-8 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-petrona text-foreground">
                   Week of {selectedWeekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
