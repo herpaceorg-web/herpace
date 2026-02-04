@@ -159,27 +159,35 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
     ? `Menstruation Day ${localSession.menstruationDay}`
     : null
 
-  // Combine workout tips with legacy cycle phase tips
-  const allTips = React.useMemo(() => {
-    const tips: string[] = []
+  // Get phase guidance from session (brief cycle-specific tip from Gemini)
+  const phaseGuidance = isSessionMode ? localSession?.phaseGuidance : null
 
-    // Add workout tips from session
+  // Get workout tips from session (3 AI-generated tips)
+  const workoutTips = React.useMemo(() => {
     if (isSessionMode && localSession?.workoutTips) {
-      tips.push(...localSession.workoutTips)
+      return localSession.workoutTips
     }
+    return []
+  }, [isSessionMode, localSession])
 
-    // Add cycle phase tips if available and not already in workout tips
-    if (props.cyclePhaseTips && !isSessionMode) {
+  // Get cycle wellness tips (nutrition, rest, etc.) - only when passed via props
+  const cycleWellnessTips = React.useMemo(() => {
+    const tips: string[] = []
+    if (props.cyclePhaseTips) {
       if (props.cyclePhaseTips.nutritionTips.length > 0) {
-        tips.push(...props.cyclePhaseTips.nutritionTips)
+        tips.push(...props.cyclePhaseTips.nutritionTips.slice(0, 1)) // Take first nutrition tip
       }
       if (props.cyclePhaseTips.restTips.length > 0) {
-        tips.push(...props.cyclePhaseTips.restTips)
+        tips.push(...props.cyclePhaseTips.restTips.slice(0, 1)) // Take first rest tip
       }
     }
-
     return tips
-  }, [isSessionMode, localSession, props.cyclePhaseTips])
+  }, [props.cyclePhaseTips])
+
+  // Combined tips for display (workout tips + cycle wellness tips)
+  const allTips = React.useMemo(() => {
+    return [...workoutTips, ...cycleWellnessTips]
+  }, [workoutTips, cycleWellnessTips])
 
   return (
     <div className="w-full max-w-[760px]">
@@ -337,6 +345,15 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
             <TabsContent value="session" className="mt-0">
               <div className="bg-[#f3f0e7] rounded-lg p-4">
+                {/* Show phase guidance insight if available */}
+                {phaseGuidance && (
+                  <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm font-medium text-purple-700">
+                      💡 {phaseGuidance}
+                    </p>
+                  </div>
+                )}
+
                 {/* Show workout tips if available */}
                 {allTips.length > 0 ? (
                   <div className="space-y-4">

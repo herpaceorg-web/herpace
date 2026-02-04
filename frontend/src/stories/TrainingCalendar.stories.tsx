@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BrowserRouter } from 'react-router-dom';
 import { CyclePhase, CycleRegularity, IntensityLevel, WorkoutType, PlanStatus } from '@/types/api';
 import type { PlanDetailResponse, ProfileResponse, SessionSummary } from '@/types/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDay } from '@/components/calendar/CalendarDay';
 import { CyclePhaseLegend } from '@/components/calendar/CyclePhaseLegend';

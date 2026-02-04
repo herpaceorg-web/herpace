@@ -127,6 +127,7 @@ export interface SessionDetailDto {
   durationMinutes?: number
   intensityLevel: IntensityLevel
   cyclePhase?: CyclePhase
+  phaseGuidance?: string
   sessionDescription?: string
   sessionNumberInPhase?: number
   totalSessionsInPhase?: number

@@ -202,6 +202,7 @@ export const MenstrualPhase: Story = {
 };
 
 export const CalendarWeekView: Story = {
+  args: {},
   render: () => {
     const weekSessions = [
       {
@@ -279,6 +280,7 @@ export const CalendarWeekView: Story = {
 };
 
 export const UseCases: Story = {
+  args: {},
   render: () => (
     <div className="p-8 max-w-6xl mx-auto">
       <div className="mb-8">
