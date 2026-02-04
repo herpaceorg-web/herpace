@@ -415,7 +415,7 @@ export const HormoneCycleChart: React.FC = () => {
               Select the date your period started. You can also select a range if it has already ended.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 flex flex-col items-center">
             <Calendar
               mode="range"
               selected={periodRange}
@@ -424,7 +424,7 @@ export const HormoneCycleChart: React.FC = () => {
               className="rounded-md border"
             />
             {periodRange?.from && (
-              <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+              <div className="mt-4 p-3 bg-muted rounded-lg text-sm w-full">
                 <strong>Selected Period:</strong>{' '}
                 {periodRange.from.toLocaleDateString()}
                 {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (
