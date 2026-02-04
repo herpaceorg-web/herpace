@@ -3,14 +3,9 @@ steps:
     args:
       - 'build'
       - '--build-arg'
-      - 'VITE_API_BASE_URL=${_VITE_API_BASE_URL}'
+      - 'VITE_API_BASE_URL=https://herpace-api-p7ysuzeitq-uc.a.run.app'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/herpace-repo/herpace-frontend:latest'
+      - 'us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest'
       - '.'
-
 images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/herpace-repo/herpace-frontend:latest'
-
-substitutions:
-  _VITE_API_BASE_URL: 'https://herpace-api-p7ysuzeitq-uc.a.run.app'
-  _REGION: 'us-central1'
+  - 'us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest'

@@ -188,7 +188,7 @@ export default function Calendar() {
   })
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <Card>
         <CardHeader>
           <div className="space-y-4">
