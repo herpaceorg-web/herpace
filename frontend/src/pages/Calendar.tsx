@@ -153,37 +153,47 @@ export default function Calendar() {
         ref={ref}
         variant="ghost"
         className={cn(
-          'h-auto w-full min-h-20 p-2 flex flex-col items-start justify-start rounded-md relative',
+          'h-auto w-full min-h-24 p-3 flex flex-col items-start justify-start rounded-none border border-border relative',
           bgClass,
           modifiers.outside && 'opacity-40',
-          modifiers.today && 'ring-2 ring-primary',
+          modifiers.today && 'ring-2 ring-primary ring-inset',
           'hover:opacity-90'
         )}
         {...props}
       >
-        {/* Day number */}
-        <div className="w-full flex justify-between items-start mb-2">
-          <span className="text-sm font-medium">{day.date.getDate()}</span>
-        </div>
+        {/* Top row: Day number and session name aligned */}
+        <div className="w-full flex items-center justify-between gap-2 mb-2">
+          <span className="text-sm font-medium shrink-0">{day.date.getDate()}</span>
 
-        {/* Session info */}
-        {hasSession && (
-          <div className="flex-1 flex flex-col items-start justify-start w-full gap-1.5">
+          {hasSession && (
             <p
               className={cn(
-                'text-xs font-semibold leading-tight text-left line-clamp-2',
+                'text-sm font-semibold leading-tight text-right flex-1 line-clamp-1',
                 isRest && 'text-gray-500',
                 !isRest && 'text-gray-900'
               )}
             >
               {session.sessionName}
             </p>
+          )}
 
-            {/* Intensity pill (under workout title) */}
-            {!isCompleted && !isSkipped && !isRest && session.intensityLevel !== undefined && (
+          {/* Status indicators in top-right */}
+          {isCompleted && (
+            <div className="text-green-600 text-sm font-bold shrink-0" title="Completed">✓</div>
+          )}
+          {!isCompleted && isSkipped && (
+            <div className="text-gray-500 text-sm shrink-0" title="Skipped">–</div>
+          )}
+        </div>
+
+        {/* Bottom section: Intensity, duration, and distance */}
+        {hasSession && !isRest && (
+          <div className="w-full flex flex-col gap-1.5">
+            {/* Intensity pill */}
+            {!isCompleted && !isSkipped && session.intensityLevel !== undefined && (
               <div
                 className={cn(
-                  'px-2 py-0.5 rounded-full text-[10px] font-medium',
+                  'px-2 py-1 rounded-full text-[10px] font-medium self-start',
                   intensityColors[session.intensityLevel]
                 )}
                 title={`Intensity: ${intensityLabels[session.intensityLevel]}`}
@@ -192,20 +202,19 @@ export default function Calendar() {
               </div>
             )}
 
-            {session.durationMinutes && !isRest && (
-              <p className="text-[10px] text-muted-foreground">
-                {session.durationMinutes} min
-              </p>
-            )}
+            {/* Duration and Distance */}
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              {session.durationMinutes && (
+                <span>{session.durationMinutes} min</span>
+              )}
+              {session.distance && (
+                <>
+                  {session.durationMinutes && <span>•</span>}
+                  <span>{session.distance} mi</span>
+                </>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* Status indicators (bottom-right corner) */}
-        {isCompleted && (
-          <div className="absolute bottom-1 right-1 text-green-600 text-xs font-bold" title="Completed">✓</div>
-        )}
-        {!isCompleted && isSkipped && (
-          <div className="absolute bottom-1 right-1 text-gray-500 text-xs" title="Skipped">–</div>
         )}
       </Button>
     )
