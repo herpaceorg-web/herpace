@@ -22,7 +22,7 @@ import type { ProfileFormValues, RaceFormValues } from '@/schemas/onboarding'
 import type { OnboardingStep } from '@/types/onboarding'
 
 const STEPS = [
-  { number: 1, title: 'Profile', description: 'Your info' },
+  { number: 1, title: 'Athlete Profile', description: 'Your info' },
   { number: 2, title: 'Race Goal', description: 'Target race' },
   { number: 3, title: 'Generate Plan', description: 'AI training' }
 ]

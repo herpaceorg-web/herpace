@@ -88,56 +88,6 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         )}
       </div>
 
-      {/* Fitness Level */}
-      <div className="space-y-2">
-        <Label htmlFor="fitnessLevel">Fitness Level *</Label>
-        <Select
-          onValueChange={(value: 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite') => setValue('fitnessLevel', value)}
-          defaultValue={defaultValues?.fitnessLevel}
-          disabled={isSubmitting}
-        >
-          <SelectTrigger id="fitnessLevel">
-            <SelectValue placeholder="Select your fitness level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Beginner">Beginner - New to running</SelectItem>
-            <SelectItem value="Intermediate">Intermediate - Regular runner</SelectItem>
-            <SelectItem value="Advanced">Advanced - Experienced runner</SelectItem>
-            <SelectItem value="Elite">Elite - Competitive athlete</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.fitnessLevel && (
-          <p className="text-sm text-destructive">{errors.fitnessLevel.message}</p>
-        )}
-      </div>
-
-      {/* Distance Unit */}
-      <div className="space-y-2">
-        <Label>Distance Unit *</Label>
-        <RadioGroup
-          onValueChange={(value: 'Kilometers' | 'Miles') => setValue('distanceUnit', value)}
-          defaultValue={defaultValues?.distanceUnit || 'Miles'}
-          disabled={isSubmitting}
-          className="flex gap-4"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Miles" id="miles" />
-            <Label htmlFor="miles" className="font-normal cursor-pointer">
-              Miles
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="Kilometers" id="kilometers" />
-            <Label htmlFor="kilometers" className="font-normal cursor-pointer">
-              Kilometers
-            </Label>
-          </div>
-        </RadioGroup>
-        {errors.distanceUnit && (
-          <p className="text-sm text-destructive">{errors.distanceUnit.message}</p>
-        )}
-      </div>
-
       {/* Date of Birth (Optional) */}
       <div className="space-y-2">
         <Label>Date of Birth (Optional)</Label>
@@ -171,9 +121,32 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         </Popover>
       </div>
 
-      {/* Typical Weekly Mileage (Optional) */}
+      {/* Running Experience */}
       <div className="space-y-2">
-        <Label htmlFor="weeklyMileage">Typical Weekly Mileage (Optional)</Label>
+        <Label htmlFor="fitnessLevel">Running Experience *</Label>
+        <Select
+          onValueChange={(value: 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite') => setValue('fitnessLevel', value)}
+          defaultValue={defaultValues?.fitnessLevel}
+          disabled={isSubmitting}
+        >
+          <SelectTrigger id="fitnessLevel">
+            <SelectValue placeholder="Select your running experience" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Beginner">Beginner - New to running</SelectItem>
+            <SelectItem value="Intermediate">Intermediate - Regular runner</SelectItem>
+            <SelectItem value="Advanced">Advanced - Experienced runner</SelectItem>
+            <SelectItem value="Elite">Elite - Competitive athlete</SelectItem>
+          </SelectContent>
+        </Select>
+        {errors.fitnessLevel && (
+          <p className="text-sm text-destructive">{errors.fitnessLevel.message}</p>
+        )}
+      </div>
+
+      {/* Current Weekly Mileage (Optional) */}
+      <div className="space-y-2">
+        <Label htmlFor="weeklyMileage">Current Weekly Mileage (Optional)</Label>
         <Input
           id="weeklyMileage"
           type="number"
@@ -184,6 +157,33 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         />
         {errors.typicalWeeklyMileage && (
           <p className="text-sm text-destructive">{errors.typicalWeeklyMileage.message}</p>
+        )}
+      </div>
+
+      {/* Preferred Distance Unit */}
+      <div className="space-y-2">
+        <Label>Preferred Distance Unit *</Label>
+        <RadioGroup
+          onValueChange={(value: 'Kilometers' | 'Miles') => setValue('distanceUnit', value)}
+          defaultValue={defaultValues?.distanceUnit || 'Miles'}
+          disabled={isSubmitting}
+          className="flex gap-4"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="Miles" id="miles" />
+            <Label htmlFor="miles" className="font-normal cursor-pointer">
+              Miles
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="Kilometers" id="kilometers" />
+            <Label htmlFor="kilometers" className="font-normal cursor-pointer">
+              Kilometers
+            </Label>
+          </div>
+        </RadioGroup>
+        {errors.distanceUnit && (
+          <p className="text-sm text-destructive">{errors.distanceUnit.message}</p>
         )}
       </div>
 
