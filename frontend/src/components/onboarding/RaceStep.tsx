@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
@@ -46,7 +47,6 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
 
   const raceDate = watch('raceDate')
   const trainingStartDate = watch('trainingStartDate')
-  const distanceType = watch('distanceType')
 
   // Update distance when distance type changes
   const handleDistanceTypeChange = (value: 'FiveK' | 'TenK' | 'HalfMarathon' | 'Marathon' | 'Custom') => {
@@ -59,6 +59,12 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
 
   return (
     <form onSubmit={handleSubmit(onComplete)} className="space-y-6">
+      {/* Your Race Section */}
+      <div>
+        <h3 className="font-petrona text-2xl font-normal text-foreground mb-1">Your Race</h3>
+        <p className="text-sm font-normal text-[#696863] mb-4">Tell us about your race</p>
+      </div>
+
       {/* Race Name */}
       <div className="space-y-2">
         <Label htmlFor="raceName">Race Name *</Label>
@@ -110,6 +116,14 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
         {errors.raceDate && (
           <p className="text-sm text-destructive">{errors.raceDate.message}</p>
         )}
+      </div>
+
+      <Separator />
+
+      {/* Your Training Plan Section */}
+      <div>
+        <h3 className="font-petrona text-2xl font-normal text-foreground mb-1">Your Training Plan</h3>
+        <p className="text-sm font-normal text-[#696863] mb-4">Customize your training</p>
       </div>
 
       {/* Training Start Date */}
@@ -197,6 +211,14 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
         {errors.goalTime && (
           <p className="text-sm text-destructive">{errors.goalTime.message}</p>
         )}
+      </div>
+
+      <Separator />
+
+      {/* Your Training Sessions Section */}
+      <div>
+        <h3 className="font-petrona text-2xl font-normal text-foreground mb-1">Your Training Sessions</h3>
+        <p className="text-sm font-normal text-[#696863] mb-4">Set your goals</p>
       </div>
 
       {/* Race Completion Goal (Optional) */}
