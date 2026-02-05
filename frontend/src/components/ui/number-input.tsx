@@ -39,7 +39,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     return (
       <div
         className={cn(
-          'flex h-9 w-full items-center rounded-lg border border-input bg-card',
+          'flex h-10 w-full items-center rounded-md border border-input bg-background',
           className
         )}
       >
@@ -69,7 +69,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             type="button"
             variant="ghost"
             size="icon"
-            className="h-full rounded-none rounded-r-lg border-l border-input px-2 hover:bg-accent"
+            className="h-full rounded-none rounded-r-md border-l border-input px-2 hover:bg-accent"
             onClick={handleIncrement}
             disabled={disabled || value >= max}
             tabIndex={-1}

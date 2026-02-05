@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
 import { Stepper } from '@/components/onboarding/Stepper'
 import { ProfileStep } from '@/components/onboarding/ProfileStep'
 import { RaceStep } from '@/components/onboarding/RaceStep'
@@ -22,9 +23,9 @@ import type { ProfileFormValues, RaceFormValues } from '@/schemas/onboarding'
 import type { OnboardingStep } from '@/types/onboarding'
 
 const STEPS = [
-  { number: 1, title: 'Athlete Profile', description: 'Your info' },
-  { number: 2, title: 'Race Goal', description: 'Target race' },
-  { number: 3, title: 'Generate Plan', description: 'AI training' }
+  { number: 1, title: 'Runner Profile', description: 'About you' },
+  { number: 2, title: 'Your Cycle', description: 'Sync with training' },
+  { number: 3, title: 'Training Plan', description: 'Customize for you' }
 ]
 
 export function Onboarding() {
@@ -33,7 +34,21 @@ export function Onboarding() {
   const [raceData, setRaceData] = useState<RaceFormValues | null>(null)
   const [raceId, setRaceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string>('')
+  const [nameDisplayState, setNameDisplayState] = useState<'default' | 'fading-out' | 'showing-name'>('default')
   const navigate = useNavigate()
+
+  // Handle name transition animation
+  useEffect(() => {
+    if (userName && nameDisplayState === 'default') {
+      // Start fade-out of "Runner"
+      setNameDisplayState('fading-out')
+      // After fade-out completes, show the actual name
+      setTimeout(() => {
+        setNameDisplayState('showing-name')
+      }, 200)
+    }
+  }, [userName, nameDisplayState])
 
   // Helper function to format time strings to TimeSpan format (HH:MM:SS)
   const formatTimeSpan = (time: string | undefined): string | undefined => {
@@ -182,9 +197,20 @@ export function Onboarding() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-3xl">Welcome to HerPace</CardTitle>
-          <CardDescription>
+        <CardHeader className="space-y-1">
+          <CardTitle className="font-petrona text-[32px] font-normal text-foreground">
+            Hello,{' '}
+            {nameDisplayState === 'default' && (
+              <span className="inline-block">Runner</span>
+            )}
+            {nameDisplayState === 'fading-out' && (
+              <span className="inline-block animate-fade-out">Runner</span>
+            )}
+            {nameDisplayState === 'showing-name' && (
+              <span className="inline-block animate-scale-in">{userName}</span>
+            )}
+          </CardTitle>
+          <CardDescription className="text-sm font-normal text-[#696863]">
             Let's set up your personalized training plan in just a few steps
           </CardDescription>
         </CardHeader>
@@ -205,6 +231,7 @@ export function Onboarding() {
             {currentStep === 1 && (
               <ProfileStep
                 onComplete={handleProfileComplete}
+                onNameChange={setUserName}
                 defaultValues={profileData || undefined}
               />
             )}

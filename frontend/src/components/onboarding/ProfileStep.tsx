@@ -17,10 +17,11 @@ import { cn } from '@/lib/utils'
 
 interface ProfileStepProps {
   onComplete: (data: ProfileFormValues) => void
+  onNameChange?: (name: string) => void
   defaultValues?: Partial<ProfileFormValues>
 }
 
-export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
+export function ProfileStep({ onComplete, onNameChange, defaultValues }: ProfileStepProps) {
   const today = new Date()
   const defaultBirthDate = new Date(
     today.getFullYear() - 30,
@@ -52,6 +53,13 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
   const halfMarathonPR = watch('halfMarathonPR')
   const marathonPR = watch('marathonPR')
 
+  // Notify parent when name input loses focus
+  const handleNameBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (onNameChange && e.target.value) {
+      onNameChange(e.target.value)
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit(onComplete)} className="space-y-6">
       {/* The Basics Section */}
@@ -62,10 +70,11 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-sm font-normal">Name *</Label>
+        <Label htmlFor="name" className="text-sm font-normal text-foreground">Name *</Label>
         <Input
           id="name"
           {...register('name')}
+          onBlur={handleNameBlur}
           placeholder="Enter your name"
           disabled={isSubmitting}
         />
@@ -76,7 +85,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Date of Birth (Optional) */}
       <div className="space-y-2">
-        <Label className="text-sm font-normal">Date of Birth (Optional)</Label>
+        <Label className="text-sm font-normal text-foreground">Date of Birth (Optional)</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -119,7 +128,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Running Experience */}
       <div className="space-y-2">
-        <Label htmlFor="fitnessLevel" className="text-sm font-normal">Running Experience *</Label>
+        <Label htmlFor="fitnessLevel" className="text-sm font-normal text-foreground">Running Experience *</Label>
         <Select
           onValueChange={(value: 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite') => setValue('fitnessLevel', value)}
           defaultValue={defaultValues?.fitnessLevel}
@@ -142,7 +151,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Current Weekly Mileage (Optional) */}
       <div className="space-y-2">
-        <Label htmlFor="weeklyMileage" className="text-sm font-normal">Current Weekly Mileage (Optional)</Label>
+        <Label htmlFor="weeklyMileage" className="text-sm font-normal text-foreground">Current Weekly Mileage (Optional)</Label>
         <NumberInput
           id="weeklyMileage"
           value={typicalWeeklyMileage || 0}
@@ -160,7 +169,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Preferred Distance Unit */}
       <div className="space-y-2">
-        <Label className="text-sm font-normal">Preferred Distance Unit *</Label>
+        <Label className="text-sm font-normal text-foreground">Preferred Distance Unit *</Label>
         <RadioGroup
           onValueChange={(value: 'Kilometers' | 'Miles') => setValue('distanceUnit', value)}
           defaultValue={defaultValues?.distanceUnit || 'Miles'}
@@ -197,7 +206,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 5K PR */}
           <div className="space-y-2">
-            <Label htmlFor="fiveKPR" className="text-sm font-normal">5K PR</Label>
+            <Label htmlFor="fiveKPR" className="text-sm font-normal text-foreground">5K PR</Label>
             <DurationInput
               id="fiveKPR"
               value={fiveKPR}
@@ -211,7 +220,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
           {/* 10K PR */}
           <div className="space-y-2">
-            <Label htmlFor="tenKPR" className="text-sm font-normal">10K PR</Label>
+            <Label htmlFor="tenKPR" className="text-sm font-normal text-foreground">10K PR</Label>
             <DurationInput
               id="tenKPR"
               value={tenKPR}
@@ -225,7 +234,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
           {/* Half Marathon PR */}
           <div className="space-y-2">
-            <Label htmlFor="halfMarathonPR" className="text-sm font-normal">Half Marathon PR</Label>
+            <Label htmlFor="halfMarathonPR" className="text-sm font-normal text-foreground">Half Marathon PR</Label>
             <DurationInput
               id="halfMarathonPR"
               value={halfMarathonPR}
@@ -239,7 +248,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
           {/* Marathon PR */}
           <div className="space-y-2">
-            <Label htmlFor="marathonPR" className="text-sm font-normal">Marathon PR</Label>
+            <Label htmlFor="marathonPR" className="text-sm font-normal text-foreground">Marathon PR</Label>
             <DurationInput
               id="marathonPR"
               value={marathonPR}

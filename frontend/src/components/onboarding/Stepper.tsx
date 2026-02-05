@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -14,37 +15,59 @@ interface StepperProps {
 
 export function Stepper({ currentStep, steps }: StepperProps) {
   return (
-    <div className="w-full py-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full p-6">
+      <div className="w-2/3 mx-auto">
+        {/* Row 1: Circles and connector lines */}
+        <div className="flex items-center">
         {steps.map((step, index) => {
           const isCompleted = currentStep > step.number
           const isActive = currentStep === step.number
           const isUpcoming = currentStep < step.number
 
           return (
-            <div key={step.number} className="flex-1 flex items-center">
-              {/* Step circle and content */}
-              <div className="flex flex-col items-center flex-1">
-                <div className="relative flex items-center justify-center">
-                  {/* Circle */}
-                  <div
-                    className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
-                      isCompleted && 'bg-primary text-primary-foreground',
-                      isActive && 'bg-primary text-primary-foreground ring-4 ring-primary/20',
-                      isUpcoming && 'bg-muted text-muted-foreground border-2 border-border'
-                    )}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      <span>{step.number}</span>
-                    )}
-                  </div>
-                </div>
+            <React.Fragment key={step.number}>
+              {/* Step circle */}
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                  isCompleted && 'bg-primary text-primary-foreground',
+                  isActive && 'bg-primary text-primary-foreground ring-4 ring-primary/20',
+                  isUpcoming && 'bg-muted text-muted-foreground border-2 border-border'
+                )}
+              >
+                {isCompleted ? (
+                  <Check className="w-5 h-5" />
+                ) : (
+                  <span>{step.number}</span>
+                )}
+              </div>
 
-                {/* Step title and description */}
-                <div className="mt-2 text-center">
+              {/* Connector line */}
+              {index < steps.length - 1 && (
+                <div
+                  className={cn(
+                    'h-0.5 flex-1 mx-4 transition-colors',
+                    isCompleted ? 'bg-primary' : 'bg-border'
+                  )}
+                />
+              )}
+            </React.Fragment>
+          )
+        })}
+      </div>
+
+      {/* Row 2: Step titles and descriptions */}
+      <div className="flex items-start mt-2">
+        {steps.map((step, index) => {
+          const isCompleted = currentStep > step.number
+          const isActive = currentStep === step.number
+          const isUpcoming = currentStep < step.number
+
+          return (
+            <React.Fragment key={step.number}>
+              {/* Text container matching circle position */}
+              <div className="flex justify-center" style={{ width: '40px' }}>
+                <div className="text-center whitespace-nowrap">
                   <div
                     className={cn(
                       'text-sm font-medium',
@@ -62,19 +85,12 @@ export function Stepper({ currentStep, steps }: StepperProps) {
                 </div>
               </div>
 
-              {/* Connector line (not shown after last step) */}
-              {index < steps.length - 1 && (
-                <div
-                  className={cn(
-                    'h-0.5 flex-1 mx-2 transition-colors',
-                    isCompleted ? 'bg-primary' : 'bg-border'
-                  )}
-                  style={{ marginTop: '-2.5rem' }}
-                />
-              )}
-            </div>
+              {/* Spacer matching connector line */}
+              {index < steps.length - 1 && <div className="flex-1 mx-4" />}
+            </React.Fragment>
           )
         })}
+      </div>
       </div>
     </div>
   )
