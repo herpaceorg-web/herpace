@@ -136,7 +136,7 @@ public class CycleTrackingService : ICycleTrackingService
             }
 
             // Update runner's last period start
-            runner.LastPeriodStart = periodStartDate;
+            runner.LastPeriodStart = DateTime.SpecifyKind(periodStartDate.Value, DateTimeKind.Utc);
 
             // Optionally adjust cycle length based on actual cycle
             if (previousLog?.ActualPeriodStart != null && actualCycleLength != runner.CycleLength)
@@ -222,8 +222,8 @@ public class CycleTrackingService : ICycleTrackingService
         {
             Id = Guid.NewGuid(),
             RunnerId = runnerId,
-            ActualPeriodStart = periodStartDate,
-            ActualPeriodEnd = periodEndDate,
+            ActualPeriodStart = periodStartDate.HasValue ? DateTime.SpecifyKind(periodStartDate.Value, DateTimeKind.Utc) : null,
+            ActualPeriodEnd = periodEndDate.HasValue ? DateTime.SpecifyKind(periodEndDate.Value, DateTimeKind.Utc) : null,
             ReportedAt = DateTime.UtcNow,
             PredictedPeriodStart = predictedPeriodStart,
             DaysDifference = daysDifference,
