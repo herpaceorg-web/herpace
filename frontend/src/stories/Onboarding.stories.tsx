@@ -54,7 +54,7 @@ export const RaceAndPlan: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Step 3: Race & Plan - Entering race details and generating personalized training plan.',
+        story: 'Step 3: Race & Plan - Entering race details and generating personalized training plan. Note: To see plan length recommendations, complete Step 1 first.',
       },
     },
   },

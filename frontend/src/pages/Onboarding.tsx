@@ -321,6 +321,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
                     onComplete={handleRaceComplete}
                     onBack={handleBackFromRace}
                     defaultValues={raceData || undefined}
+                    fitnessLevel={profileData?.fitnessLevel}
                   />
                 )}
               </div>
