@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HerPace.Core;
 using HerPace.Core.DTOs;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
@@ -233,6 +234,8 @@ public class SessionCompletionService : ISessionCompletionService
             UserNotes = session.UserNotes,
             IsSkipped = session.IsSkipped,
             SkipReason = session.SkipReason,
+            TrainingStage = TrainingStageLibrary.CalculateStage(session.ScheduledDate, session.TrainingPlan.StartDate, session.TrainingPlan.EndDate),
+            TrainingStageInfo = TrainingStageLibrary.GetInfo(TrainingStageLibrary.CalculateStage(session.ScheduledDate, session.TrainingPlan.StartDate, session.TrainingPlan.EndDate)),
             WasModified = session.WasModified,
             IsCompleted = session.CompletedAt.HasValue && !session.IsSkipped
         };

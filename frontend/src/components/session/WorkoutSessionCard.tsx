@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic, TrendingUp } from 'lucide-react'
 import { cn, displayDistance } from '@/lib/utils'
-import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
-import { CyclePhase, WorkoutType } from '@/types/api'
+import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
+import { CyclePhase, WorkoutType, TrainingStage } from '@/types/api'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { TRAINING_STAGES } from '@/lib/trainingStages'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { VoiceModal } from '@/components/voice/VoiceModal'
 import { api } from '@/lib/api-client'
@@ -246,10 +248,20 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
     return [...workoutTips, ...cycleWellnessTips]
   }, [workoutTips, cycleWellnessTips])
 
+  // Training stage info: prefer server-hydrated data, fall back to client-side library
+  const stageInfo: TrainingStageInfoDto | null = React.useMemo(() => {
+    if (!isSessionMode || !localSession) return null
+    if (localSession.trainingStageInfo) return localSession.trainingStageInfo
+    if (localSession.trainingStage !== undefined && localSession.trainingStage !== null) {
+      return TRAINING_STAGES[localSession.trainingStage] ?? null
+    }
+    return null
+  }, [isSessionMode, localSession?.trainingStageInfo, localSession?.trainingStage])
+
   return (
     <div className="w-full max-w-[760px]">
       {/* Phase tracking section */}
-      {(cyclePhases && cyclePhases.length > 0) || menstruationText || progressText ? (
+      {(cyclePhases && cyclePhases.length > 0) || menstruationText || progressText || stageInfo ? (
         <div className="bg-[#fefdfb] border border-[#ebe8e2] rounded-t-lg px-2 pb-3 flex items-center gap-3 flex-wrap mb-[-12px] w-fit">
           {cyclePhases?.map((phase, index) => (
             <React.Fragment key={index}>
@@ -285,6 +297,36 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   {progressText}
                 </p>
               </div>
+            </>
+          )}
+
+          {/* Training stage badge with info popover */}
+          {stageInfo && (
+            <>
+              {((cyclePhases && cyclePhases.length > 0) || menstruationText || progressText) && (
+                <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
+              )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-sm text-[#696863] font-medium cursor-pointer hover:text-[#3d3826] transition-colors">
+                    <TrendingUp className="h-4 w-4" />
+                    <p className="leading-[20px]">{stageInfo.name} Stage</p>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 bg-[#fcf9f3] border-[#ebe8e2]" align="start">
+                  <div className="space-y-2">
+                    <div>
+                      <h4 className="text-sm font-semibold text-[#3d3826]">{stageInfo.name} — {stageInfo.tagline}</h4>
+                      <p className="text-xs text-[#85837d] mt-1 leading-relaxed">{stageInfo.description}</p>
+                    </div>
+                    <div className="border-t border-[#ebe8e2] pt-2 space-y-1.5">
+                      <p className="text-xs text-[#696863]"><span className="font-medium">Focus:</span> {stageInfo.focus}</p>
+                      <p className="text-xs text-[#696863]"><span className="font-medium">What to expect:</span> {stageInfo.whatToExpect}</p>
+                      <p className="text-xs text-[#696863]"><span className="font-medium">Tip:</span> {stageInfo.tip}</p>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </>
           )}
         </div>
