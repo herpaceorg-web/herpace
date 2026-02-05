@@ -170,7 +170,7 @@ public class VoiceSessionService : IVoiceSessionService
         sb.AppendLine();
         sb.AppendLine("1. LOGGING COMPLETION - They've finished their workout and want to record it");
         sb.AppendLine("   - Ask for: actual distance, duration, how they felt (effort 1-10), any notes");
-        sb.AppendLine("   - Confirm details back to them");
+        sb.AppendLine("   - Once you have distance, duration, and effort from the user, call the log_workout_completion tool with those values");
         sb.AppendLine("   - Be encouraging and acknowledge their achievement");
         sb.AppendLine("   - Example: \"Great job finishing your run! How far did you go?\"");
         sb.AppendLine();
