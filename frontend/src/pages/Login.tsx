@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { HormoneWaveBackground } from '@/components/HormoneWaveBackground'
 
 export function Login() {
   const [email, setEmail] = useState('')
@@ -46,14 +47,15 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-3xl">HerPace</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+    <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+      <HormoneWaveBackground opacity={0.3} />
+      <Card className="relative z-10 w-full max-w-md">
+        <CardHeader className="space-y-2">
+          <CardTitle className="font-petrona text-[32px] font-normal text-primary">HerPace</CardTitle>
+          <CardDescription className="text-sm font-normal text-[#696863]">Sign in to your account</CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pb-3">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="error">
@@ -62,7 +64,7 @@ export function Login() {
             )}
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
               </label>
               <Input
@@ -77,7 +79,7 @@ export function Login() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </label>
               <Input
@@ -101,13 +103,18 @@ export function Login() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-primary font-medium hover:underline">
-              Sign up
-            </Link>
-          </p>
+        <div className="relative flex items-center px-6 py-3">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink mx-4 text-sm text-muted-foreground">or</span>
+          <div className="flex-grow border-t border-border"></div>
+        </div>
+
+        <CardFooter className="flex flex-col items-center pt-3">
+          <Link to="/signup" className="w-full">
+            <Button variant="outline" className="w-full">
+              Create an Account
+            </Button>
+          </Link>
         </CardFooter>
       </Card>
     </div>

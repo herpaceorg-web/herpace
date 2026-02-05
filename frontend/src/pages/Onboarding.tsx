@@ -8,6 +8,7 @@ import { RaceStep } from '@/components/onboarding/RaceStep'
 import { GeneratingPlanStep } from '@/components/onboarding/GeneratingPlanStep'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { HormoneWaveBackground } from '@/components/HormoneWaveBackground'
 import {
   FitnessLevel,
   DistanceUnit,
@@ -259,8 +260,9 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+      <HormoneWaveBackground opacity={0.3} />
+      <Card className="relative z-10 w-full max-w-2xl">
         <CardHeader className="space-y-1">
           <CardTitle className="font-petrona text-[32px] font-normal text-foreground">
             Hello,{' '}

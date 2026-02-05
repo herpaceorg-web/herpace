@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Eye, EyeOff } from 'lucide-react'
+import { HormoneWaveBackground } from '@/components/HormoneWaveBackground'
 
 // Validation schema
 const signupSchema = z.object({
@@ -98,20 +99,15 @@ export function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-semibold">
-              H
-            </div>
-            <span className="ml-2 text-sm text-muted-foreground">Her Pace</span>
-          </div>
-          <CardTitle className="text-2xl font-semibold">Sign Up to Her Pace</CardTitle>
-          <CardDescription>Ship Faster and Focus on Growth.</CardDescription>
+    <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+      <HormoneWaveBackground opacity={0.3} />
+      <Card className="relative z-10 w-full max-w-md shadow-md">
+        <CardHeader className="space-y-2">
+          <CardTitle className="font-petrona text-[32px] font-normal text-primary">HerPace</CardTitle>
+          <CardDescription className="text-sm font-normal text-[#696863]">Never miss a training day due to your cycle again</CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pb-3">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {error && (
@@ -166,6 +162,9 @@ export function Signup() {
                         </button>
                       </div>
                     </FormControl>
+                    <p className="text-sm text-muted-foreground mt-1.5">
+                      Must be 8+ characters with uppercase, lowercase, and number
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -207,7 +206,7 @@ export function Signup() {
                 control={form.control}
                 name="agreeToTerms"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
@@ -216,7 +215,7 @@ export function Signup() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm font-normal">
+                      <FormLabel className="text-sm font-normal text-foreground">
                         I agree to{' '}
                         <Link to="/privacy" className="text-primary hover:underline">
                           privacy policy
@@ -237,19 +236,24 @@ export function Signup() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating account...' : 'Sign Up to Her Pace'}
+                {isLoading ? 'Creating account...' : 'Create an Account'}
               </Button>
             </form>
           </Form>
         </CardContent>
 
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link to="/login" className="text-primary font-medium hover:underline">
-              Sign in instead
-            </Link>
-          </p>
+        <div className="relative flex items-center px-6 py-3">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink mx-4 text-sm text-muted-foreground">or</span>
+          <div className="flex-grow border-t border-border"></div>
+        </div>
+
+        <CardFooter className="flex flex-col items-center pt-3">
+          <Link to="/login" className="w-full">
+            <Button variant="outline" className="w-full">
+              Sign In
+            </Button>
+          </Link>
         </CardFooter>
       </Card>
     </div>
