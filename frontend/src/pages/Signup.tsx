@@ -99,7 +99,7 @@ export function Signup() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-white p-4">
       <HormoneWaveBackground opacity={0.3} />
       <Card className="relative z-10 w-full max-w-md shadow-md">
         <CardHeader className="space-y-2">
