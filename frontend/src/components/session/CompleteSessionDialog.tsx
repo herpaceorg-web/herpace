@@ -12,9 +12,10 @@ interface CompleteSessionDialogProps {
   onOpenChange: (open: boolean) => void
   onComplete: (data: CompleteSessionRequest) => Promise<void>
   distanceUnit: 'km' | 'mi'
+  startInLogMode?: boolean
 }
 
-export function CompleteSessionDialog({ session, open, onOpenChange, onComplete, distanceUnit }: CompleteSessionDialogProps) {
+export function CompleteSessionDialog({ session, open, onOpenChange, onComplete, distanceUnit, startInLogMode = false }: CompleteSessionDialogProps) {
   const [actualDistance, setActualDistance] = useState(
     session.distance != null ? displayDistance(session.distance, distanceUnit).toString() : ''
   )
@@ -22,7 +23,7 @@ export function CompleteSessionDialog({ session, open, onOpenChange, onComplete,
   const [rpe, setRpe] = useState('')
   const [userNotes, setUserNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoggingWorkout, setIsLoggingWorkout] = useState(false)
+  const [isLoggingWorkout, setIsLoggingWorkout] = useState(startInLogMode)
 
   const isRestDay = session.workoutType === WorkoutType.Rest
 

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic } from 'lucide-react'
 import { cn, displayDistance } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
-import { CyclePhase } from '@/types/api'
+import { CyclePhase, WorkoutType } from '@/types/api'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { VoiceModal } from '@/components/voice/VoiceModal'
 import { api } from '@/lib/api-client'
@@ -72,6 +72,21 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
   // Determine if we're using session DTO or legacy props
   const isSessionMode = !!props.session
+  const isRestDay = isSessionMode && localSession?.workoutType === WorkoutType.Rest
+
+  // Auto-complete rest days on mount — no action required from the user.
+  // Optimistic: mark completed immediately so the UI never flickers to "pending".
+  useEffect(() => {
+    if (isRestDay && localSession && !localSession.isCompleted && !localSession.isSkipped) {
+      setLocalSession(prev => prev ? { ...prev, isCompleted: true } : prev)
+      api.put<Record<string, never>, SessionCompletionResponse>(
+        `/api/sessions/${localSession.id}/complete`,
+        {}
+      ).catch((err: unknown) => {
+        console.error('Failed to auto-complete rest day:', err)
+      })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Extract values from either session or legacy props
   const sessionName = isSessionMode ? localSession!.sessionName : props.sessionName!
@@ -524,29 +539,40 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
 
               {/* Action buttons */}
-              {!localSession.isCompleted && !localSession.isSkipped && (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)}>
-                    Complete Workout
+              {isRestDay ? (
+                /* Rest day: completed by default. Only offer optional workout log
+                   if the user hasn't already logged one. */
+                localSession.isCompleted && !localSession.actualDistance && !localSession.actualDuration && (
+                  <Button size="sm" variant="outline" onClick={() => setIsCompleteDialogOpen(true)}>
+                    Log a Workout
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsVoiceModalOpen(true)}
-                    className="bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700"
-                  >
-                    <Mic className="h-4 w-4 mr-1" />
-                    Voice
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleSkip}
-                    disabled={isSkipping}
-                  >
-                    {isSkipping ? 'Skipping...' : 'Skip'}
-                  </Button>
-                </div>
+                )
+              ) : (
+                /* Regular workout day: full action set */
+                !localSession.isCompleted && !localSession.isSkipped && (
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)}>
+                      Complete Workout
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsVoiceModalOpen(true)}
+                      className="bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700"
+                    >
+                      <Mic className="h-4 w-4 mr-1" />
+                      Voice
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSkip}
+                      disabled={isSkipping}
+                    >
+                      {isSkipping ? 'Skipping...' : 'Skip'}
+                    </Button>
+                  </div>
+                )
               )}
             </div>
           )}
@@ -561,6 +587,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           onOpenChange={setIsCompleteDialogOpen}
           onComplete={handleComplete}
           distanceUnit={distanceUnit}
+          startInLogMode={isRestDay}
         />
       )}
 

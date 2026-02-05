@@ -26,11 +26,13 @@ public interface ISessionCompletionService
         SkipSessionRequest request);
 
     /// <summary>
-    /// Retrieves upcoming sessions (today + next N sessions) for a runner.
+    /// Retrieves upcoming sessions (after today) for a runner.
+    /// clientDate overrides the server's UTC date to match the user's local timezone.
     /// </summary>
     Task<List<SessionDetailDto>> GetUpcomingSessionsAsync(
         Guid runnerId,
-        int count);
+        int count,
+        string? clientDate = null);
 
     /// <summary>
     /// Retrieves detailed information for a single session.

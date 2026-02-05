@@ -138,9 +138,14 @@ public class SessionCompletionService : ISessionCompletionService
 
     public async Task<List<SessionDetailDto>> GetUpcomingSessionsAsync(
         Guid runnerId,
-        int count)
+        int count,
+        string? clientDate = null)
     {
-        var today = DateTime.UtcNow.Date;
+        DateTime today;
+        if (!string.IsNullOrEmpty(clientDate) && DateTime.TryParse(clientDate, out var parsed))
+            today = parsed.Date;
+        else
+            today = DateTime.UtcNow.Date;
 
         var sessions = await _context.TrainingSessions
             .Include(s => s.TrainingPlan)

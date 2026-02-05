@@ -65,10 +65,22 @@ export function Dashboard() {
       // Cycle position returns 404 for DoNotTrack users — catch and treat as null
       const [summary, sessionsResponse, profile, cyclePos] = await Promise.all([
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
-        api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7'),
+        api.get<UpcomingSessionsResponse>(`/api/sessions/upcoming?count=7&clientDate=${clientDate}`),
         api.get<ProfileResponse>('/api/profiles/me'),
         api.get<CyclePositionDto>('/api/cycle/position').catch(() => null)
       ])
+
+      // Sanity-check: if the backend returned a todaysSession whose date doesn't
+      // match the client's local date, discard it rather than showing stale data.
+      if (summary.todaysSession) {
+        const sessionDateStr = summary.todaysSession.scheduledDate.slice(0, 10)
+        if (sessionDateStr !== clientDate) {
+          console.warn(
+            `plan-summary returned todaysSession dated ${sessionDateStr} but client date is ${clientDate} — discarding`
+          )
+          summary.todaysSession = null
+        }
+      }
 
       setPlanSummary(summary)
       setUpcomingSessions(sessionsResponse.sessions)

@@ -44,14 +44,14 @@ public class SessionController : ControllerBase
     [ProducesResponseType(typeof(UpcomingSessionsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUpcomingSessions([FromQuery] int count = 7)
+    public async Task<IActionResult> GetUpcomingSessions([FromQuery] int count = 7, [FromQuery] string? clientDate = null)
     {
         try
         {
             var runnerId = GetRunnerIdFromClaims();
-            _logger.LogInformation("Getting {Count} upcoming sessions for runner {RunnerId}", count, runnerId);
+            _logger.LogInformation("Getting {Count} upcoming sessions for runner {RunnerId} with clientDate {ClientDate}", count, runnerId, clientDate);
 
-        var sessions = await _sessionCompletionService.GetUpcomingSessionsAsync(runnerId, count);
+        var sessions = await _sessionCompletionService.GetUpcomingSessionsAsync(runnerId, count, clientDate);
 
         // Check if there's a pending recalculation job
         var hasPendingRecalculation = false;
