@@ -58,11 +58,11 @@ function VoiceModalWrapper({ sessionContext }: { sessionContext?: VoiceSessionCo
 
 export const Default = {
   render: () => <VoiceModalWrapper sessionContext={mockSessionContext} />,
-} satisfies Story
+} as Story
 
 export const WithoutContext = {
   render: () => <VoiceModalWrapper />,
-} satisfies Story
+} as Story
 
 // Static mockup showing the modal UI
 export const CurrentDesign = {
@@ -232,4 +232,4 @@ export const CurrentDesign = {
       </div>
     </div>
   ),
-} satisfies Story
+} as Story

@@ -95,19 +95,19 @@ function DialogWrapper({ session, distanceUnit = 'km', startInLogMode = false }:
 
 export const EasyRun = {
   render: () => <DialogWrapper session={mockSession} distanceUnit="km" />,
-} satisfies Story
+} as Story
 
 export const LongRun = {
   render: () => <DialogWrapper session={mockLongRunSession} distanceUnit="km" />,
-} satisfies Story
+} as Story
 
 export const RestDay = {
   render: () => <DialogWrapper session={mockRestDaySession} distanceUnit="km" />,
-} satisfies Story
+} as Story
 
 export const WithMiles = {
   render: () => <DialogWrapper session={mockSession} distanceUnit="mi" />,
-} satisfies Story
+} as Story
 
 // Design mockup showing integrated voice feature
 export const IntegratedVoiceDesign = {
@@ -437,4 +437,4 @@ export const IntegratedVoiceDesign = {
       </div>
     </div>
   ),
-} satisfies Story
+} as Story
