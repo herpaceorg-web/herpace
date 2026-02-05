@@ -7,12 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code
+# Copy source code (includes .env.production, which Vite loads automatically)
 COPY . .
-
-# Build argument for API URL
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build the application
 RUN npm run build
