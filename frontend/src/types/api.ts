@@ -45,10 +45,25 @@ export type DistanceUnit = typeof DistanceUnit[keyof typeof DistanceUnit]
 export const CycleRegularity = {
   Regular: 0,
   Irregular: 1,
-  DoNotTrack: 2
+  DoNotTrack: 2,
+  PreferNotToShare: 3
 } as const
 
 export type CycleRegularity = typeof CycleRegularity[keyof typeof CycleRegularity]
+
+export const BirthControlType = {
+  None: 0,
+  Pill: 1,
+  HormonalIUD: 2,
+  CopperIUD: 3,
+  Implant: 4,
+  Shot: 5,
+  Patch: 6,
+  Ring: 7,
+  Other: 8
+} as const
+
+export type BirthControlType = typeof BirthControlType[keyof typeof BirthControlType]
 
 export const DistanceType = {
   FiveK: 0,
@@ -186,6 +201,7 @@ export interface CreateProfileRequest {
   dateOfBirth?: string
   typicalWeeklyMileage?: number
   cycleRegularity: number
+  birthControlType: number
   cycleLength?: number
   lastPeriodStart?: string
   lastPeriodEnd?: string

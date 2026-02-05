@@ -22,10 +22,39 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const AthleteProfile: Story = {
+  args: {
+    initialStep: 1,
+  },
   parameters: {
     docs: {
       description: {
-        story: 'The first step of onboarding showing the Athlete Profile form with title and stepper.',
+        story: 'Step 1: Athlete Profile - Collecting runner information and training background.',
+      },
+    },
+  },
+}
+
+export const YourCycle: Story = {
+  args: {
+    initialStep: 2,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Step 2: Your Cycle - Collecting menstrual cycle tracking information to sync training with hormonal phases.',
+      },
+    },
+  },
+}
+
+export const RaceAndPlan: Story = {
+  args: {
+    initialStep: 3,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Step 3: Race & Plan - Entering race details and generating personalized training plan.',
       },
     },
   },
