@@ -78,7 +78,7 @@ export function Dashboard() {
           console.warn(
             `plan-summary returned todaysSession dated ${sessionDateStr} but client date is ${clientDate} — discarding`
           )
-          summary.todaysSession = null
+          summary.todaysSession = undefined
         }
       }
 
