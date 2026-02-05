@@ -262,18 +262,18 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-white p-4">
       <HormoneWaveBackground opacity={0.3} />
-      <Card className="relative z-10 w-full max-w-2xl">
-        <CardHeader className="space-y-1">
+      <Card className="relative z-10 w-full max-w-2xl flex flex-col max-h-[90vh]">
+        <CardHeader className="space-y-1 flex-shrink-0">
           <CardTitle className="font-petrona text-[32px] font-normal text-foreground">
             Hello,{' '}
             {nameDisplayState === 'default' && (
-              <span className="inline-block">Runner</span>
+              <span className="inline-block">Runner!</span>
             )}
             {nameDisplayState === 'fading-out' && (
-              <span className="inline-block animate-fade-out">Runner</span>
+              <span className="inline-block animate-fade-out">Runner!</span>
             )}
             {nameDisplayState === 'showing-name' && (
-              <span className="inline-block animate-scale-in">{userName}</span>
+              <span className="inline-block animate-scale-in">{userName}!</span>
             )}
           </CardTitle>
           <CardDescription className="text-sm font-normal text-[#696863]">
@@ -281,7 +281,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="flex-1 overflow-y-auto custom-scrollbar">
           {/* Stepper */}
           <Stepper currentStep={currentStep} steps={STEPS} />
 
@@ -293,7 +293,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
           )}
 
           {/* Step Content */}
-          <div className="mt-6">
+          <div className="mt-6 pb-6">
             {currentStep === 1 && (
               <ProfileStep
                 onComplete={handleProfileComplete}
