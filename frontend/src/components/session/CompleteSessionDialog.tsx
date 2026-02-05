@@ -4,16 +4,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { WorkoutType, type SessionDetailDto, type CompleteSessionRequest } from '@/types/api'
+import { displayDistance, toKm } from '@/lib/utils'
 
 interface CompleteSessionDialogProps {
   session: SessionDetailDto
   open: boolean
   onOpenChange: (open: boolean) => void
   onComplete: (data: CompleteSessionRequest) => Promise<void>
+  distanceUnit: 'km' | 'mi'
 }
 
-export function CompleteSessionDialog({ session, open, onOpenChange, onComplete }: CompleteSessionDialogProps) {
-  const [actualDistance, setActualDistance] = useState(session.distance?.toString() || '')
+export function CompleteSessionDialog({ session, open, onOpenChange, onComplete, distanceUnit }: CompleteSessionDialogProps) {
+  const [actualDistance, setActualDistance] = useState(
+    session.distance != null ? displayDistance(session.distance, distanceUnit).toString() : ''
+  )
   const [actualDuration, setActualDuration] = useState(session.durationMinutes?.toString() || '')
   const [rpe, setRpe] = useState('')
   const [userNotes, setUserNotes] = useState('')
@@ -34,7 +38,7 @@ export function CompleteSessionDialog({ session, open, onOpenChange, onComplete 
       }
 
       const data: CompleteSessionRequest = {
-        actualDistance: actualDistance ? parseFloat(actualDistance) : undefined,
+        actualDistance: actualDistance ? toKm(parseFloat(actualDistance), distanceUnit) : undefined,
         actualDuration: actualDuration ? parseInt(actualDuration) : undefined,
         rpe: rpe ? parseInt(rpe) : undefined,
         userNotes: userNotes || undefined
@@ -44,7 +48,7 @@ export function CompleteSessionDialog({ session, open, onOpenChange, onComplete 
       await onComplete(data)
 
       // Reset form
-      setActualDistance(session.distance?.toString() || '')
+      setActualDistance(session.distance != null ? displayDistance(session.distance, distanceUnit).toString() : '')
       setActualDuration(session.durationMinutes?.toString() || '')
       setRpe('')
       setUserNotes('')
@@ -75,7 +79,7 @@ export function CompleteSessionDialog({ session, open, onOpenChange, onComplete 
             {(!isRestDay || isLoggingWorkout) && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="actualDistance">Distance (km)</Label>
+                  <Label htmlFor="actualDistance">Distance ({distanceUnit})</Label>
                   <Input
                     id="actualDistance"
                     type="number"
@@ -86,7 +90,7 @@ export function CompleteSessionDialog({ session, open, onOpenChange, onComplete 
                   />
                   {session.distance && (
                     <p className="text-xs text-muted-foreground">
-                      Planned: {session.distance} km
+                      Planned: {displayDistance(session.distance, distanceUnit)} {distanceUnit}
                     </p>
                   )}
                 </div>

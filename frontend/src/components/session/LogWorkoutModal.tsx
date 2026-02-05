@@ -5,14 +5,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/api-client'
+import { toKm } from '@/lib/utils'
 
 interface LogWorkoutModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onWorkoutLogged: () => void
+  distanceUnit: 'km' | 'mi'
 }
 
-export function LogWorkoutModal({ open, onOpenChange, onWorkoutLogged }: LogWorkoutModalProps) {
+export function LogWorkoutModal({ open, onOpenChange, onWorkoutLogged, distanceUnit }: LogWorkoutModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     distance: '',
@@ -27,7 +29,7 @@ export function LogWorkoutModal({ open, onOpenChange, onWorkoutLogged }: LogWork
 
     try {
       await api.post('/api/sessions/log-adhoc', {
-        actualDistance: Number(formData.distance) || null,
+        actualDistance: formData.distance ? toKm(Number(formData.distance), distanceUnit) : null,
         actualDuration: Number(formData.duration) || null,
         rpe: Number(formData.rpe),
         userNotes: formData.notes,
@@ -52,7 +54,7 @@ export function LogWorkoutModal({ open, onOpenChange, onWorkoutLogged }: LogWork
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="distance">Distance (km)</Label>
+            <Label htmlFor="distance">Distance ({distanceUnit})</Label>
             <Input
               id="distance"
               type="number"

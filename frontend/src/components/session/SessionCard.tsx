@@ -5,11 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { api } from '@/lib/api-client'
+import { displayDistance } from '@/lib/utils'
 
 interface SessionCardProps {
   session: SessionDetailDto
   cyclePhaseTips?: CyclePhaseTipsDto
   onSessionUpdated?: () => void
+  distanceUnit?: 'km' | 'mi'
 }
 
 const workoutTypeColors: Record<WorkoutType, string> = {
@@ -42,7 +44,7 @@ const cyclePhaseColors: Record<CyclePhase, string> = {
   [CyclePhase.Luteal]: 'bg-blue-100 text-blue-800 border-blue-300',
 }
 
-export function SessionCard({ session, cyclePhaseTips, onSessionUpdated }: SessionCardProps) {
+export function SessionCard({ session, cyclePhaseTips, onSessionUpdated, distanceUnit = 'km' }: SessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(session)
@@ -164,7 +166,7 @@ export function SessionCard({ session, cyclePhaseTips, onSessionUpdated }: Sessi
               {localSession.distance && (
                 <div>
                   <span className="text-muted-foreground">Distance:</span>{' '}
-                  <span className="font-medium">{localSession.distance} km</span>
+                  <span className="font-medium">{displayDistance(localSession.distance, distanceUnit)} {distanceUnit}</span>
                 </div>
               )}
 
@@ -201,7 +203,7 @@ export function SessionCard({ session, cyclePhaseTips, onSessionUpdated }: Sessi
                 <p className="text-sm font-medium text-green-800">✓ Completed</p>
                 {localSession.actualDistance && (
                   <p className="text-xs text-green-700 mt-1">
-                    Actual: {localSession.actualDistance} km in {localSession.actualDuration} min
+                    Actual: {displayDistance(localSession.actualDistance, distanceUnit)} {distanceUnit} in {localSession.actualDuration} min
                   </p>
                 )}
                 {localSession.rpe && (
@@ -246,6 +248,7 @@ export function SessionCard({ session, cyclePhaseTips, onSessionUpdated }: Sessi
         open={isCompleteDialogOpen}
         onOpenChange={setIsCompleteDialogOpen}
         onComplete={handleComplete}
+        distanceUnit={distanceUnit}
       />
     </>
   )

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
@@ -26,6 +26,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [showSummaryModal, setShowSummaryModal] = useState(false)
   const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
+  const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
 
   useEffect(() => {
     loadDashboardData()
@@ -59,14 +60,16 @@ export function Dashboard() {
       const now = new Date()
       const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-      // Load plan summary and upcoming sessions in parallel
-      const [summary, sessionsResponse] = await Promise.all([
+      // Load plan summary, upcoming sessions, and profile in parallel
+      const [summary, sessionsResponse, profile] = await Promise.all([
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
-        api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7')
+        api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7'),
+        api.get<ProfileResponse>('/api/profiles/me')
       ])
 
       setPlanSummary(summary)
       setUpcomingSessions(sessionsResponse.sessions)
+      setDistanceUnit(profile.distanceUnit === 1 ? 'mi' : 'km')
 
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -181,6 +184,7 @@ export function Dashboard() {
             session={planSummary.todaysSession}
             cyclePhaseTips={planSummary.cyclePhaseTips}
             onSessionUpdated={loadDashboardData}
+            distanceUnit={distanceUnit}
           />
         ) : (
           <Card>
@@ -240,7 +244,7 @@ export function Dashboard() {
         {upcomingSessions.length > 0 ? (
           <div className="space-y-4">
             {upcomingSessions.map((session) => (
-              <WorkoutSessionCard key={session.id} session={session} onSessionUpdated={loadDashboardData} />
+              <WorkoutSessionCard key={session.id} session={session} onSessionUpdated={loadDashboardData} distanceUnit={distanceUnit} />
             ))}
           </div>
         ) : (
@@ -282,6 +286,7 @@ export function Dashboard() {
         open={showLogWorkoutModal}
         onOpenChange={setShowLogWorkoutModal}
         onWorkoutLogged={loadDashboardData}
+        distanceUnit={distanceUnit}
       />
     </div>
   )

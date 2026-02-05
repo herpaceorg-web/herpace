@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, displayDistance } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
 import { CyclePhase } from '@/types/api'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
@@ -75,8 +75,9 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
   // Extract values from either session or legacy props
   const sessionName = isSessionMode ? localSession!.sessionName : props.sessionName!
-  const distance = isSessionMode ? localSession!.distance : props.distance
-  const distanceUnit = props.distanceUnit || 'mi'
+  const distanceRawKm = isSessionMode ? localSession!.distance : props.distance
+  const distanceUnit = props.distanceUnit || 'km'
+  const distance = distanceRawKm != null ? displayDistance(distanceRawKm, distanceUnit) : undefined
   const durationMinutes = isSessionMode ? localSession!.durationMinutes : props.durationMinutes
   const zone = props.zone // Zone info not in session DTO, use legacy prop
 
@@ -318,7 +319,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                     className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
                   >
                     <Route className="h-3.5 w-3.5 mr-1.5" />
-                    {distance} {distanceUnit === 'mi' ? 'Mi' : 'km'}
+                    {distance} {distanceUnit === 'mi' ? 'mi' : 'km'}
                   </Badge>
                 )}
                 {durationMinutes && (
@@ -506,7 +507,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   <p className="text-sm font-medium text-green-800">✓ Completed</p>
                   {localSession.actualDistance && (
                     <p className="text-xs text-green-700 mt-1">
-                      Actual: {localSession.actualDistance} km in {localSession.actualDuration} min
+                      Actual: {displayDistance(localSession.actualDistance, distanceUnit)} {distanceUnit} in {localSession.actualDuration} min
                     </p>
                   )}
                   {localSession.rpe && (
@@ -559,6 +560,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           open={isCompleteDialogOpen}
           onOpenChange={setIsCompleteDialogOpen}
           onComplete={handleComplete}
+          distanceUnit={distanceUnit}
         />
       )}
 
