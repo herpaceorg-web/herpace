@@ -98,7 +98,6 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const distance = distanceRawKm != null ? displayDistance(distanceRawKm, distanceUnit) : undefined
   const durationMinutes = isSessionMode ? localSession!.durationMinutes : props.durationMinutes
   const zone = props.zone // Zone info not in session DTO, use legacy prop
-  const intensityLevel = isSessionMode ? localSession?.intensityLevel : props.intensityLevel
 
   // Build cycle phases from session
   const cyclePhases = isSessionMode && localSession!.cyclePhase !== undefined

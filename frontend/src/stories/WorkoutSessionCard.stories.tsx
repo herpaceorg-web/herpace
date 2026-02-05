@@ -909,7 +909,7 @@ export const SessionCTAs: Story = {
       workoutType: WorkoutType.Rest,
       distance: undefined,
       durationMinutes: undefined,
-      intensityLevel: undefined,
+      intensityLevel: IntensityLevel.Low,
       isCompleted: true
     }
 

@@ -59,7 +59,7 @@ const mockRestDaySession: SessionDetailDto = {
   scheduledDate: new Date().toISOString(),
   distance: undefined,
   durationMinutes: undefined,
-  intensityLevel: undefined,
+  intensityLevel: IntensityLevel.Low,
   cyclePhase: CyclePhase.Menstrual,
   isCompleted: true,
   isSkipped: false,
@@ -93,24 +93,24 @@ function DialogWrapper({ session, distanceUnit = 'km', startInLogMode = false }:
   )
 }
 
-export const EasyRun: Story = {
+export const EasyRun = {
   render: () => <DialogWrapper session={mockSession} distanceUnit="km" />,
-}
+} satisfies Story
 
-export const LongRun: Story = {
+export const LongRun = {
   render: () => <DialogWrapper session={mockLongRunSession} distanceUnit="km" />,
-}
+} satisfies Story
 
-export const RestDay: Story = {
+export const RestDay = {
   render: () => <DialogWrapper session={mockRestDaySession} distanceUnit="km" />,
-}
+} satisfies Story
 
-export const WithMiles: Story = {
+export const WithMiles = {
   render: () => <DialogWrapper session={mockSession} distanceUnit="mi" />,
-}
+} satisfies Story
 
 // Design mockup showing integrated voice feature
-export const IntegratedVoiceDesign: Story = {
+export const IntegratedVoiceDesign = {
   parameters: {
     layout: 'padded',
   },
@@ -437,4 +437,4 @@ export const IntegratedVoiceDesign: Story = {
       </div>
     </div>
   ),
-}
+} satisfies Story
