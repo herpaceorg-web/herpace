@@ -299,8 +299,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
             <Label htmlFor="fiveKPR">5K PR</Label>
             <Input
               id="fiveKPR"
+              type="time"
+              step="1"
               {...register('fiveKPR')}
-              placeholder="0:25:30"
+              placeholder="00:25:30"
               disabled={isSubmitting}
             />
             {errors.fiveKPR && (
@@ -313,8 +315,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
             <Label htmlFor="tenKPR">10K PR</Label>
             <Input
               id="tenKPR"
+              type="time"
+              step="1"
               {...register('tenKPR')}
-              placeholder="0:55:20"
+              placeholder="00:55:20"
               disabled={isSubmitting}
             />
             {errors.tenKPR && (
@@ -327,8 +331,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
             <Label htmlFor="halfMarathonPR">Half Marathon PR</Label>
             <Input
               id="halfMarathonPR"
+              type="time"
+              step="1"
               {...register('halfMarathonPR')}
-              placeholder="1:45:30"
+              placeholder="01:45:30"
               disabled={isSubmitting}
             />
             {errors.halfMarathonPR && (
@@ -341,8 +347,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
             <Label htmlFor="marathonPR">Marathon PR</Label>
             <Input
               id="marathonPR"
+              type="time"
+              step="1"
               {...register('marathonPR')}
-              placeholder="3:30:00"
+              placeholder="03:30:00"
               disabled={isSubmitting}
             />
             {errors.marathonPR && (
