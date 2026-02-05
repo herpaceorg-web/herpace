@@ -120,6 +120,31 @@ export interface CyclePhaseTipsDto {
   moodInsights: string[]
 }
 
+// Cycle tracking DTOs
+export interface CyclePositionDto {
+  currentDayInCycle: number
+  cycleLength: number
+  currentPhase: CyclePhase
+  lastPeriodStart: string
+  nextPredictedPeriod: string
+  daysUntilNextPeriod: number
+  phaseDescription: string
+  phaseGuidance: string
+}
+
+export interface ReportPeriodRequest {
+  periodStartDate?: string
+  periodEndDate?: string
+}
+
+export interface ReportPeriodResponse {
+  success: boolean
+  message: string
+  triggeredRegeneration: boolean
+  daysDifference?: number
+  updatedCyclePosition?: CyclePositionDto
+}
+
 // Plan and Session DTOs
 export interface PlanSummaryDto {
   planId: string

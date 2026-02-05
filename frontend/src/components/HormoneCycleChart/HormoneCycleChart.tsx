@@ -21,6 +21,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import type { DateRange } from "react-day-picker";
+import { api } from "@/lib/api-client";
+import type { CyclePositionDto, ReportPeriodRequest, ReportPeriodResponse } from "@/types/api";
 
 interface HormoneData {
   day: number;
@@ -30,43 +32,114 @@ interface HormoneData {
   lh: number;
 }
 
-const generateHormoneData = (): HormoneData[] => {
+// Computes phase day boundaries using the same proportional algorithm as
+// the backend CyclePhaseCalculator and the frontend cyclePhases.ts utility.
+const computePhaseBoundaries = (cycleLength: number) => {
+  const menstrualEnd = 5;
+  const remainingDays = cycleLength - menstrualEnd;
+  const follicularDays = Math.round(remainingDays * 0.30);
+  const follicularEnd = menstrualEnd + follicularDays;
+  const ovulatoryDays = Math.max(2, Math.round(remainingDays * 0.07));
+  const ovulatoryEnd = follicularEnd + ovulatoryDays;
+  const lutealDays = cycleLength - ovulatoryEnd;
+  return { menstrualEnd, follicularEnd, ovulatoryEnd, follicularDays, ovulatoryDays, lutealDays };
+};
+
+// Generates the four hormone curves scaled to the user's actual cycle length.
+// Inflection points (peaks, troughs, transitions) are mapped to computed phase
+// boundaries so the curve shapes remain biologically consistent regardless of
+// whether the cycle is 21 or 45 days.
+const generateHormoneData = (cycleLength: number): HormoneData[] => {
+  const { follicularEnd, ovulatoryEnd, lutealDays } = computePhaseBoundaries(cycleLength);
   const data: HormoneData[] = [];
 
-  for (let day = 1; day <= 28; day++) {
-    // Estrogen: Low at start, rises during follicular, peaks at ovulation, moderate in luteal
-    const estrogen =
-      day <= 10 ? 25 :
-      day <= 12 ? 25 + Math.pow((day - 10) / 2, 2) * 45 :
-      day === 13 ? 95 :
-      day === 14 ? 100 :
-      day <= 16 ? 100 - Math.pow((day - 14) / 2, 2) * 35 :
-      day <= 21 ? 65 + Math.pow((day - 16) / 5, 1.5) * 20 :
-      85 - Math.pow((day - 21) / 7, 1.2) * 60;
+  // Estrogen reference points mapped to phase boundaries
+  const estrRiseStart = follicularEnd - 2;
+  const estrPeak = ovulatoryEnd;
+  const estrDropEnd = ovulatoryEnd + Math.max(1, Math.round(lutealDays * 0.15));
+  const estrSecondPeak = ovulatoryEnd + Math.round(lutealDays * 0.50);
 
-    // Progesterone: Very low until ovulation, then rises significantly in luteal phase
-    const progesterone =
-      day <= 13 ? 10 :
-      day <= 21 ? 10 + Math.pow((day - 13) / 8, 1.8) * 100 :
-      day <= 23 ? 110 :
-      110 - Math.pow((day - 23) / 5, 1.5) * 90;
+  // Progesterone reference points
+  const progRiseStart = follicularEnd + 1;
+  const progPeakStart = ovulatoryEnd + Math.round(lutealDays * 0.50);
+  const progPeakEnd = ovulatoryEnd + Math.round(lutealDays * 0.65);
 
-    // FSH: Single smooth peak at ovulation
-    const fsh =
-      day <= 10 ? 25 :
-      day <= 13 ? 25 + Math.pow((day - 10) / 3, 1.5) * 60 :
-      day <= 15 ? 85 :
-      day <= 18 ? 85 - Math.pow((day - 15) / 3, 1.3) * 50 :
-      35 - Math.pow((day - 18) / 10, 0.8) * 10;
+  // FSH reference points
+  const fshRiseStart = follicularEnd - 2;
+  const fshPeakEnd = ovulatoryEnd + 1;
+  const fshDropEnd = ovulatoryEnd + Math.max(2, Math.round(lutealDays * 0.28));
 
-    // LH: Sharp peak at ovulation (day 13-14)
-    const lh =
-      day <= 11 ? 15 + day * 2 :
-      day === 12 ? 45 :
-      day === 13 ? 95 :
-      day === 14 ? 85 :
-      day === 15 ? 40 :
-      20 - (day - 15) * 0.5;
+  for (let day = 1; day <= cycleLength; day++) {
+    // Estrogen: low → rises late follicular → peaks at ovulation →
+    //           brief dip → smaller luteal peak → drops
+    let estrogen: number;
+    if (day <= estrRiseStart) {
+      estrogen = 25;
+    } else if (day <= follicularEnd) {
+      const t = (day - estrRiseStart) / Math.max(1, follicularEnd - estrRiseStart);
+      estrogen = 25 + Math.pow(t, 2) * 45;
+    } else if (day <= estrPeak) {
+      const t = (day - follicularEnd) / Math.max(1, estrPeak - follicularEnd);
+      estrogen = 70 + Math.pow(t, 0.5) * 30;
+    } else if (day <= estrDropEnd) {
+      const t = (day - estrPeak) / Math.max(1, estrDropEnd - estrPeak);
+      estrogen = 100 - Math.pow(t, 2) * 35;
+    } else if (day <= estrSecondPeak) {
+      const t = (day - estrDropEnd) / Math.max(1, estrSecondPeak - estrDropEnd);
+      estrogen = 65 + Math.pow(t, 1.5) * 20;
+    } else {
+      const t = (day - estrSecondPeak) / Math.max(1, cycleLength - estrSecondPeak);
+      estrogen = 85 - Math.pow(t, 1.2) * 60;
+    }
+
+    // Progesterone: flat until ovulation → rises → peaks mid-late luteal → drops
+    let progesterone: number;
+    if (day <= progRiseStart) {
+      progesterone = 10;
+    } else if (day <= progPeakStart) {
+      const t = (day - progRiseStart) / Math.max(1, progPeakStart - progRiseStart);
+      progesterone = 10 + Math.pow(t, 1.8) * 100;
+    } else if (day <= progPeakEnd) {
+      progesterone = 110;
+    } else {
+      const t = (day - progPeakEnd) / Math.max(1, cycleLength - progPeakEnd);
+      progesterone = 110 - Math.pow(t, 1.5) * 90;
+    }
+
+    // FSH: flat → rises late follicular → peaks at ovulation → drops
+    let fsh: number;
+    if (day <= fshRiseStart) {
+      fsh = 25;
+    } else if (day <= progRiseStart) {
+      const t = (day - fshRiseStart) / Math.max(1, progRiseStart - fshRiseStart);
+      fsh = 25 + Math.pow(t, 1.5) * 60;
+    } else if (day <= fshPeakEnd) {
+      fsh = 85;
+    } else if (day <= fshDropEnd) {
+      const t = (day - fshPeakEnd) / Math.max(1, fshDropEnd - fshPeakEnd);
+      fsh = 85 - Math.pow(t, 1.3) * 50;
+    } else {
+      const t = (day - fshDropEnd) / Math.max(1, cycleLength - fshDropEnd);
+      fsh = 35 - Math.pow(t, 0.8) * 10;
+    }
+
+    // LH: gentle rise → sharp spike at ovulation → rapid drop
+    let lh: number;
+    if (day < follicularEnd) {
+      const t = (day - 1) / Math.max(1, follicularEnd - 2);
+      lh = 17 + t * 20;
+    } else if (day === follicularEnd) {
+      lh = 45;
+    } else if (day === follicularEnd + 1) {
+      lh = 95;
+    } else if (day <= ovulatoryEnd) {
+      lh = 85;
+    } else if (day === ovulatoryEnd + 1) {
+      lh = 40;
+    } else {
+      const t = (day - ovulatoryEnd - 1) / Math.max(1, lutealDays - 1);
+      lh = 20 - t * 5;
+    }
 
     data.push({
       day,
@@ -81,40 +154,28 @@ const generateHormoneData = (): HormoneData[] => {
 };
 
 const HORMONE_COLORS = {
-  estrogen: "#efa910",  // Yellow
-  progesterone: "#a14139",  // Red
-  fsh: "#677344",  // Green
-  lh: "#597d93",  // Blue
+  estrogen: "#efa910",
+  progesterone: "#a14139",
+  fsh: "#677344",
+  lh: "#597d93",
 };
 
 const chartConfig = {
   estrogen: {
     label: "Estrogen",
-    theme: {
-      light: HORMONE_COLORS.estrogen,
-      dark: HORMONE_COLORS.estrogen,
-    },
+    theme: { light: HORMONE_COLORS.estrogen, dark: HORMONE_COLORS.estrogen },
   },
   progesterone: {
     label: "Progesterone",
-    theme: {
-      light: HORMONE_COLORS.progesterone,
-      dark: HORMONE_COLORS.progesterone,
-    },
+    theme: { light: HORMONE_COLORS.progesterone, dark: HORMONE_COLORS.progesterone },
   },
   fsh: {
     label: "FSH",
-    theme: {
-      light: HORMONE_COLORS.fsh,
-      dark: HORMONE_COLORS.fsh,
-    },
+    theme: { light: HORMONE_COLORS.fsh, dark: HORMONE_COLORS.fsh },
   },
   lh: {
     label: "LH",
-    theme: {
-      light: HORMONE_COLORS.lh,
-      dark: HORMONE_COLORS.lh,
-    },
+    theme: { light: HORMONE_COLORS.lh, dark: HORMONE_COLORS.lh },
   },
 };
 
@@ -169,64 +230,46 @@ const PhaseChart: React.FC<PhaseChartProps> = ({ data, phaseType }) => {
             }
           />
 
-          <Area
-            type="basis"
-            dataKey="estrogen"
-            name="Estrogen"
-            stroke={HORMONE_COLORS.estrogen}
-            strokeOpacity={0.4}
-            fill={`url(#${phaseType}Estrogen)`}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
-          <Area
-            type="basis"
-            dataKey="progesterone"
-            name="Progesterone"
-            stroke={HORMONE_COLORS.progesterone}
-            strokeOpacity={0.4}
-            fill={`url(#${phaseType}Progesterone)`}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
-          <Area
-            type="basis"
-            dataKey="fsh"
-            name="FSH"
-            stroke={HORMONE_COLORS.fsh}
-            strokeOpacity={0.4}
-            fill={`url(#${phaseType}FSH)`}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
-          <Area
-            type="basis"
-            dataKey="lh"
-            name="LH"
-            stroke={HORMONE_COLORS.lh}
-            strokeOpacity={0.4}
-            fill={`url(#${phaseType}LH)`}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
+          <Area type="basis" dataKey="estrogen" name="Estrogen" stroke={HORMONE_COLORS.estrogen} strokeOpacity={0.4} fill={`url(#${phaseType}Estrogen)`} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+          <Area type="basis" dataKey="progesterone" name="Progesterone" stroke={HORMONE_COLORS.progesterone} strokeOpacity={0.4} fill={`url(#${phaseType}Progesterone)`} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+          <Area type="basis" dataKey="fsh" name="FSH" stroke={HORMONE_COLORS.fsh} strokeOpacity={0.4} fill={`url(#${phaseType}FSH)`} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+          <Area type="basis" dataKey="lh" name="LH" stroke={HORMONE_COLORS.lh} strokeOpacity={0.4} fill={`url(#${phaseType}LH)`} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
         </AreaChart>
       </ChartContainer>
     </div>
   );
 };
 
-export const HormoneCycleChart: React.FC = () => {
+interface HormoneCycleChartProps {
+  cyclePosition: CyclePositionDto | null;
+  onPeriodLogged: (updated: CyclePositionDto) => void;
+}
+
+export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosition, onPeriodLogged }) => {
   const [isLogPeriodOpen, setIsLogPeriodOpen] = React.useState(false);
   const [periodRange, setPeriodRange] = React.useState<DateRange | undefined>();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const hormoneData = generateHormoneData();
-  const currentDay = 20;
-  const daysUntilPeriod = 8;
-  const currentDate = new Date(2026, 0, 20); // Friday Jan 20
+  // Graceful fallback when cycle tracking is not enabled (DoNotTrack users)
+  if (!cyclePosition) {
+    return (
+      <div className="py-8 text-center text-muted-foreground">
+        <p>Cycle tracking is not enabled. Update your profile to see hormone cycle visualization.</p>
+      </div>
+    );
+  }
+
+  const { cycleLength, currentDayInCycle, daysUntilNextPeriod } = cyclePosition;
+  const { follicularEnd, ovulatoryEnd, follicularDays, ovulatoryDays, lutealDays } = computePhaseBoundaries(cycleLength);
+  const hormoneData = generateHormoneData(cycleLength);
+
+  // Split at ovulatoryEnd with one-day overlap for chart continuity
+  const follicularData = hormoneData.slice(0, ovulatoryEnd);
+  const lutealData = hormoneData.slice(ovulatoryEnd - 1);
+
+  // Overlay widths as percentages of the left (follicular) chart
+  const menstrualPct = (5 / ovulatoryEnd) * 100;
+  const ovulationPct = (ovulatoryDays / ovulatoryEnd) * 100;
 
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString("en-US", {
@@ -239,26 +282,28 @@ export const HormoneCycleChart: React.FC = () => {
   const handleLogPeriod = async () => {
     if (!periodRange?.from) return;
 
-    // If only one date selected, use the same date for start and end
     const startDate = periodRange.from;
     const endDate = periodRange.to || periodRange.from;
 
-    console.log('Logging period:', {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
-    });
+    try {
+      setIsSubmitting(true);
+      const response = await api.post<ReportPeriodRequest, ReportPeriodResponse>("/api/cycle/report", {
+        periodStartDate: startDate.toISOString(),
+        periodEndDate: endDate.toISOString(),
+      });
 
-    // TODO: Make API call to log period
-    // await api.post('/api/periods', { startDate, endDate });
+      if (response.success && response.updatedCyclePosition) {
+        onPeriodLogged(response.updatedCyclePosition);
+      }
 
-    // Close modal and reset
-    setIsLogPeriodOpen(false);
-    setPeriodRange(undefined);
+      setIsLogPeriodOpen(false);
+      setPeriodRange(undefined);
+    } catch (err) {
+      console.error("Failed to log period:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  // Split data for two separate containers
-  const follicularData = hormoneData.slice(0, 14); // Days 1-14
-  const lutealData = hormoneData.slice(13); // Days 14-28 (overlap day 14 for continuity)
 
   return (
     <div className="w-full max-w-[1336px] bg-gradient-to-b from-muted to-background border border-border p-3 rounded-2xl shadow-[1px_1px_24px_0px_rgba(69,66,58,0.04)]">
@@ -268,16 +313,16 @@ export const HormoneCycleChart: React.FC = () => {
           <div className="flex items-start justify-between px-6 w-full">
             <div className="flex flex-col gap-2">
               <h2 className="text-2xl font-semibold leading-7 font-['Petrona'] text-foreground">
-                Today is {formatDate(currentDate)}
+                Today is {formatDate(new Date())}
               </h2>
               <div className="flex gap-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Cycle Day</span>
-                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{currentDay}</span>
+                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{currentDayInCycle}</span>
                 </div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Next Period in</span>
-                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{daysUntilPeriod} Days</span>
+                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{daysUntilNextPeriod} Days</span>
                 </div>
               </div>
             </div>
@@ -298,7 +343,10 @@ export const HormoneCycleChart: React.FC = () => {
                 {/* Follicular Phase Header */}
                 <div className="flex h-7 border-b border-border bg-background relative z-10">
                   {/* Menstruation */}
-                  <div className="w-[26%] bg-[rgba(78,109,128,0.6)] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-lg">
+                  <div
+                    className="bg-[rgba(78,109,128,0.6)] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-lg"
+                    style={{ width: `${menstrualPct}%` }}
+                  >
                     <Snowflake className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
                     <span className="text-xs font-medium text-[#29271b] whitespace-nowrap">Menstruation</span>
                   </div>
@@ -309,13 +357,16 @@ export const HormoneCycleChart: React.FC = () => {
                       <Sprout className="w-4 h-4 flex-shrink-0" />
                       <span className="font-manrope text-sm font-medium leading-5 text-[#45423A]">Follicular Phase</span>
                       <Badge variant="secondary" className="font-manrope text-xs font-normal h-5 px-2 bg-[#F3F0E7] hover:bg-[#F3F0E7] text-[#45423A] border-0">
-                        12-14 Days
+                        {follicularDays} Days
                       </Badge>
                     </div>
                   </div>
 
                   {/* Ovulation */}
-                  <div className="w-[17%] bg-[rgba(217,119,6,0.7)] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-tr-lg">
+                  <div
+                    className="bg-[rgba(217,119,6,0.7)] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-tr-lg"
+                    style={{ width: `${ovulationPct}%` }}
+                  >
                     <Sun className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
                     <span className="text-xs font-medium text-[#29271b] whitespace-nowrap">Ovulation</span>
                   </div>
@@ -325,7 +376,10 @@ export const HormoneCycleChart: React.FC = () => {
                 <PhaseChart data={follicularData} phaseType="follicular" />
 
                 {/* Menstruation Overlay */}
-                <div className="absolute left-0 top-7 bottom-0 w-[26%] bg-[rgba(78,109,128,0.1)] rounded-bl-lg">
+                <div
+                  className="absolute left-0 top-7 bottom-0 rounded-bl-lg"
+                  style={{ width: `${menstrualPct}%`, backgroundColor: "rgba(78,109,128,0.1)" }}
+                >
                   <svg className="absolute right-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
                     <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(78,109,128,0.2)" strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
                   </svg>
@@ -335,7 +389,10 @@ export const HormoneCycleChart: React.FC = () => {
                 </div>
 
                 {/* Ovulation Overlay */}
-                <div className="absolute right-0 top-7 bottom-0 w-[17%] bg-[rgba(227,146,25,0.1)] rounded-br-lg">
+                <div
+                  className="absolute right-0 top-7 bottom-0 rounded-br-lg"
+                  style={{ width: `${ovulationPct}%`, backgroundColor: "rgba(227,146,25,0.1)" }}
+                >
                   <svg className="absolute left-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
                     <line x1="0" y1="0" x2="0" y2="100%" stroke="rgba(217,119,6,0.2)" strokeWidth="1" strokeDasharray="8 8" vectorEffect="non-scaling-stroke" />
                   </svg>
@@ -354,7 +411,7 @@ export const HormoneCycleChart: React.FC = () => {
                       <Leaf className="w-4 h-4 flex-shrink-0" />
                       <span className="font-manrope text-sm font-medium leading-5 text-[#45423A]">Luteal Phase</span>
                       <Badge variant="secondary" className="font-manrope text-xs font-normal h-5 px-2 bg-[#F3F0E7] hover:bg-[#F3F0E7] text-[#45423A] border-0">
-                        12-14 Days
+                        {lutealDays} Days
                       </Badge>
                     </div>
                   </div>
@@ -367,12 +424,12 @@ export const HormoneCycleChart: React.FC = () => {
 
             {/* Cycle Days */}
             <div className="flex items-center justify-between px-3 w-full">
-              {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+              {Array.from({ length: cycleLength }, (_, i) => i + 1).map((day) => (
                 <div
                   key={day}
                   className={cn(
                     "flex-1 flex items-center justify-center text-xs font-normal leading-4 text-[#696863] text-center",
-                    day === currentDay && "bg-card rounded-xl"
+                    day === currentDayInCycle && "bg-card rounded-xl"
                   )}
                 >
                   {day}
@@ -437,14 +494,14 @@ export const HormoneCycleChart: React.FC = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsLogPeriodOpen(false)}>
+            <Button variant="outline" onClick={() => setIsLogPeriodOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               onClick={handleLogPeriod}
-              disabled={!periodRange?.from}
+              disabled={!periodRange?.from || isSubmitting}
             >
-              Log Period
+              {isSubmitting ? "Logging..." : "Log Period"}
             </Button>
           </DialogFooter>
         </DialogContent>
