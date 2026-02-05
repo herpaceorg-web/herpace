@@ -100,6 +100,25 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       if (message.toolCall?.functionCalls) {
         for (const call of message.toolCall.functionCalls) {
           onToolCall?.(call.name, call.args)
+
+          // Gemini Live requires a functionResponse to continue the conversation.
+          // Send an acknowledgement so the model doesn't stall.
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              clientContent: {
+                turns: [{
+                  role: 'user',
+                  parts: [{
+                    functionResponse: {
+                      name: call.name,
+                      response: { output: 'Workout details received for confirmation.' }
+                    }
+                  }]
+                }],
+                turnComplete: true
+              }
+            }))
+          }
         }
         return
       }
@@ -170,12 +189,12 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       ws.onopen = () => {
         console.log('WebSocket connected to Gemini Live API')
 
-        // Send setup message with model and system instruction
+        // Send setup message with model, tools, and system instruction
         const setupMessage = {
           setup: {
             model: tokenResponse.model || 'models/gemini-2.5-flash-native-audio-preview-12-2025',
             generationConfig: {
-              responseModalities: ['AUDIO'],
+              responseModalities: ['TEXT', 'AUDIO'],
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
@@ -184,6 +203,34 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
                 }
               }
             },
+            tools: [{
+              functionDeclarations: [{
+                name: 'log_workout_completion',
+                description: 'Called when the user has provided all required workout completion details. Invoke this after confirming the collected values with the user.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    actualDistance: {
+                      type: 'number',
+                      description: 'Actual distance covered, in kilometers'
+                    },
+                    actualDuration: {
+                      type: 'number',
+                      description: 'Actual workout duration, in minutes'
+                    },
+                    rpe: {
+                      type: 'integer',
+                      description: 'Rate of Perceived Exertion, 1 (very easy) to 10 (max effort)'
+                    },
+                    notes: {
+                      type: 'string',
+                      description: 'Optional notes from the user about their workout'
+                    }
+                  },
+                  required: ['actualDistance', 'actualDuration', 'rpe']
+                }
+              }]
+            }],
             ...(tokenResponse.systemInstruction && {
               systemInstruction: {
                 parts: [{ text: tokenResponse.systemInstruction }]
@@ -209,19 +256,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       ws.onclose = (event) => {
         console.log('WebSocket closed:', event.code, event.reason, 'wasClean:', event.wasClean)
 
-        // Common close codes:
-        // 1000 = Normal closure
-        // 1001 = Going away (page closing)
-        // 1006 = Abnormal closure (no close frame received)
-        // 1011 = Server error
-        if (event.code !== 1000 && event.code !== 1001) {
-          console.warn('WebSocket closed unexpectedly with code:', event.code)
-        }
-
-        // Only call onComplete if we had an active session
-        onComplete?.()
-
-        // Stop audio processor but don't close WebSocket again (it's already closed)
+        // Cleanup resources
         audioProcessorRef.current?.stop()
         audioProcessorRef.current = null
         mediaStreamRef.current?.getTracks().forEach(track => track.stop())
@@ -229,7 +264,19 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
         wsRef.current = null
         audioQueueRef.current.clear()
 
-        updateState('idle')
+        if (event.code !== 1000 && event.code !== 1001) {
+          // Abnormal closure — surface the error instead of silently resetting to idle.
+          // onerror may have already set an error message; preserve it if so.
+          const errorMsg = event.reason || `Connection lost (code: ${event.code})`
+          console.warn('WebSocket closed unexpectedly:', errorMsg)
+          setError(prev => prev || errorMsg)
+          onError?.(new Error(errorMsg))
+          updateState('error')
+        } else {
+          // Clean closure
+          onComplete?.()
+          updateState('idle')
+        }
       }
 
       // Create audio processor for microphone input
