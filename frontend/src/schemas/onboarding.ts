@@ -23,9 +23,7 @@ export const profileStepSchema = z.object({
     z.number().min(0).max(200).optional()
   ),
 
-  cycleRegularity: z.enum(['Regular', 'Irregular', 'DoNotTrack'], {
-    message: 'Please indicate your cycle tracking preference'
-  }),
+  cycleRegularity: z.enum(['Regular', 'Irregular', 'DoNotTrack']).optional(),
 
   cycleLength: z.number().min(21).max(45).optional(),
 
@@ -56,30 +54,7 @@ export const profileStepSchema = z.object({
     .refine((val) => !val || /^(\d{1,2}):([0-5]\d):([0-5]\d)$/.test(val), {
       message: 'Format: HH:MM:SS (e.g., 3:30:00)'
     }),
-}).refine(
-  (data) => {
-    if (data.cycleRegularity !== 'DoNotTrack') {
-      return data.cycleLength !== undefined
-    }
-    return true
-  },
-  {
-    message: 'Cycle length is required when tracking cycle',
-    path: ['cycleLength']
-  }
-).refine(
-  (data) => {
-    // If user provides an end date, they must also provide a start date
-    if (data.lastPeriodEnd !== undefined) {
-      return data.lastPeriodStart !== undefined
-    }
-    return true
-  },
-  {
-    message: 'Period start date is required when providing an end date',
-    path: ['lastPeriodStart']
-  }
-)
+})
 
 // Export the output type (after preprocessing) instead of input type
 export type ProfileFormValues = z.output<typeof profileStepSchema>
