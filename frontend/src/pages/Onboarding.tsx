@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import { Stepper } from '@/components/onboarding/Stepper'
@@ -46,6 +46,14 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
   const [nameDisplayState, setNameDisplayState] = useState<'default' | 'fading-out' | 'showing-name'>('default')
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false)
   const navigate = useNavigate()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
+  }, [currentStep])
 
   // Handle name transition animation
   useEffect(() => {
@@ -281,7 +289,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto custom-scrollbar">
+        <CardContent ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
           {/* Stepper */}
           <Stepper currentStep={currentStep} steps={STEPS} />
 

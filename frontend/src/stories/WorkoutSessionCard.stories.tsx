@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
-import { Snowflake, Sun, Leaf, Sprout, Heart } from 'lucide-react'
+import { Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
 import { IntensityLevel, WorkoutType, CyclePhase } from '@/types/api'
 import type { SessionDetailDto } from '@/types/api'
 import { ToastProvider } from '@/contexts/ToastContext'
@@ -417,21 +417,6 @@ export const SessionList: Story = {
       },
     ]
 
-    // Helper to get intensity color - using heart color at different opacities
-    const getIntensityColor = (level: IntensityLevel) => {
-      const heartColor = 'rgb(161, 65, 57)' // #A14139
-      switch (level) {
-        case IntensityLevel.Low:
-          return heartColor
-        case IntensityLevel.Moderate:
-          return heartColor
-        case IntensityLevel.High:
-          return heartColor
-        default:
-          return 'rgb(156, 163, 175)' // gray-400
-      }
-    }
-
     // Helper to get flowing background gradient
     const getFlowingBackground = (level: IntensityLevel) => {
       const opacities = level === IntensityLevel.Low
@@ -446,26 +431,6 @@ export const SessionList: Story = {
         radial-gradient(ellipse 100% 150% at 50% -50%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%),
         radial-gradient(ellipse 100% 150% at 50% 150%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%)
       `
-    }
-
-    // Helper to render intensity hearts
-    const renderIntensityHearts = (level: IntensityLevel) => {
-      const heartCount = level === IntensityLevel.Low ? 1 : level === IntensityLevel.Moderate ? 2 : 3
-      const color = getIntensityColor(level)
-
-      return (
-        <div className="flex gap-1 items-center">
-          {[...Array(3)].map((_, i) => (
-            <Heart
-              key={i}
-              className="h-4 w-4"
-              fill={i < heartCount ? color : 'none'}
-              stroke={i < heartCount ? color : 'rgb(209, 213, 219)'}
-              strokeWidth={2}
-            />
-          ))}
-        </div>
-      )
     }
 
     // Helper to get zone info based on intensity
