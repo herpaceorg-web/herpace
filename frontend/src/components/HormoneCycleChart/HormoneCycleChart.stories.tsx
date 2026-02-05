@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { HormoneCycleChart } from './HormoneCycleChart';
+import { CyclePhase } from '@/types/api';
 
 const meta = {
   title: 'Components/HormoneCycleChart',
@@ -19,12 +20,41 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Mock handler for period logging
+const mockOnPeriodLogged = () => {
+  console.log('Period logged');
+};
+
 export const Default: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 1,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Menstrual,
+      lastPeriodStart: new Date().toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 28,
+      phaseDescription: 'Menstrual Phase',
+      phaseGuidance: 'Rest and recovery period',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
 };
 
 export const MenstruationPhase: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 3,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Menstrual,
+      lastPeriodStart: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 26 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 26,
+      phaseDescription: 'Menstrual Phase',
+      phaseGuidance: 'Rest and recovery period',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     docs: {
       description: {
@@ -35,7 +65,19 @@ export const MenstruationPhase: Story = {
 };
 
 export const FollicularPhase: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 10,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Follicular,
+      lastPeriodStart: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 19,
+      phaseDescription: 'Follicular Phase',
+      phaseGuidance: 'Rising energy levels',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     docs: {
       description: {
@@ -46,7 +88,19 @@ export const FollicularPhase: Story = {
 };
 
 export const OvulationPhase: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 14,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Ovulatory,
+      lastPeriodStart: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000).toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 15,
+      phaseDescription: 'Ovulatory Phase',
+      phaseGuidance: 'Peak energy and performance',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     docs: {
       description: {
@@ -57,7 +111,19 @@ export const OvulationPhase: Story = {
 };
 
 export const LutealPhase: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 22,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Luteal,
+      lastPeriodStart: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 7,
+      phaseDescription: 'Luteal Phase',
+      phaseGuidance: 'Moderate activity recommended',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     docs: {
       description: {
@@ -68,7 +134,19 @@ export const LutealPhase: Story = {
 };
 
 export const EndOfCycle: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 27,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Luteal,
+      lastPeriodStart: new Date(Date.now() - 26 * 24 * 60 * 60 * 1000).toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 2,
+      phaseDescription: 'Luteal Phase',
+      phaseGuidance: 'Period approaching',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     docs: {
       description: {
@@ -79,7 +157,19 @@ export const EndOfCycle: Story = {
 };
 
 export const CustomDate: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 15,
+      cycleLength: 30,
+      currentPhase: CyclePhase.Ovulatory,
+      lastPeriodStart: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 16,
+      phaseDescription: 'Ovulatory Phase',
+      phaseGuidance: 'Peak energy and performance',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     docs: {
       description: {
@@ -90,7 +180,19 @@ export const CustomDate: Story = {
 };
 
 export const WithCustomBackground: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 1,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Menstrual,
+      lastPeriodStart: new Date().toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 28,
+      phaseDescription: 'Menstrual Phase',
+      phaseGuidance: 'Rest and recovery period',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   decorators: [
     (Story) => (
       <div className="bg-gray-100 p-8">
@@ -101,7 +203,19 @@ export const WithCustomBackground: Story = {
 };
 
 export const Responsive: Story = {
-  args: {},
+  args: {
+    cyclePosition: {
+      currentDayInCycle: 1,
+      cycleLength: 28,
+      currentPhase: CyclePhase.Menstrual,
+      lastPeriodStart: new Date().toISOString(),
+      nextPredictedPeriod: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+      daysUntilNextPeriod: 28,
+      phaseDescription: 'Menstrual Phase',
+      phaseGuidance: 'Rest and recovery period',
+    },
+    onPeriodLogged: mockOnPeriodLogged,
+  },
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',

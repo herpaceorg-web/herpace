@@ -260,7 +260,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
   }
 
   const { cycleLength, currentDayInCycle, daysUntilNextPeriod } = cyclePosition;
-  const { follicularEnd, ovulatoryEnd, follicularDays, ovulatoryDays, lutealDays } = computePhaseBoundaries(cycleLength);
+  const { ovulatoryEnd, follicularDays, ovulatoryDays, lutealDays } = computePhaseBoundaries(cycleLength);
   const hormoneData = generateHormoneData(cycleLength);
 
   // Split at ovulatoryEnd with one-day overlap for chart continuity
