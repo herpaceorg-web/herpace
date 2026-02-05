@@ -21,7 +21,7 @@ type Story = StoryObj<typeof meta>
 const mockSessionContext: VoiceSessionContextDto = {
   sessionId: '1',
   sessionName: '30 Minute Easy Run',
-  workoutType: WorkoutType.EasyRun,
+  workoutType: WorkoutType.Easy,
   plannedDistance: 5,
   plannedDuration: 30,
   cyclePhase: CyclePhase.Follicular,

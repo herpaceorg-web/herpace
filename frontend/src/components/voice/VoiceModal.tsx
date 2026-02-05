@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { X, Mic, Volume2, AlertCircle, CheckCircle } from 'lucide-react'
+import { X, Volume2, AlertCircle, CheckCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,

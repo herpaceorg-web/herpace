@@ -334,8 +334,7 @@ export const SessionList: Story = {
       {
         id: '1',
         sessionName: '30 Minute Easy Run',
-        sessionType: 'Easy Run',
-        workoutType: WorkoutType.EasyRun,
+        workoutType: WorkoutType.Easy,
         scheduledDate: new Date().toISOString(),
         distance: 5,
         durationMinutes: 30,
@@ -353,8 +352,7 @@ export const SessionList: Story = {
       {
         id: '2',
         sessionName: 'Speed Intervals - 400m Repeats',
-        sessionType: 'Intervals',
-        workoutType: WorkoutType.Intervals,
+        workoutType: WorkoutType.Interval,
         scheduledDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
         distance: 6,
         durationMinutes: 40,
@@ -372,8 +370,7 @@ export const SessionList: Story = {
       {
         id: '3',
         sessionName: 'Long Run with Tempo Finish',
-        sessionType: 'Long Run',
-        workoutType: WorkoutType.LongRun,
+        workoutType: WorkoutType.Long,
         scheduledDate: new Date(Date.now() + 172800000).toISOString(), // 2 days from now
         distance: 15,
         durationMinutes: 90,
@@ -392,8 +389,7 @@ export const SessionList: Story = {
       {
         id: '4',
         sessionName: 'Recovery Run',
-        sessionType: 'Recovery',
-        workoutType: WorkoutType.Recovery,
+        workoutType: WorkoutType.Easy,
         scheduledDate: new Date(Date.now() + 259200000).toISOString(), // 3 days from now
         distance: 4.8, // ~3 miles
         durationMinutes: 25,
@@ -866,8 +862,7 @@ export const SessionCTAs: Story = {
     const baseSession: SessionDetailDto = {
       id: '1',
       sessionName: '30 Minute Easy Run',
-      sessionType: 'Easy Run',
-      workoutType: WorkoutType.EasyRun,
+      workoutType: WorkoutType.Easy,
       scheduledDate: new Date().toISOString(),
       distance: 5,
       durationMinutes: 30,

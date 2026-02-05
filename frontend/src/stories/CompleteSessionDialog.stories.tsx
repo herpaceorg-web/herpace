@@ -21,8 +21,7 @@ type Story = StoryObj<typeof meta>
 const mockSession: SessionDetailDto = {
   id: '1',
   sessionName: '30 Minute Easy Run',
-  sessionType: 'Easy Run',
-  workoutType: WorkoutType.EasyRun,
+  workoutType: WorkoutType.Easy,
   scheduledDate: new Date().toISOString(),
   distance: 5,
   durationMinutes: 30,
@@ -41,8 +40,7 @@ const mockSession: SessionDetailDto = {
 const mockLongRunSession: SessionDetailDto = {
   id: '2',
   sessionName: 'Long Run with Tempo Finish',
-  sessionType: 'Long Run',
-  workoutType: WorkoutType.LongRun,
+  workoutType: WorkoutType.Long,
   scheduledDate: new Date().toISOString(),
   distance: 15,
   durationMinutes: 90,
@@ -57,7 +55,6 @@ const mockLongRunSession: SessionDetailDto = {
 const mockRestDaySession: SessionDetailDto = {
   id: '3',
   sessionName: 'Rest Day',
-  sessionType: 'Rest',
   workoutType: WorkoutType.Rest,
   scheduledDate: new Date().toISOString(),
   distance: undefined,
