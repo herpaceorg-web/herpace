@@ -101,21 +101,15 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
         for (const call of message.toolCall.functionCalls) {
           onToolCall?.(call.name, call.args)
 
-          // Gemini Live requires a functionResponse to continue the conversation.
-          // Send an acknowledgement so the model doesn't stall.
+          // Gemini Live requires a toolResponse to continue the conversation.
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
-              clientContent: {
-                turns: [{
-                  role: 'user',
-                  parts: [{
-                    functionResponse: {
-                      name: call.name,
-                      response: { output: 'Workout details received for confirmation.' }
-                    }
-                  }]
-                }],
-                turnComplete: true
+              toolResponse: {
+                functionResponses: [{
+                  id: call.id,
+                  name: call.name,
+                  response: { result: 'Workout details received for confirmation.' }
+                }]
               }
             }))
           }
@@ -194,7 +188,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           setup: {
             model: tokenResponse.model || 'models/gemini-2.5-flash-native-audio-preview-12-2025',
             generationConfig: {
-              responseModalities: ['TEXT', 'AUDIO'],
+              responseModalities: ['AUDIO'],
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
@@ -231,6 +225,9 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
                 }
               }]
             }],
+            // Transcription flags — presence enables them for native audio models
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
             ...(tokenResponse.systemInstruction && {
               systemInstruction: {
                 parts: [{ text: tokenResponse.systemInstruction }]
