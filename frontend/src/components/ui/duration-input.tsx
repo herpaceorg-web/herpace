@@ -24,10 +24,11 @@ export const DurationInput = React.forwardRef<HTMLInputElement, DurationInputPro
       }
     }, [value])
 
-    // Notify parent of changes in HH:MM:SS format
+    // Notify parent of changes (send raw values, padding happens on form submit)
     const notifyChange = (h: string, m: string, s: string) => {
       if (h || m || s) {
-        const formatted = `${h.padStart(2, '0')}:${m.padStart(2, '0')}:${s.padStart(2, '0')}`
+        // Send unpadded values separated by colons
+        const formatted = `${h || '0'}:${m || '0'}:${s || '0'}`
         onChange?.(formatted)
       } else {
         onChange?.('')
@@ -63,6 +64,7 @@ export const DurationInput = React.forwardRef<HTMLInputElement, DurationInputPro
           type="text"
           inputMode="numeric"
           placeholder="00"
+          maxLength={2}
           value={hours}
           onChange={handleHoursChange}
           className="w-14 text-center"
@@ -73,6 +75,7 @@ export const DurationInput = React.forwardRef<HTMLInputElement, DurationInputPro
           type="text"
           inputMode="numeric"
           placeholder="00"
+          maxLength={2}
           value={minutes}
           onChange={handleMinutesChange}
           className="w-14 text-center"
@@ -83,6 +86,7 @@ export const DurationInput = React.forwardRef<HTMLInputElement, DurationInputPro
           type="text"
           inputMode="numeric"
           placeholder="00"
+          maxLength={2}
           value={seconds}
           onChange={handleSecondsChange}
           className="w-14 text-center"
