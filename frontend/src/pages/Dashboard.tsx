@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto } from '@/types/api'
+import { IntensityLevel } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
@@ -117,6 +118,22 @@ export function Dashboard() {
     }
   }
 
+  // Helper to get flowing background gradient based on intensity
+  const getFlowingBackground = (level: IntensityLevel) => {
+    const opacities = level === IntensityLevel.Low
+      ? { main: 0.10, secondary: 0.08 }
+      : level === IntensityLevel.Moderate
+      ? { main: 0.16, secondary: 0.13 }
+      : { main: 0.24, secondary: 0.20 }
+
+    return `
+      radial-gradient(ellipse 150% 100% at -50% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
+      radial-gradient(ellipse 150% 100% at 150% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 150% at 50% -50%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 150% at 50% 150%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%)
+    `
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -200,12 +217,23 @@ export function Dashboard() {
       <div>
         <h2 className="text-2xl font-semibold mb-4">Today's Workout</h2>
         {planSummary.todaysSession ? (
-          <WorkoutSessionCard
-            session={planSummary.todaysSession}
-            cyclePhaseTips={planSummary.cyclePhaseTips}
-            onSessionUpdated={loadDashboardData}
-            distanceUnit={distanceUnit}
-          />
+          <div className="relative">
+            <WorkoutSessionCard
+              session={planSummary.todaysSession}
+              cyclePhaseTips={planSummary.cyclePhaseTips}
+              onSessionUpdated={loadDashboardData}
+              distanceUnit={distanceUnit}
+            />
+            {/* Flowing gradient overlay - only on card, not phase section */}
+            {planSummary.todaysSession.intensityLevel !== undefined && (
+              <div
+                className="absolute top-[30px] left-0 right-0 bottom-0 pointer-events-none rounded-tl-none rounded-tr-2xl rounded-b-2xl"
+                style={{
+                  background: getFlowingBackground(planSummary.todaysSession.intensityLevel)
+                }}
+              />
+            )}
+          </div>
         ) : (
           <Card>
             <CardContent className="pt-6">
@@ -262,9 +290,20 @@ export function Dashboard() {
         </div>
 
         {upcomingSessions.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-12">
             {upcomingSessions.map((session) => (
-              <WorkoutSessionCard key={session.id} session={session} onSessionUpdated={loadDashboardData} distanceUnit={distanceUnit} />
+              <div key={session.id} className="relative">
+                <WorkoutSessionCard session={session} onSessionUpdated={loadDashboardData} distanceUnit={distanceUnit} />
+                {/* Flowing gradient overlay - only on card, not phase section */}
+                {session.intensityLevel !== undefined && (
+                  <div
+                    className="absolute top-[30px] left-0 right-0 bottom-0 pointer-events-none rounded-tl-none rounded-tr-2xl rounded-b-2xl"
+                    style={{
+                      background: getFlowingBackground(session.intensityLevel)
+                    }}
+                  />
+                )}
+              </div>
             ))}
           </div>
         ) : (
