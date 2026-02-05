@@ -214,6 +214,8 @@ export interface ProfileResponse {
   createdAt: string
 }
 
+export type UpdateProfileRequest = CreateProfileRequest
+
 // Race DTOs
 export interface CreateRaceRequest {
   raceName: string

@@ -36,6 +36,7 @@ export function Onboarding() {
   const [error, setError] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>('')
   const [nameDisplayState, setNameDisplayState] = useState<'default' | 'fading-out' | 'showing-name'>('default')
+  const [profileExists, setProfileExists] = useState(false)
   const navigate = useNavigate()
 
   // Handle name transition animation
@@ -49,6 +50,24 @@ export function Onboarding() {
       }, 200)
     }
   }, [userName, nameDisplayState])
+
+  // Check if profile exists on mount
+  useEffect(() => {
+    const checkExistingProfile = async () => {
+      try {
+        const response = await api.get<ProfileResponse>('/api/profiles/me')
+        if (response) {
+          setProfileExists(true)
+          // Optionally pre-populate form with existing data
+        }
+      } catch (err) {
+        // 404 means no profile exists - expected for new users
+        setProfileExists(false)
+      }
+    }
+
+    checkExistingProfile()
+  }, [])
 
   // Helper function to format time strings to TimeSpan format (HH:MM:SS)
   const formatTimeSpan = (time: string | undefined): string | undefined => {
@@ -93,21 +112,36 @@ export function Onboarding() {
         marathonPR: formatTimeSpan(data.marathonPR)
       }
 
-      await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
+      // Use PUT if profile exists, POST if creating new
+      if (profileExists) {
+        await api.put<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
+      } else {
+        await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
+        // After successful creation, update state so subsequent submissions use PUT
+        setProfileExists(true)
+      }
 
       // Success - move to next step
       setCurrentStep(2)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
-
-        if (axiosError.response?.status === 409) {
-          // Profile already exists - skip to dashboard
-          setError('You already have a profile. Redirecting to dashboard...')
-          setTimeout(() => navigate('/dashboard'), 2000)
-        } else {
-          setError(axiosError.response?.data?.message || 'Failed to create profile. Please try again.')
+        const axiosError = err as {
+          response?: { status?: number; data?: { message?: string } }
         }
+
+        // Handle edge case: profile created between mount check and submission
+        if (axiosError.response?.status === 400 &&
+            axiosError.response?.data?.message?.includes('Profile already exists')) {
+          // Retry with PUT
+          setProfileExists(true)
+          handleProfileComplete(data)
+          return
+        }
+
+        setError(
+          axiosError.response?.data?.message ||
+          'Failed to save profile. Please try again.'
+        )
       } else {
         setError('An unexpected error occurred. Please try again.')
       }
