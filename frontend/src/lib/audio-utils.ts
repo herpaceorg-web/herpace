@@ -20,12 +20,15 @@ export const AUDIO_CONFIG = {
 
 /**
  * Audio context singleton for reuse
+ * Uses hardware sample rate for best compatibility
  */
 let audioContext: AudioContext | null = null
 
 export function getAudioContext(): AudioContext {
   if (!audioContext) {
-    audioContext = new AudioContext({ sampleRate: AUDIO_CONFIG.output.sampleRate })
+    // Use hardware's native sample rate (typically 44.1kHz or 48kHz)
+    // We'll resample Gemini's 24kHz audio to match
+    audioContext = new AudioContext()
   }
   return audioContext
 }
@@ -143,8 +146,12 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 /**
  * Play PCM audio data from Gemini (24kHz, 16-bit, mono)
+ * Returns the BufferSource for scheduling and cleanup
  */
-export async function playPcmAudio(base64Data: string): Promise<void> {
+export async function playPcmAudio(
+  base64Data: string,
+  startTime?: number
+): Promise<{ source: AudioBufferSourceNode; duration: number }> {
   const context = getAudioContext()
 
   // Resume context if suspended (browser autoplay policy)
@@ -163,61 +170,125 @@ export async function playPcmAudio(base64Data: string): Promise<void> {
     float32Array[i] = int16Array[i] / (int16Array[i] < 0 ? 0x8000 : 0x7fff)
   }
 
-  // Create audio buffer
+  // Create audio buffer with proper sample rate
+  // Gemini sends 24kHz audio, but we need to resample to hardware rate
   const audioBuffer = context.createBuffer(
     AUDIO_CONFIG.output.channelCount,
     float32Array.length,
-    AUDIO_CONFIG.output.sampleRate
+    AUDIO_CONFIG.output.sampleRate // 24kHz source rate
   )
 
   audioBuffer.getChannelData(0).set(float32Array)
 
-  // Play the audio
+  // Create and configure the audio source
   const source = context.createBufferSource()
   source.buffer = audioBuffer
   source.connect(context.destination)
-  source.start()
 
-  // Return a promise that resolves when playback completes
-  return new Promise((resolve) => {
-    source.onended = () => resolve()
-  })
+  // Calculate actual duration in seconds
+  const duration = audioBuffer.duration
+
+  // Start playback at specified time or immediately
+  if (startTime !== undefined && startTime > context.currentTime) {
+    source.start(startTime)
+  } else {
+    source.start()
+  }
+
+  // Auto-disconnect after playback to prevent memory leaks
+  source.onended = () => {
+    source.disconnect()
+  }
+
+  return { source, duration }
 }
 
 /**
  * Audio queue for managing sequential playback of audio chunks
+ * with seamless scheduling and pre-buffering
  */
 export class AudioQueue {
   private queue: string[] = []
   private isPlaying = false
+  private nextScheduledTime = 0
+  private activeSources: AudioBufferSourceNode[] = []
+  private readonly PRE_BUFFER_COUNT = 2 // Buffer 2 chunks before starting playback
 
   async enqueue(base64Data: string): Promise<void> {
     this.queue.push(base64Data)
-    if (!this.isPlaying) {
-      this.playNext()
+
+    // Start playback only after pre-buffering initial chunks
+    if (!this.isPlaying && this.queue.length >= this.PRE_BUFFER_COUNT) {
+      this.startPlayback()
     }
   }
 
-  private async playNext(): Promise<void> {
-    if (this.queue.length === 0) {
-      this.isPlaying = false
-      return
-    }
+  private startPlayback(): void {
+    if (this.isPlaying) return
 
     this.isPlaying = true
-    const audioData = this.queue.shift()!
+    const context = getAudioContext()
 
-    try {
-      await playPcmAudio(audioData)
-    } catch (error) {
-      console.error('Error playing audio:', error)
+    // Initialize scheduling time with a small buffer (100ms) to allow for processing
+    this.nextScheduledTime = context.currentTime + 0.1
+
+    // Schedule all queued chunks
+    this.scheduleNext()
+  }
+
+  private async scheduleNext(): Promise<void> {
+    while (this.queue.length > 0) {
+      const audioData = this.queue.shift()!
+
+      try {
+        const context = getAudioContext()
+
+        // If we're behind schedule, reset to current time
+        if (this.nextScheduledTime < context.currentTime) {
+          this.nextScheduledTime = context.currentTime
+        }
+
+        const { source, duration } = await playPcmAudio(audioData, this.nextScheduledTime)
+
+        // Track active source for cleanup
+        this.activeSources.push(source)
+
+        // Remove from tracking when it ends
+        source.onended = () => {
+          const index = this.activeSources.indexOf(source)
+          if (index > -1) {
+            this.activeSources.splice(index, 1)
+          }
+          source.disconnect()
+        }
+
+        // Schedule next chunk to start exactly when this one ends (seamless playback)
+        this.nextScheduledTime += duration
+
+      } catch (error) {
+        console.error('Error scheduling audio:', error)
+        // Continue with next chunk despite error
+      }
     }
 
-    this.playNext()
+    this.isPlaying = false
   }
 
   clear(): void {
+    // Stop and disconnect all active sources
+    this.activeSources.forEach(source => {
+      try {
+        source.stop()
+        source.disconnect()
+      } catch (error) {
+        // Source may have already ended
+      }
+    })
+
+    this.activeSources = []
     this.queue = []
+    this.isPlaying = false
+    this.nextScheduledTime = 0
   }
 
   get length(): number {
