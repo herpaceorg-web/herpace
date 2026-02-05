@@ -133,6 +133,15 @@ export const raceStepSchema = z.object({
   raceCompletionGoal: z.string()
     .max(1000, 'Goal description must be less than 1000 characters')
     .optional(),
+
+  planLength: z.number()
+    .int()
+    .min(8)
+    .max(24)
+    .optional(),
+
+  longRunDay: z.string()
+    .optional(),
 }).refine(
   (data) => {
     // Cross-field validation: trainingStartDate must be before raceDate
