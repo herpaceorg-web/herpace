@@ -19,15 +19,21 @@ export const DurationInput = React.forwardRef<HTMLInputElement, DurationInputPro
       if (value) {
         const parts = value.split(':')
         setHours(parts[0] || '')
-        setMinutes(parts[1] || '')
-        setSeconds(parts[2] || '')
+        // Only set minutes/seconds if they're not "0" or empty
+        setMinutes(parts[1] && parts[1] !== '0' ? parts[1] : '')
+        setSeconds(parts[2] && parts[2] !== '0' ? parts[2] : '')
+      } else {
+        // Clear all fields when value is empty
+        setHours('')
+        setMinutes('')
+        setSeconds('')
       }
     }, [value])
 
     // Notify parent of changes (send raw values, padding happens on form submit)
     const notifyChange = (h: string, m: string, s: string) => {
       if (h || m || s) {
-        // Send unpadded values separated by colons
+        // Send values with "0" for empty fields (for validation), but UI keeps them empty
         const formatted = `${h || '0'}:${m || '0'}:${s || '0'}`
         onChange?.(formatted)
       } else {
