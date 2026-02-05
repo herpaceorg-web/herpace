@@ -265,7 +265,7 @@ public class SessionController : ControllerBase
         DateTime today;
         if (!string.IsNullOrEmpty(clientDate) && DateTime.TryParse(clientDate, out var parsedDate))
         {
-            today = parsedDate.Date;
+            today = DateTime.SpecifyKind(parsedDate.Date, DateTimeKind.Utc);
             _logger.LogInformation("Using client date {Today} for today's session lookup", today);
         }
         else

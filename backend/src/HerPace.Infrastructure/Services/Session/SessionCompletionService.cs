@@ -144,7 +144,7 @@ public class SessionCompletionService : ISessionCompletionService
     {
         DateTime today;
         if (!string.IsNullOrEmpty(clientDate) && DateTime.TryParse(clientDate, out var parsed))
-            today = parsed.Date;
+            today = DateTime.SpecifyKind(parsed.Date, DateTimeKind.Utc);
         else
             today = DateTime.UtcNow.Date;
 
