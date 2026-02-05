@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useState } from 'react'
 import { GeneratingPlanStep } from '@/components/onboarding/GeneratingPlanStep'
-import { FormulaAnimation } from '@/components/onboarding/FormulaAnimation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 
 const meta = {
   title: 'Onboarding/GeneratingPlanStep',
@@ -34,6 +33,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
+  args: {},
   parameters: {
     docs: {
       description: {
@@ -44,6 +44,7 @@ export const Default: Story = {
 }
 
 export const WithCTA: Story = {
+  args: {},
   render: () => {
     const [progress, setProgress] = useState(0)
     const [isComplete, setIsComplete] = useState(false)

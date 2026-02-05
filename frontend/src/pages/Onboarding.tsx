@@ -148,7 +148,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
         marathonPR: formatTimeSpan(profileData?.marathonPR)
       }
 
-      await api.put<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
+      await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
 
       // Success - move to next step
       setCurrentStep(3)

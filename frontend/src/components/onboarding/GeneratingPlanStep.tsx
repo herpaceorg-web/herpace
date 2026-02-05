@@ -60,13 +60,13 @@ const getCurrentPhase = (progress: number) => {
   ) || GENERATION_PHASES[GENERATION_PHASES.length - 1]
 }
 
-interface GeneratingPlanStepProps {
+export interface GeneratingPlanStepProps {
   initialProgress?: number // For demo/testing purposes
   initialComplete?: boolean // For demo/testing purposes
-  onReviewPlan?: () => void // Called when user clicks "Review my HerPace Plan"
+  onReviewPlan?: () => void // Called when user clicks "Review Training Plan"
 }
 
-export function GeneratingPlanStep({ initialProgress = 0, initialComplete = false, onReviewPlan }: GeneratingPlanStepProps = {}) {
+export function GeneratingPlanStep({ initialProgress = 0, initialComplete = false, onReviewPlan }: GeneratingPlanStepProps) {
   const [messageIndex, setMessageIndex] = useState(0)
   const [progress, setProgress] = useState(initialProgress)
   const [currentPhase, setCurrentPhase] = useState(getCurrentPhase(initialProgress))

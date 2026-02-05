@@ -59,6 +59,9 @@ export const SequentialBuildUp: Story = {
 }
 
 export const PhaseProgressive: Story = {
+  args: {
+    animationStyle: 'phase-progressive',
+  },
   render: () => <ProgressSimulator animationStyle="phase-progressive" />,
   parameters: {
     docs: {
@@ -112,6 +115,9 @@ export const MathEquation: Story = {
 }
 
 export const ProgressSynced: Story = {
+  args: {
+    animationStyle: 'progress-synced',
+  },
   render: () => <ProgressSimulator animationStyle="progress-synced" />,
   parameters: {
     docs: {
@@ -123,6 +129,9 @@ export const ProgressSynced: Story = {
 }
 
 export const ProgressSyncedWithButton: Story = {
+  args: {
+    animationStyle: 'progress-synced',
+  },
   render: () => {
     const [progress, setProgress] = useState(0)
     const [hasLooped, setHasLooped] = useState(false)
