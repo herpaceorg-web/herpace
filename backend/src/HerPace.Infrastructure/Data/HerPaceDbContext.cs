@@ -23,6 +23,7 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
     public DbSet<TrainingPlan> TrainingPlans => Set<TrainingPlan>();
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
     public DbSet<CycleLog> CycleLogs => Set<CycleLog>();
+    public DbSet<PlanAdaptationHistory> PlanAdaptationHistory => Set<PlanAdaptationHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -151,6 +152,35 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
             entity.HasIndex(tp => new { tp.RunnerId, tp.Status })
                 .IsUnique()
                 .HasFilter("\"Status\" = 0"); // PlanStatus.Active = 0
+
+            // One-to-many relationship with PlanAdaptationHistory
+            entity.HasMany<PlanAdaptationHistory>()
+                .WithOne(pah => pah.TrainingPlan)
+                .HasForeignKey(pah => pah.TrainingPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure PlanAdaptationHistory entity
+        modelBuilder.Entity<PlanAdaptationHistory>(entity =>
+        {
+            entity.ToTable("plan_adaptation_history");
+
+            entity.HasKey(pah => pah.Id);
+
+            entity.Property(pah => pah.Summary)
+                .IsRequired()
+                .HasMaxLength(4000);
+
+            entity.Property(pah => pah.TriggerReason)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(pah => pah.ChangesJson)
+                .HasColumnType("jsonb"); // Use PostgreSQL's native JSON type for better querying
+
+            entity.HasIndex(pah => pah.TrainingPlanId);
+            entity.HasIndex(pah => pah.AdaptedAt)
+                .IsDescending(); // Optimize for fetching recent adaptations first
         });
 
         // Configure TrainingSession entity

@@ -69,6 +69,7 @@ public class SessionDetailDto
     // Computed fields
     public bool WasModified { get; set; } // >20% deviation from planned
     public bool IsCompleted { get; set; } // CompletedAt != null && !IsSkipped
+    public bool IsRecentlyUpdated { get; set; } // Updated by plan recalculation within last 7 days
 }
 
 /// <summary>
@@ -94,6 +95,7 @@ public class PlanSummaryDto
     public int DaysUntilRace { get; set; }
     public bool HasPendingRecalculation { get; set; } // Is a recalculation job currently running?
     public string? RecalculationSummary { get; set; } // AI-generated summary (null if viewed or no recalculation)
+    public LatestAdaptationDto? LatestAdaptation { get; set; } // Latest adaptation details with before/after changes
     public SessionDetailDto? TodaysSession { get; set; } // Today's session (null if no session today)
     public CyclePhaseTipsDto? CyclePhaseTips { get; set; } // Wellness tips for today's cycle phase
 }

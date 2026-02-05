@@ -54,25 +54,42 @@ public class SessionController : ControllerBase
 
         var sessions = await _sessionCompletionService.GetUpcomingSessionsAsync(runnerId, count, clientDate);
 
-        // Check if there's a pending recalculation job
+        // Check if there's a pending recalculation job and calculate IsRecentlyUpdated
         var hasPendingRecalculation = false;
         if (sessions.Any())
         {
-            // Get the active plan to check job status
+            // Get the active plan to check job status and last recalculation time
             var activePlan = await _context.TrainingPlans
+                .Include(p => p.Sessions)
                 .Where(p => p.RunnerId == runnerId && p.Status == PlanStatus.Active)
                 .FirstOrDefaultAsync();
 
-            if (activePlan != null && !string.IsNullOrEmpty(activePlan.LastRecalculationJobId))
+            if (activePlan != null)
             {
-                try
+                // Check Hangfire job status
+                if (!string.IsNullOrEmpty(activePlan.LastRecalculationJobId))
                 {
-                    var jobState = JobStorage.Current?.GetConnection()?.GetStateData(activePlan.LastRecalculationJobId);
-                    hasPendingRecalculation = jobState?.Name is "Processing" or "Enqueued";
+                    try
+                    {
+                        var jobState = JobStorage.Current?.GetConnection()?.GetStateData(activePlan.LastRecalculationJobId);
+                        hasPendingRecalculation = jobState?.Name is "Processing" or "Enqueued";
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error checking Hangfire job status for job {JobId}", activePlan.LastRecalculationJobId);
+                    }
                 }
-                catch (Exception ex)
+
+                // Calculate IsRecentlyUpdated for each session
+                foreach (var session in sessions)
                 {
-                    _logger.LogWarning(ex, "Error checking Hangfire job status for job {JobId}", activePlan.LastRecalculationJobId);
+                    var sessionEntity = activePlan.Sessions.FirstOrDefault(s => s.Id == session.Id);
+                    if (sessionEntity != null)
+                    {
+                        session.IsRecentlyUpdated = activePlan.LastRecalculatedAt.HasValue
+                            && sessionEntity.UpdatedAt >= activePlan.LastRecalculatedAt.Value
+                            && (DateTime.UtcNow - sessionEntity.UpdatedAt).TotalDays <= 7;
+                    }
                 }
             }
         }
@@ -351,7 +368,10 @@ public class SessionController : ControllerBase
                 TrainingStage = TrainingStageLibrary.CalculateStage(todaysSessionEntity.ScheduledDate, activePlan.StartDate, activePlan.EndDate),
                 TrainingStageInfo = TrainingStageLibrary.GetInfo(TrainingStageLibrary.CalculateStage(todaysSessionEntity.ScheduledDate, activePlan.StartDate, activePlan.EndDate)),
                 WasModified = todaysSessionEntity.WasModified,
-                IsCompleted = todaysSessionEntity.CompletedAt.HasValue && !todaysSessionEntity.IsSkipped
+                IsCompleted = todaysSessionEntity.CompletedAt.HasValue && !todaysSessionEntity.IsSkipped,
+                IsRecentlyUpdated = activePlan.LastRecalculatedAt.HasValue
+                    && todaysSessionEntity.UpdatedAt >= activePlan.LastRecalculatedAt.Value
+                    && (DateTime.UtcNow - todaysSessionEntity.UpdatedAt).TotalDays <= 7
             };
         }
 
@@ -359,6 +379,39 @@ public class SessionController : ControllerBase
         var recalculationSummary = activePlan.RecalculationSummaryViewedAt == null
             ? activePlan.LastRecalculationSummary
             : null;
+
+        // Get latest adaptation details if summary not viewed
+        LatestAdaptationDto? latestAdaptation = null;
+        if (activePlan.RecalculationSummaryViewedAt == null)
+        {
+            var latestHistory = await _context.PlanAdaptationHistory
+                .Where(h => h.TrainingPlanId == activePlan.Id)
+                .OrderByDescending(h => h.AdaptedAt)
+                .FirstOrDefaultAsync();
+
+            if (latestHistory != null && !string.IsNullOrEmpty(latestHistory.ChangesJson))
+            {
+                try
+                {
+                    var changes = JsonSerializer.Deserialize<List<SessionChangeDto>>(
+                        latestHistory.ChangesJson,
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+                    if (changes != null)
+                    {
+                        latestAdaptation = new LatestAdaptationDto
+                        {
+                            AdaptedAt = latestHistory.AdaptedAt,
+                            SessionChanges = changes
+                        };
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to deserialize adaptation changes for history {HistoryId}", latestHistory.Id);
+                }
+            }
+        }
 
         // Get cycle phase tips for today's session
         CyclePhaseTipsDto? cyclePhaseTips = null;
@@ -376,6 +429,7 @@ public class SessionController : ControllerBase
             DaysUntilRace = (activePlan.Race.RaceDate - DateTime.UtcNow.Date).Days,
             HasPendingRecalculation = hasPendingRecalculation,
             RecalculationSummary = recalculationSummary,
+            LatestAdaptation = latestAdaptation,
             TodaysSession = todaysSession,
             CyclePhaseTips = cyclePhaseTips
         };
@@ -473,6 +527,106 @@ public class SessionController : ControllerBase
         _logger.LogInformation("Ad-hoc workout logged for runner {RunnerId}", runner.Id);
 
         return Ok(new { message = "Workout logged successfully" });
+    }
+
+    /// <summary>
+    /// Gets the adaptation history for the current user's active training plan.
+    /// GET /api/sessions/adaptation-history?skip=0&take=10
+    /// </summary>
+    [HttpGet("adaptation-history")]
+    public async Task<IActionResult> GetAdaptationHistory([FromQuery] int skip = 0, [FromQuery] int take = 10)
+    {
+        try
+        {
+            var runnerId = GetRunnerIdFromClaims();
+
+            // Get active training plan
+            var activePlan = await _context.TrainingPlans
+                .Include(tp => tp.Race)
+                .FirstOrDefaultAsync(tp => tp.RunnerId == runnerId && tp.Status == PlanStatus.Active);
+
+            if (activePlan == null)
+                return NotFound(new { message = "No active training plan found" });
+
+            // Fetch adaptation history entries
+            var historyEntries = await _context.PlanAdaptationHistory
+                .Where(h => h.TrainingPlanId == activePlan.Id)
+                .OrderByDescending(h => h.AdaptedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            // Map to DTOs and deserialize changes
+            var historyDtos = historyEntries.Select(h => new AdaptationHistoryDto
+            {
+                Id = h.Id,
+                AdaptedAt = h.AdaptedAt,
+                IsViewed = h.ViewedAt.HasValue,
+                Summary = h.Summary,
+                SessionsAffectedCount = h.SessionsAffectedCount,
+                TriggerReason = h.TriggerReason,
+                Changes = string.IsNullOrEmpty(h.ChangesJson)
+                    ? new List<SessionChangeDto>()
+                    : JsonSerializer.Deserialize<List<SessionChangeDto>>(h.ChangesJson,
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+                      ?? new List<SessionChangeDto>()
+            }).ToList();
+
+            _logger.LogInformation(
+                "Retrieved {Count} adaptation history entries for plan {PlanId}",
+                historyDtos.Count,
+                activePlan.Id);
+
+            return Ok(historyDtos);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Marks an adaptation history entry as viewed by the user.
+    /// POST /api/sessions/adaptation-history/{id}/mark-viewed
+    /// </summary>
+    [HttpPost("adaptation-history/{id}/mark-viewed")]
+    public async Task<IActionResult> MarkAdaptationHistoryViewed(Guid id)
+    {
+        try
+        {
+            var runnerId = GetRunnerIdFromClaims();
+
+            // Get active training plan
+            var activePlan = await _context.TrainingPlans
+                .FirstOrDefaultAsync(tp => tp.RunnerId == runnerId && tp.Status == PlanStatus.Active);
+
+            if (activePlan == null)
+                return NotFound(new { message = "No active training plan found" });
+
+            // Find the history entry
+            var historyEntry = await _context.PlanAdaptationHistory
+                .FirstOrDefaultAsync(h => h.Id == id && h.TrainingPlanId == activePlan.Id);
+
+            if (historyEntry == null)
+                return NotFound(new { message = "Adaptation history entry not found" });
+
+            // Mark as viewed
+            historyEntry.ViewedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Marked adaptation history {HistoryId} as viewed for plan {PlanId}",
+                id,
+                activePlan.Id);
+
+            return Ok(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>

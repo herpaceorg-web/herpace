@@ -172,8 +172,28 @@ export interface PlanSummaryDto {
   daysUntilRace: number
   hasPendingRecalculation: boolean
   recalculationSummary?: string
+  latestAdaptation?: LatestAdaptationDto
   todaysSession?: SessionDetailDto
   cyclePhaseTips?: CyclePhaseTipsDto
+}
+
+export interface LatestAdaptationDto {
+  adaptedAt: string
+  sessionChanges: SessionChangeDto[]
+}
+
+export interface SessionChangeDto {
+  sessionId: string
+  scheduledDate: string
+  sessionName: string
+  oldDistance?: number
+  oldDuration?: number
+  oldWorkoutType?: WorkoutType
+  oldIntensityLevel?: IntensityLevel
+  newDistance?: number
+  newDuration?: number
+  newWorkoutType: WorkoutType
+  newIntensityLevel: IntensityLevel
 }
 
 export interface SessionDetailDto {
@@ -197,6 +217,7 @@ export interface SessionDetailDto {
   trainingStageInfo?: TrainingStageInfoDto
   isCompleted: boolean
   isSkipped: boolean
+  isRecentlyUpdated?: boolean
   actualDistance?: number
   actualDuration?: number
   rpe?: number

@@ -1,4 +1,7 @@
+using System.Text.Json;
 using Hangfire;
+using HerPace.Core.DTOs;
+using HerPace.Core.Entities;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
 using HerPace.Infrastructure.Data;
@@ -261,7 +264,19 @@ public class PlanAdaptationService : IPlanAdaptationService
             _logger.LogInformation("Calling AI generator for recalculation");
             var recalculatedPlan = await _aiPlanGenerator.RecalculatePlanAsync(recalcRequest);
 
-            // Step 7: Update existing sessions in-place (preserve IDs)
+            // Step 7a: Capture current session state before updates (for history)
+            var changesList = futureSessions.Select(s => new SessionChangeDto
+            {
+                SessionId = s.Id,
+                ScheduledDate = s.ScheduledDate,
+                SessionName = s.SessionName,
+                OldDistance = s.Distance,
+                OldDuration = s.DurationMinutes,
+                OldWorkoutType = s.WorkoutType,
+                OldIntensityLevel = s.IntensityLevel
+            }).ToList();
+
+            // Step 7b: Update existing sessions in-place (preserve IDs)
             foreach (var existingSession in futureSessions)
             {
                 var aiSession = recalculatedPlan.Sessions
@@ -295,6 +310,20 @@ public class PlanAdaptationService : IPlanAdaptationService
                 }
             }
 
+            // Step 7c: Complete change records with new values
+            foreach (var change in changesList)
+            {
+                var updated = futureSessions.First(s => s.Id == change.SessionId);
+                change.NewDistance = updated.Distance;
+                change.NewDuration = updated.DurationMinutes;
+                change.NewWorkoutType = updated.WorkoutType;
+                change.NewIntensityLevel = updated.IntensityLevel;
+            }
+
+            _logger.LogInformation(
+                "Captured {Count} session changes for history",
+                changesList.Count(c => c.HasChanges()));
+
             // Step 8: Generate AI summary of recalculation
             try
             {
@@ -313,6 +342,37 @@ public class PlanAdaptationService : IPlanAdaptationService
                 // Don't fail the entire recalculation if summary generation fails
                 plan.LastRecalculationSummary = "Your training plan has been adjusted based on your recent performance.";
                 plan.RecalculationSummaryViewedAt = null;
+            }
+
+            // Step 8b: Create history entry
+            try
+            {
+                var historyEntry = new PlanAdaptationHistory
+                {
+                    Id = Guid.NewGuid(),
+                    TrainingPlanId = plan.Id,
+                    AdaptedAt = DateTime.UtcNow,
+                    ViewedAt = null,
+                    Summary = plan.LastRecalculationSummary ?? "Your training plan has been adjusted based on your recent performance.",
+                    SessionsAffectedCount = changesList.Count(c => c.HasChanges()),
+                    TriggerReason = "Training pattern deviation detected",
+                    ChangesJson = JsonSerializer.Serialize(changesList, new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    })
+                };
+
+                _context.PlanAdaptationHistory.Add(historyEntry);
+
+                _logger.LogInformation(
+                    "Created adaptation history entry {HistoryId} for plan {PlanId}",
+                    historyEntry.Id,
+                    trainingPlanId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating adaptation history for plan {PlanId}. Continuing without history.", trainingPlanId);
+                // Don't fail the entire recalculation if history creation fails
             }
 
             // Step 9: Update plan timestamps

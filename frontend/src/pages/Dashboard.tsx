@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
+import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -293,6 +294,26 @@ export function Dashboard() {
             <p className="text-sm whitespace-pre-line">
               {planSummary?.recalculationSummary}
             </p>
+
+            {/* Before/After comparison */}
+            {planSummary?.latestAdaptation?.sessionChanges && planSummary.latestAdaptation.sessionChanges.length > 0 && (
+              <div className="mt-4 border-t pt-4">
+                <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">What Changed</h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {planSummary.latestAdaptation.sessionChanges
+                    .filter(change => {
+                      // Only show sessions that actually changed
+                      return change.oldDistance !== change.newDistance ||
+                             change.oldDuration !== change.newDuration ||
+                             change.oldWorkoutType !== change.newWorkoutType ||
+                             change.oldIntensityLevel !== change.newIntensityLevel
+                    })
+                    .map(change => (
+                      <SessionChangeCard key={change.sessionId} change={change} />
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={handleDismissSummary}>Got It</Button>

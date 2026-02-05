@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic, TrendingUp } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic, TrendingUp, Sparkles } from 'lucide-react'
 import { cn, displayDistance } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
@@ -15,6 +15,7 @@ import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { VoiceModal } from '@/components/voice/VoiceModal'
 import { api } from '@/lib/api-client'
 import type { VoiceSessionContextDto } from '@/types/voice'
+import { useToast } from '@/contexts/ToastContext'
 
 export interface SessionStep {
   number: number
@@ -72,6 +73,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(props.session)
+  const toast = useToast()
 
   // Determine if we're using session DTO or legacy props
   const isSessionMode = !!props.session
@@ -174,6 +176,15 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
       )
 
       console.log('Session skipped successfully:', response)
+
+      // Show toast if plan adaptation was triggered
+      if (response.recalculationTriggered) {
+        toast.info(
+          "Training Plan Adapting",
+          "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
+        )
+      }
+
       setLocalSession({ ...localSession, isSkipped: true })
       props.onSessionUpdated?.()
     } catch (error) {
@@ -193,6 +204,15 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
     )
 
     console.log('Session completed successfully:', response)
+
+    // Show toast if plan adaptation was triggered
+    if (response.recalculationTriggered) {
+      toast.info(
+        "Training Plan Adapting",
+        "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
+      )
+    }
+
     setLocalSession({
       ...localSession,
       isCompleted: true,
@@ -356,9 +376,17 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 </div>
               )}
               <div className="flex justify-between items-start gap-4">
-                <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
-                  {sessionName}
-                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
+                    {sessionName}
+                  </h2>
+                  {props.session.isRecentlyUpdated && (
+                    <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Recently Updated
+                    </Badge>
+                  )}
+                </div>
                 {props.onMenuClick && (
                   <button
                     onClick={props.onMenuClick}

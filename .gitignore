@@ -186,3 +186,6 @@ fix-migration-history.sql
 fix-ownership-via-gcloud.ps1
 fix-table-ownership.ps1
 backend/src/HerPace.API/appsettings.json
+fix-database-permissions.ps1
+backend/test-gemini-3.ps1
+fix-database-permissions.ps1
