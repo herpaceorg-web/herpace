@@ -1,0 +1,85 @@
+import * as React from 'react'
+import { Minus, Plus } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+
+export interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
+  value?: number
+  onChange?: (value: number) => void
+  min?: number
+  max?: number
+  step?: number
+}
+
+export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
+  ({ className, value = 0, onChange, min = 0, max = 999, step = 1, disabled, ...props }, ref) => {
+    const handleDecrement = () => {
+      const newValue = Math.max(min, (value || 0) - step)
+      onChange?.(newValue)
+    }
+
+    const handleIncrement = () => {
+      const newValue = Math.min(max, (value || 0) + step)
+      onChange?.(newValue)
+    }
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value
+      if (val === '') {
+        onChange?.(0)
+        return
+      }
+      const numVal = parseFloat(val)
+      if (!isNaN(numVal)) {
+        const clampedValue = Math.max(min, Math.min(max, numVal))
+        onChange?.(clampedValue)
+      }
+    }
+
+    return (
+      <div
+        className={cn(
+          'flex h-9 w-full items-center rounded-lg border border-input bg-card',
+          className
+        )}
+      >
+        <input
+          ref={ref}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={handleInputChange}
+          disabled={disabled}
+          className="flex-1 bg-transparent px-3 py-2 text-sm text-center outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          {...props}
+        />
+        <div className="flex h-full items-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-full rounded-none border-l border-input px-2 hover:bg-accent"
+            onClick={handleDecrement}
+            disabled={disabled || value <= min}
+            tabIndex={-1}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-full rounded-none rounded-r-lg border-l border-input px-2 hover:bg-accent"
+            onClick={handleIncrement}
+            disabled={disabled || value >= max}
+            tabIndex={-1}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    )
+  }
+)
+
+NumberInput.displayName = 'NumberInput'

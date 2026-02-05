@@ -5,9 +5,11 @@ import { Calendar as CalendarIcon } from 'lucide-react'
 import { profileStepSchema, type ProfileFormValues } from '@/schemas/onboarding'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { DurationInput } from '@/components/ui/duration-input'
@@ -42,6 +44,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
   })
 
   const dateOfBirth = watch('dateOfBirth')
+  const typicalWeeklyMileage = watch('typicalWeeklyMileage')
 
   // Watch PR values for DurationInput
   const fiveKPR = watch('fiveKPR')
@@ -51,9 +54,15 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
   return (
     <form onSubmit={handleSubmit(onComplete)} className="space-y-6">
+      {/* The Basics Section */}
+      <div>
+        <h3 className="font-petrona text-2xl font-normal text-foreground mb-1">The Basics</h3>
+        <p className="text-sm font-normal text-[#696863] mb-4">Let's start with you</p>
+      </div>
+
       {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="name">Name *</Label>
+        <Label htmlFor="name" className="text-sm font-normal">Name *</Label>
         <Input
           id="name"
           {...register('name')}
@@ -67,7 +76,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Date of Birth (Optional) */}
       <div className="space-y-2">
-        <Label>Date of Birth (Optional)</Label>
+        <Label className="text-sm font-normal">Date of Birth (Optional)</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -99,9 +108,18 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         </Popover>
       </div>
 
+      {/* Divider */}
+      <Separator className="my-6" />
+
+      {/* Training Background Section */}
+      <div>
+        <h3 className="font-petrona text-2xl font-normal text-foreground mb-1">Training Background</h3>
+        <p className="text-sm font-normal text-[#696863] mb-4">Tell us about your running history</p>
+      </div>
+
       {/* Running Experience */}
       <div className="space-y-2">
-        <Label htmlFor="fitnessLevel">Running Experience *</Label>
+        <Label htmlFor="fitnessLevel" className="text-sm font-normal">Running Experience *</Label>
         <Select
           onValueChange={(value: 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite') => setValue('fitnessLevel', value)}
           defaultValue={defaultValues?.fitnessLevel}
@@ -124,12 +142,14 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Current Weekly Mileage (Optional) */}
       <div className="space-y-2">
-        <Label htmlFor="weeklyMileage">Current Weekly Mileage (Optional)</Label>
-        <Input
+        <Label htmlFor="weeklyMileage" className="text-sm font-normal">Current Weekly Mileage (Optional)</Label>
+        <NumberInput
           id="weeklyMileage"
-          type="number"
-          step="0.1"
-          {...register('typicalWeeklyMileage', { valueAsNumber: true })}
+          value={typicalWeeklyMileage || 0}
+          onChange={(value) => setValue('typicalWeeklyMileage', value)}
+          min={0}
+          max={200}
+          step={5}
           placeholder="e.g., 25"
           disabled={isSubmitting}
         />
@@ -140,7 +160,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Preferred Distance Unit */}
       <div className="space-y-2">
-        <Label>Preferred Distance Unit *</Label>
+        <Label className="text-sm font-normal">Preferred Distance Unit *</Label>
         <RadioGroup
           onValueChange={(value: 'Kilometers' | 'Miles') => setValue('distanceUnit', value)}
           defaultValue={defaultValues?.distanceUnit || 'Miles'}
@@ -149,13 +169,13 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Miles" id="miles" />
-            <Label htmlFor="miles" className="font-normal cursor-pointer">
+            <Label htmlFor="miles" className="text-sm font-normal cursor-pointer">
               Miles
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Kilometers" id="kilometers" />
-            <Label htmlFor="kilometers" className="font-normal cursor-pointer">
+            <Label htmlFor="kilometers" className="text-sm font-normal cursor-pointer">
               Kilometers
             </Label>
           </div>
@@ -166,10 +186,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
       </div>
 
       {/* Personal Records Section (Optional) */}
-      <div className="space-y-4 pt-4 border-t">
+      <div className="space-y-4">
         <div>
-          <Label className="text-base">Personal Records (Optional)</Label>
-          <p className="text-sm text-muted-foreground">
+          <h4 className="font-petrona text-lg font-normal text-foreground mb-1">Personal Records (Optional)</h4>
+          <p className="text-sm font-normal text-[#696863]">
             Help us create a better training plan by sharing your best race times
           </p>
         </div>
@@ -177,7 +197,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* 5K PR */}
           <div className="space-y-2">
-            <Label htmlFor="fiveKPR">5K PR</Label>
+            <Label htmlFor="fiveKPR" className="text-sm font-normal">5K PR</Label>
             <DurationInput
               id="fiveKPR"
               value={fiveKPR}
@@ -191,7 +211,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
           {/* 10K PR */}
           <div className="space-y-2">
-            <Label htmlFor="tenKPR">10K PR</Label>
+            <Label htmlFor="tenKPR" className="text-sm font-normal">10K PR</Label>
             <DurationInput
               id="tenKPR"
               value={tenKPR}
@@ -205,7 +225,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
           {/* Half Marathon PR */}
           <div className="space-y-2">
-            <Label htmlFor="halfMarathonPR">Half Marathon PR</Label>
+            <Label htmlFor="halfMarathonPR" className="text-sm font-normal">Half Marathon PR</Label>
             <DurationInput
               id="halfMarathonPR"
               value={halfMarathonPR}
@@ -219,7 +239,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
           {/* Marathon PR */}
           <div className="space-y-2">
-            <Label htmlFor="marathonPR">Marathon PR</Label>
+            <Label htmlFor="marathonPR" className="text-sm font-normal">Marathon PR</Label>
             <DurationInput
               id="marathonPR"
               value={marathonPR}
@@ -235,7 +255,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
 
       {/* Submit Button */}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Saving...' : 'Continue'}
+        {isSubmitting ? 'Saving...' : 'Next: Your Cycle'}
       </Button>
     </form>
   )
