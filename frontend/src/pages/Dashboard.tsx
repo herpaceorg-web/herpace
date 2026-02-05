@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
@@ -27,6 +27,7 @@ export function Dashboard() {
   const [showSummaryModal, setShowSummaryModal] = useState(false)
   const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
+  const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
 
   useEffect(() => {
     loadDashboardData()
@@ -60,16 +61,19 @@ export function Dashboard() {
       const now = new Date()
       const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-      // Load plan summary, upcoming sessions, and profile in parallel
-      const [summary, sessionsResponse, profile] = await Promise.all([
+      // Load plan summary, upcoming sessions, profile, and cycle position in parallel
+      // Cycle position returns 404 for DoNotTrack users — catch and treat as null
+      const [summary, sessionsResponse, profile, cyclePos] = await Promise.all([
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
         api.get<UpcomingSessionsResponse>('/api/sessions/upcoming?count=7'),
-        api.get<ProfileResponse>('/api/profiles/me')
+        api.get<ProfileResponse>('/api/profiles/me'),
+        api.get<CyclePositionDto>('/api/cycle/position').catch(() => null)
       ])
 
       setPlanSummary(summary)
       setUpcomingSessions(sessionsResponse.sessions)
       setDistanceUnit(profile.distanceUnit === 1 ? 'mi' : 'km')
+      setCyclePosition(cyclePos)
 
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -171,7 +175,10 @@ export function Dashboard() {
             <CardTitle>Your Hormone Cycle</CardTitle>
           </CardHeader>
           <CardContent>
-            <HormoneCycleChart />
+            <HormoneCycleChart
+              cyclePosition={cyclePosition}
+              onPeriodLogged={(updated) => setCyclePosition(updated)}
+            />
           </CardContent>
         </Card>
       </div>
