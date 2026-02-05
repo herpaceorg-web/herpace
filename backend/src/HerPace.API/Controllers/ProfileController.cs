@@ -102,6 +102,72 @@ public class ProfileController : ControllerBase
     }
 
     /// <summary>
+    /// Updates the runner profile for the authenticated user.
+    /// </summary>
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateProfile([FromBody] CreateProfileRequest request)
+    {
+        var userId = GetAuthenticatedUserId();
+
+        _logger.LogInformation("Updating profile for user {UserId}", userId);
+
+        // Find existing profile
+        var existingRunner = await _context.Runners
+            .FirstOrDefaultAsync(r => r.UserId == userId);
+
+        if (existingRunner == null)
+        {
+            return NotFound(new { message = "Profile not found. Please create a profile first." });
+        }
+
+        // Validate cycle length if provided
+        if (request.CycleLength.HasValue && (request.CycleLength.Value < 21 || request.CycleLength.Value > 45))
+        {
+            return BadRequest(new { message = "Cycle length must be between 21 and 45 days." });
+        }
+
+        // Update runner profile
+        existingRunner.Name = request.Name;
+        existingRunner.DateOfBirth = request.DateOfBirth.HasValue ? DateTime.SpecifyKind(request.DateOfBirth.Value, DateTimeKind.Utc) : null;
+        existingRunner.FitnessLevel = request.FitnessLevel;
+        existingRunner.TypicalWeeklyMileage = request.TypicalWeeklyMileage;
+        existingRunner.DistanceUnit = request.DistanceUnit;
+        existingRunner.FiveKPR = request.FiveKPR;
+        existingRunner.TenKPR = request.TenKPR;
+        existingRunner.HalfMarathonPR = request.HalfMarathonPR;
+        existingRunner.MarathonPR = request.MarathonPR;
+        existingRunner.CycleLength = request.CycleLength;
+        existingRunner.LastPeriodStart = request.LastPeriodStart.HasValue ? DateTime.SpecifyKind(request.LastPeriodStart.Value, DateTimeKind.Utc) : null;
+        existingRunner.LastPeriodEnd = request.LastPeriodEnd.HasValue ? DateTime.SpecifyKind(request.LastPeriodEnd.Value, DateTimeKind.Utc) : null;
+        existingRunner.TypicalCycleRegularity = request.TypicalCycleRegularity;
+        existingRunner.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Profile updated successfully for user {UserId}, runner {RunnerId}", userId, existingRunner.Id);
+
+        return Ok(new ProfileResponse
+        {
+            Id = existingRunner.Id,
+            UserId = existingRunner.UserId,
+            Name = existingRunner.Name,
+            DateOfBirth = existingRunner.DateOfBirth,
+            FitnessLevel = existingRunner.FitnessLevel,
+            TypicalWeeklyMileage = existingRunner.TypicalWeeklyMileage,
+            DistanceUnit = existingRunner.DistanceUnit,
+            FiveKPR = existingRunner.FiveKPR,
+            TenKPR = existingRunner.TenKPR,
+            HalfMarathonPR = existingRunner.HalfMarathonPR,
+            MarathonPR = existingRunner.MarathonPR,
+            CycleLength = existingRunner.CycleLength,
+            LastPeriodStart = existingRunner.LastPeriodStart,
+            LastPeriodEnd = existingRunner.LastPeriodEnd,
+            TypicalCycleRegularity = existingRunner.TypicalCycleRegularity,
+            CreatedAt = existingRunner.CreatedAt
+        });
+    }
+
+    /// <summary>
     /// Retrieves the runner profile for the authenticated user.
     /// </summary>
     [HttpGet("me")]
