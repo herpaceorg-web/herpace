@@ -46,6 +46,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   const mediaStreamRef = useRef<MediaStream | null>(null)
   const audioProcessorRef = useRef<{ start: () => void; stop: () => void } | null>(null)
   const audioQueueRef = useRef<AudioQueue>(new AudioQueue())
+  const setupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Check browser support on mount
   useEffect(() => {
@@ -65,8 +66,11 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   // Handle WebSocket messages from Gemini
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
-      console.log('WebSocket message received (raw):', event.data)
-      const message = JSON.parse(event.data) as GeminiServerContentMessage & {
+      const rawData = event.data instanceof ArrayBuffer
+        ? new TextDecoder().decode(event.data)
+        : event.data
+      console.log('WebSocket message received (raw):', rawData)
+      const message = JSON.parse(rawData) as GeminiServerContentMessage & {
         error?: { message?: string; code?: number; status?: string }
       }
       console.log('WebSocket message parsed:', message)
@@ -90,6 +94,10 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       // Handle setup complete
       if (message.setupComplete) {
         console.log('Setup complete received, transitioning to listening state')
+        if (setupTimeoutRef.current) {
+          clearTimeout(setupTimeoutRef.current)
+          setupTimeoutRef.current = null
+        }
         updateState('listening')
         // Start audio capture
         audioProcessorRef.current?.start()
@@ -178,6 +186,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
 
       // Connect to Gemini Live API via WebSocket
       const ws = new WebSocket(tokenResponse.webSocketUrl)
+      ws.binaryType = 'arraybuffer'
       wsRef.current = ws
 
       ws.onopen = () => {
@@ -189,6 +198,9 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
             model: tokenResponse.model || 'models/gemini-2.5-flash-native-audio-preview-12-2025',
             generationConfig: {
               responseModalities: ['AUDIO'],
+              thinkingConfig: {
+                thinkingBudget: 0
+              },
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
@@ -236,8 +248,17 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           }
         }
 
-        console.log('Sending setup message:', setupMessage.setup.model)
+        console.log('Sending setup message:', JSON.stringify(setupMessage, null, 2))
         ws.send(JSON.stringify(setupMessage))
+
+        // If setupComplete doesn't arrive within 10s, surface an error instead of spinning
+        setupTimeoutRef.current = setTimeout(() => {
+          console.warn('Setup timeout: no setupComplete received')
+          setError('Voice assistant setup timed out. Check console for the setup message that was sent.')
+          onError?.(new Error('Setup timeout'))
+          updateState('error')
+          ws.close()
+        }, 10000)
       }
 
       ws.onmessage = handleMessage
@@ -330,6 +351,12 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
 
   // Cleanup resources
   const cleanup = useCallback(() => {
+    // Cancel pending setup timeout
+    if (setupTimeoutRef.current) {
+      clearTimeout(setupTimeoutRef.current)
+      setupTimeoutRef.current = null
+    }
+
     // Stop audio processor
     audioProcessorRef.current?.stop()
     audioProcessorRef.current = null
