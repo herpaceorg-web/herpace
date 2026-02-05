@@ -5,16 +5,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic, TrendingUp, Sparkles } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart } from 'lucide-react'
 import { cn, displayDistance } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
-import { VoiceModal } from '@/components/voice/VoiceModal'
 import { api } from '@/lib/api-client'
-import type { VoiceSessionContextDto } from '@/types/voice'
 import { useToast } from '@/contexts/ToastContext'
 
 export interface SessionStep {
@@ -70,7 +68,6 @@ const cyclePhaseLabels: Record<CyclePhase, string> = {
 
 export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(props.session)
   const toast = useToast()
@@ -310,7 +307,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               </div>
             </>
           )}
-          {progressText && (
+          {progressText && !isRestDay && (
             <>
               {((cyclePhases && cyclePhases.length > 0) || menstruationText) && (
                 <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
@@ -380,7 +377,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
                     {sessionName}
                   </h2>
-                  {props.session.isRecentlyUpdated && (
+                  {props.session?.isRecentlyUpdated && (
                     <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       Recently Updated
@@ -398,198 +395,224 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 )}
               </div>
 
-              {/* Metrics badges on right */}
-              <div className="flex gap-2 flex-wrap">
-                {distance && (
-                  <Badge
-                    variant="outline"
-                    className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
-                  >
-                    <Route className="h-3.5 w-3.5 mr-1.5" />
-                    {distance} {distanceUnit === 'mi' ? 'mi' : 'km'}
-                  </Badge>
-                )}
-                {durationMinutes && (
-                  <Badge
-                    variant="outline"
-                    className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
-                  >
-                    <Timer className="h-3.5 w-3.5 mr-1.5" />
-                    {durationMinutes} Min
-                  </Badge>
-                )}
-                {zone && (
-                  <Badge
-                    variant="outline"
-                    className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
-                  >
-                    <Activity className="h-3.5 w-3.5 mr-1.5" />
-                    {zone}
-                  </Badge>
-                )}
-              </div>
+              {/* Metrics badges - only show for non-rest days */}
+              {!isRestDay && (
+                <div className="flex gap-2 flex-wrap">
+                  {distance && (
+                    <Badge
+                      variant="outline"
+                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                    >
+                      <Route className="h-3.5 w-3.5 mr-1.5" />
+                      {distance} {distanceUnit === 'mi' ? 'mi' : 'km'}
+                    </Badge>
+                  )}
+                  {durationMinutes && (
+                    <Badge
+                      variant="outline"
+                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                    >
+                      <Timer className="h-3.5 w-3.5 mr-1.5" />
+                      {durationMinutes} Min
+                    </Badge>
+                  )}
+                  {zone && (
+                    <Badge
+                      variant="outline"
+                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                    >
+                      <Activity className="h-3.5 w-3.5 mr-1.5" />
+                      {zone}
+                    </Badge>
+                  )}
+                  {/* Intensity hearts display */}
+                  {(isSessionMode ? localSession?.intensityLevel : props.intensityLevel) !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-[#696863]">Intensity</span>
+                      <div className="flex gap-1 items-center">
+                        {[...Array(3)].map((_, i) => {
+                          const level = isSessionMode ? localSession!.intensityLevel : props.intensityLevel!
+                          const heartCount = level === IntensityLevel.Low ? 1 : level === IntensityLevel.Moderate ? 2 : 3
+                          const heartColor = 'rgb(161, 65, 57)' // #A14139
+                          return (
+                            <Heart
+                              key={i}
+                              className="h-4 w-4"
+                              fill={i < heartCount ? heartColor : 'none'}
+                              stroke={i < heartCount ? heartColor : 'rgb(209, 213, 219)'}
+                              strokeWidth={2}
+                            />
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Tabs for Warmup/Session/Recover */}
-          <Tabs defaultValue="session" className="w-full">
-            <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-4">
-              {warmupContent && (
+          {/* Tabs for Warmup/Session/Recover - Only show for non-rest days */}
+          {!isRestDay && (
+            <Tabs defaultValue="session" className="w-full">
+              <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-4">
+                {warmupContent && (
+                  <TabsTrigger
+                    value="warmup"
+                    className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
+                  >
+                    Warmup
+                  </TabsTrigger>
+                )}
                 <TabsTrigger
-                  value="warmup"
+                  value="session"
                   className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
                 >
-                  Warmup
+                  Session
                 </TabsTrigger>
-              )}
-              <TabsTrigger
-                value="session"
-                className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
-              >
-                Session
-              </TabsTrigger>
-              {recoverContent && (
-                <TabsTrigger
-                  value="recover"
-                  className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
-                >
-                  Recover
-                </TabsTrigger>
-              )}
-            </TabsList>
+                {recoverContent && (
+                  <TabsTrigger
+                    value="recover"
+                    className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
+                  >
+                    Recover
+                  </TabsTrigger>
+                )}
+              </TabsList>
 
-            {warmupContent && (
-              <TabsContent value="warmup" className="mt-0">
+              {warmupContent && (
+                <TabsContent value="warmup" className="mt-0">
+                  <div className="bg-[#f3f0e7] rounded-lg p-4">
+                    {typeof warmupContent === 'object' &&
+                    'props' in warmupContent &&
+                    warmupContent.props.steps ? (
+                      <WarmupSteps steps={warmupContent.props.steps} />
+                    ) : (
+                      warmupContent
+                    )}
+                  </div>
+                </TabsContent>
+              )}
+
+              <TabsContent value="session" className="mt-0">
                 <div className="bg-[#f3f0e7] rounded-lg p-4">
-                  {typeof warmupContent === 'object' &&
-                  'props' in warmupContent &&
-                  warmupContent.props.steps ? (
-                    <WarmupSteps steps={warmupContent.props.steps} />
+                  {/* Show phase guidance insight if available */}
+                  {phaseGuidance && (
+                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                      <p className="text-sm font-medium text-purple-700">
+                        💡 {phaseGuidance}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Show workout tips if available */}
+                  {allTips.length > 0 ? (
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-medium text-[#3d3826]">
+                        Workout Tips
+                      </h3>
+                      <ul className="space-y-3">
+                        {allTips.map((tip, index) => (
+                          <li
+                            key={index}
+                            className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                          >
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Show session description if available */}
+                      {sessionContent.steps.length > 0 && sessionContent.steps[0].instructions.length > 0 && (
+                        <div className="mt-6 pt-4 border-t border-[#ebe8e2]">
+                          <h3 className="text-sm font-medium text-[#3d3826] mb-3">
+                            Session Details
+                          </h3>
+                          <ul className="space-y-2">
+                            {sessionContent.steps[0].instructions.map((instruction, index) => (
+                              <li
+                                key={index}
+                                className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                              >
+                                {instruction}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    warmupContent
+                    // Fallback to original step display if no tips
+                    <>
+                      {sessionContent.heading && (
+                        <h3 className="text-sm font-medium text-[#3d3826] mb-4">
+                          {sessionContent.heading}
+                        </h3>
+                      )}
+                      <div className="space-y-8">
+                        {sessionContent.steps.map((step, stepIndex) => (
+                          <div key={step.number} className="relative">
+                            <div className="flex gap-4">
+                              {/* Step number indicator */}
+                              <div className="flex-shrink-0 relative">
+                                <div className="w-[38px] h-[38px] rounded-full bg-[#45423a] text-white flex items-center justify-center text-lg font-medium">
+                                  {step.number}
+                                </div>
+                                {/* Connecting line to next step */}
+                                {stepIndex < sessionContent.steps.length - 1 && (
+                                  <div className="absolute top-[45px] left-[18px] w-0.5 h-[calc(100%+16px)] bg-[rgba(71,72,87,0.2)]" />
+                                )}
+                              </div>
+
+                              {/* Step content */}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h4 className="text-base font-normal text-[#141414]">
+                                    {step.title}
+                                  </h4>
+                                  {step.duration && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                                    >
+                                      <Timer className="h-3.5 w-3.5 mr-1.5" />
+                                      {step.duration} Min
+                                    </Badge>
+                                  )}
+                                </div>
+                                <ul className="space-y-1">
+                                  {step.instructions.map((instruction, index) => (
+                                    <li
+                                      key={index}
+                                      className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                                    >
+                                      {instruction}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               </TabsContent>
-            )}
 
-            <TabsContent value="session" className="mt-0">
-              <div className="bg-[#f3f0e7] rounded-lg p-4">
-                {/* Show phase guidance insight if available */}
-                {phaseGuidance && (
-                  <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
-                    <p className="text-sm font-medium text-purple-700">
-                      💡 {phaseGuidance}
-                    </p>
-                  </div>
-                )}
-
-                {/* Show workout tips if available */}
-                {allTips.length > 0 ? (
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-[#3d3826]">
-                      Workout Tips
-                    </h3>
-                    <ul className="space-y-3">
-                      {allTips.map((tip, index) => (
-                        <li
-                          key={index}
-                          className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
-                        >
-                          {tip}
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Show session description if available */}
-                    {sessionContent.steps.length > 0 && sessionContent.steps[0].instructions.length > 0 && (
-                      <div className="mt-6 pt-4 border-t border-[#ebe8e2]">
-                        <h3 className="text-sm font-medium text-[#3d3826] mb-3">
-                          Session Details
-                        </h3>
-                        <ul className="space-y-2">
-                          {sessionContent.steps[0].instructions.map((instruction, index) => (
-                            <li
-                              key={index}
-                              className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
-                            >
-                              {instruction}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Fallback to original step display if no tips
-                  <>
-                    {sessionContent.heading && (
-                      <h3 className="text-sm font-medium text-[#3d3826] mb-4">
-                        {sessionContent.heading}
-                      </h3>
-                    )}
-                    <div className="space-y-8">
-                      {sessionContent.steps.map((step, stepIndex) => (
-                        <div key={step.number} className="relative">
-                          <div className="flex gap-4">
-                            {/* Step number indicator */}
-                            <div className="flex-shrink-0 relative">
-                              <div className="w-[38px] h-[38px] rounded-full bg-[#45423a] text-white flex items-center justify-center text-lg font-medium">
-                                {step.number}
-                              </div>
-                              {/* Connecting line to next step */}
-                              {stepIndex < sessionContent.steps.length - 1 && (
-                                <div className="absolute top-[45px] left-[18px] w-0.5 h-[calc(100%+16px)] bg-[rgba(71,72,87,0.2)]" />
-                              )}
-                            </div>
-
-                            {/* Step content */}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h4 className="text-base font-normal text-[#141414]">
-                                  {step.title}
-                                </h4>
-                                {step.duration && (
-                                  <Badge
-                                    variant="outline"
-                                    className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
-                                  >
-                                    <Timer className="h-3.5 w-3.5 mr-1.5" />
-                                    {step.duration} Min
-                                  </Badge>
-                                )}
-                              </div>
-                              <ul className="space-y-1">
-                                {step.instructions.map((instruction, index) => (
-                                  <li
-                                    key={index}
-                                    className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
-                                  >
-                                    {instruction}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </TabsContent>
-
-            {recoverContent && (
-              <TabsContent value="recover" className="mt-0">
-                <div className="bg-[#f3f0e7] rounded-lg p-4">{recoverContent}</div>
-              </TabsContent>
-            )}
-          </Tabs>
+              {recoverContent && (
+                <TabsContent value="recover" className="mt-0">
+                  <div className="bg-[#f3f0e7] rounded-lg p-4">{recoverContent}</div>
+                </TabsContent>
+              )}
+            </Tabs>
+          )}
 
           {/* Completion status and action buttons (only in session mode) */}
           {isSessionMode && localSession && (
             <div className="mt-6 space-y-4">
-              {/* Completion status */}
-              {localSession.isCompleted && (
+              {/* Completion status - hide for rest days */}
+              {!isRestDay && localSession.isCompleted && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-sm font-medium text-green-800">✓ Completed</p>
                   {localSession.actualDistance && (
@@ -603,7 +626,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 </div>
               )}
 
-              {localSession.isSkipped && (
+              {!isRestDay && localSession.isSkipped && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <p className="text-sm font-medium text-gray-800">Skipped</p>
                 </div>
@@ -615,42 +638,29 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 /* Rest day: completed by default. Only offer optional workout log
                    if the user hasn't already logged one. */
                 localSession.isCompleted && !localSession.actualDistance && !localSession.actualDuration && (
-                  <Button size="sm" variant="outline" onClick={() => setIsCompleteDialogOpen(true)}>
-                    Log a Workout
+                  <Button size="sm" variant="outline" onClick={() => setIsCompleteDialogOpen(true)} className="w-full text-foreground">
+                    Log Optional Session
                   </Button>
                 )
               ) : (
                 /* Regular workout day: full action set */
                 !localSession.isCompleted && !localSession.isSkipped && (
-                  <div className="space-y-3">
-                    {/* Primary actions: Complete and Skip */}
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => setIsCompleteDialogOpen(true)}
-                        className="flex-1"
-                      >
-                        Complete Session
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleSkip}
-                        disabled={isSkipping}
-                        className="flex-1"
-                      >
-                        {isSkipping ? 'Skipping...' : 'Skip Session'}
-                      </Button>
-                    </div>
-                    {/* Secondary action: Voice chat */}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setIsCompleteDialogOpen(true)}
+                      className="flex-1"
+                    >
+                      Complete Session
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setIsVoiceModalOpen(true)}
-                      className="w-full bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700"
+                      onClick={handleSkip}
+                      disabled={isSkipping}
+                      className="flex-1"
                     >
-                      <Mic className="h-4 w-4 mr-1.5" />
-                      Chat about this session
+                      {isSkipping ? 'Skipping...' : 'Skip Session'}
                     </Button>
                   </div>
                 )
@@ -669,33 +679,6 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           onComplete={handleComplete}
           distanceUnit={distanceUnit}
           startInLogMode={isRestDay}
-        />
-      )}
-
-      {/* Voice Modal */}
-      {isSessionMode && localSession && (
-        <VoiceModal
-          open={isVoiceModalOpen}
-          onOpenChange={setIsVoiceModalOpen}
-          sessionId={localSession.id}
-          sessionContext={{
-            sessionId: localSession.id,
-            sessionName: localSession.sessionName,
-            workoutType: localSession.workoutType,
-            plannedDistance: localSession.distance ?? undefined,
-            plannedDuration: localSession.durationMinutes ?? undefined,
-            cyclePhase: localSession.cyclePhase ?? undefined,
-            phaseGuidance: localSession.phaseGuidance ?? undefined,
-            workoutTips: localSession.workoutTips || [],
-            intensityLevel: localSession.intensityLevel
-          } as VoiceSessionContextDto}
-          onComplete={() => {
-            setLocalSession({
-              ...localSession,
-              isCompleted: true
-            })
-            props.onSessionUpdated?.()
-          }}
         />
       )}
     </div>

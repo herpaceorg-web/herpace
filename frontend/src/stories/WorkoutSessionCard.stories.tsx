@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
-import { Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
+import { Snowflake, Sun, Leaf, Sprout, Heart } from 'lucide-react'
 import { IntensityLevel, WorkoutType, CyclePhase } from '@/types/api'
 import type { SessionDetailDto } from '@/types/api'
+import { ToastProvider } from '@/contexts/ToastContext'
+import { ToastContainer } from '@/components/ui/toast-container'
 
 const meta = {
   title: 'Components/Session/WorkoutSessionCard',
@@ -11,6 +13,14 @@ const meta = {
     layout: 'centered',
   },
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <ToastProvider>
+        <ToastContainer />
+        <Story />
+      </ToastProvider>
+    ),
+  ],
 } satisfies Meta<typeof WorkoutSessionCard>
 
 export default meta
@@ -407,17 +417,91 @@ export const SessionList: Story = {
       },
     ]
 
+    // Helper to get intensity color - using heart color at different opacities
+    const getIntensityColor = (level: IntensityLevel) => {
+      const heartColor = 'rgb(161, 65, 57)' // #A14139
+      switch (level) {
+        case IntensityLevel.Low:
+          return heartColor
+        case IntensityLevel.Moderate:
+          return heartColor
+        case IntensityLevel.High:
+          return heartColor
+        default:
+          return 'rgb(156, 163, 175)' // gray-400
+      }
+    }
+
+    // Helper to get flowing background gradient
+    const getFlowingBackground = (level: IntensityLevel) => {
+      const opacities = level === IntensityLevel.Low
+        ? { main: 0.10, secondary: 0.08 }
+        : level === IntensityLevel.Moderate
+        ? { main: 0.16, secondary: 0.13 }
+        : { main: 0.24, secondary: 0.20 }
+
+      return `
+        radial-gradient(ellipse 150% 100% at -50% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
+        radial-gradient(ellipse 150% 100% at 150% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
+        radial-gradient(ellipse 100% 150% at 50% -50%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%),
+        radial-gradient(ellipse 100% 150% at 50% 150%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%)
+      `
+    }
+
+    // Helper to render intensity hearts
+    const renderIntensityHearts = (level: IntensityLevel) => {
+      const heartCount = level === IntensityLevel.Low ? 1 : level === IntensityLevel.Moderate ? 2 : 3
+      const color = getIntensityColor(level)
+
+      return (
+        <div className="flex gap-1 items-center">
+          {[...Array(3)].map((_, i) => (
+            <Heart
+              key={i}
+              className="h-4 w-4"
+              fill={i < heartCount ? color : 'none'}
+              stroke={i < heartCount ? color : 'rgb(209, 213, 219)'}
+              strokeWidth={2}
+            />
+          ))}
+        </div>
+      )
+    }
+
+    // Helper to get zone info based on intensity
+    const getZoneInfo = (level: IntensityLevel) => {
+      switch (level) {
+        case IntensityLevel.Low:
+          return 'Zone 2-3 / RPE 2-4'
+        case IntensityLevel.Moderate:
+          return 'Zone 3-4 / RPE 5-7'
+        case IntensityLevel.High:
+          return 'Zone 4-5 / RPE 7-9'
+        default:
+          return undefined
+      }
+    }
+
     return (
       <div className="w-full lg:w-2/3 mx-auto space-y-12">
         <h2 className="text-2xl font-semibold mb-12">Upcoming Sessions</h2>
         <div className="space-y-12">
           {sessions.map((session) => (
-            <WorkoutSessionCard
-              key={session.id}
-              session={session}
-              onSessionUpdated={() => console.log('Session updated')}
-              distanceUnit="km"
-            />
+            <div key={session.id} className="relative">
+              <WorkoutSessionCard
+                session={session}
+                zone={getZoneInfo(session.intensityLevel)}
+                onSessionUpdated={() => console.log('Session updated')}
+                distanceUnit="km"
+              />
+              {/* Flowing gradient overlay - only on card, not phase section */}
+              <div
+                className="absolute top-[30px] left-0 right-0 bottom-0 pointer-events-none rounded-tl-none rounded-tr-2xl rounded-b-2xl"
+                style={{
+                  background: getFlowingBackground(session.intensityLevel)
+                }}
+              />
+            </div>
           ))}
         </div>
       </div>
