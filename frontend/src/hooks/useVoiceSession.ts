@@ -66,8 +66,11 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   // Handle WebSocket messages from Gemini
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
-      console.log('WebSocket message received (raw):', event.data)
-      const message = JSON.parse(event.data) as GeminiServerContentMessage & {
+      const rawData = event.data instanceof ArrayBuffer
+        ? new TextDecoder().decode(event.data)
+        : event.data
+      console.log('WebSocket message received (raw):', rawData)
+      const message = JSON.parse(rawData) as GeminiServerContentMessage & {
         error?: { message?: string; code?: number; status?: string }
       }
       console.log('WebSocket message parsed:', message)
@@ -183,6 +186,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
 
       // Connect to Gemini Live API via WebSocket
       const ws = new WebSocket(tokenResponse.webSocketUrl)
+      ws.binaryType = 'arraybuffer'
       wsRef.current = ws
 
       ws.onopen = () => {
