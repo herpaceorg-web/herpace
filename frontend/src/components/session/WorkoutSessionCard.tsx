@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Mic } from 'lucide-react'
 import { cn, displayDistance } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse } from '@/types/api'
-import { CyclePhase, WorkoutType } from '@/types/api'
+import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { VoiceModal } from '@/components/voice/VoiceModal'
 import { api } from '@/lib/api-client'
@@ -38,6 +38,7 @@ export interface WorkoutSessionCardProps {
   distanceUnit?: 'km' | 'mi'
   durationMinutes?: number
   zone?: string
+  intensityLevel?: IntensityLevel
   cyclePhases?: {
     phaseName: string
     icon?: React.ReactNode
@@ -95,6 +96,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const distance = distanceRawKm != null ? displayDistance(distanceRawKm, distanceUnit) : undefined
   const durationMinutes = isSessionMode ? localSession!.durationMinutes : props.durationMinutes
   const zone = props.zone // Zone info not in session DTO, use legacy prop
+  const intensityLevel = isSessionMode ? localSession?.intensityLevel : props.intensityLevel
 
   // Build cycle phases from session
   const cyclePhases = isSessionMode && localSession!.cyclePhase !== undefined
@@ -205,6 +207,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const sessionDate = isSessionMode && localSession ? new Date(localSession.scheduledDate) : new Date()
   const dayOfWeek = sessionDate.toLocaleDateString('en-US', { weekday: 'short' })
   const monthDay = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const dateString = `${dayOfWeek} ${monthDay}`
+
 
   // Build session progress text
   const progressText = isSessionMode && localSession?.sessionNumberInPhase && localSession?.totalSessionsInPhase
@@ -247,7 +251,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   }, [workoutTips, cycleWellnessTips])
 
   return (
-    <div className="w-full max-w-[760px]">
+    <div className="w-full">
       {/* Phase tracking section */}
       {(cyclePhases && cyclePhases.length > 0) || menstruationText || progressText ? (
         <div className="bg-[#fefdfb] border border-[#ebe8e2] rounded-t-lg px-2 pb-3 flex items-center gap-3 flex-wrap mb-[-12px] w-fit">
@@ -300,17 +304,16 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         )}
       >
         <CardContent className="p-4">
-          {/* Header with date icon, session name, and metrics */}
-          <div className="flex gap-4 items-start mb-6">
-            {/* Date icon */}
-            <div className="flex-shrink-0 flex flex-col items-center justify-center bg-[#f3f0e7] rounded-lg p-2 min-w-[60px]">
-              <Calendar className="h-5 w-5 text-[#3d3826] mb-1" />
-              <div className="text-[#3d3826] text-xs font-semibold">{dayOfWeek}</div>
-              <div className="text-[#696863] text-xs">{monthDay}</div>
-            </div>
-
+          {/* Header with session name and metrics */}
+          <div className="flex gap-4 items-start mb-4">
             {/* Session name and metrics */}
             <div className="flex-1 flex flex-col gap-2">
+              {/* Date */}
+              {isSessionMode && (
+                <div className="text-sm text-[#696863]">
+                  {dateString}
+                </div>
+              )}
               <div className="flex justify-between items-start gap-4">
                 <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
                   {sessionName}
@@ -361,7 +364,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
           {/* Tabs for Warmup/Session/Recover */}
           <Tabs defaultValue="session" className="w-full">
-            <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-6">
+            <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-4">
               {warmupContent && (
                 <TabsTrigger
                   value="warmup"
@@ -550,26 +553,35 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               ) : (
                 /* Regular workout day: full action set */
                 !localSession.isCompleted && !localSession.isSkipped && (
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => setIsCompleteDialogOpen(true)}>
-                      Complete Workout
-                    </Button>
+                  <div className="space-y-3">
+                    {/* Primary actions: Complete and Skip */}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => setIsCompleteDialogOpen(true)}
+                        className="flex-1"
+                      >
+                        Complete Session
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleSkip}
+                        disabled={isSkipping}
+                        className="flex-1"
+                      >
+                        {isSkipping ? 'Skipping...' : 'Skip Session'}
+                      </Button>
+                    </div>
+                    {/* Secondary action: Voice chat */}
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => setIsVoiceModalOpen(true)}
-                      className="bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700"
+                      className="w-full bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700"
                     >
-                      <Mic className="h-4 w-4 mr-1" />
-                      Voice
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSkip}
-                      disabled={isSkipping}
-                    >
-                      {isSkipping ? 'Skipping...' : 'Skip'}
+                      <Mic className="h-4 w-4 mr-1.5" />
+                      Chat about this session
                     </Button>
                   </div>
                 )

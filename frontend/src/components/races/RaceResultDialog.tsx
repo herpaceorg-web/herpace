@@ -86,7 +86,7 @@ export function RaceResultDialog({ open, onOpenChange, onSubmit }: RaceResultDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Log Race Result</DialogTitle>
           <DialogDescription>

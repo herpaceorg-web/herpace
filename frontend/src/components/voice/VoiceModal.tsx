@@ -65,6 +65,7 @@ export function VoiceModal({
     state,
     error,
     isSupported,
+    isSpeaking,
     startSession,
     stopSession
   } = useVoiceSession({
@@ -141,22 +142,22 @@ export function VoiceModal({
       case 'connecting':
         return 'Connecting to voice assistant...'
       case 'listening':
-        return 'Listening... Tell me about your workout!'
+        return 'Listening... Tell me about your training session!'
       case 'processing':
         return 'Processing...'
       case 'responding':
         return 'Coach is responding...'
       case 'error':
-        return error || 'Something went wrong. Tap to try again.'
+        return error || 'Something went wrong. Click to try again.'
       default:
-        return 'Tap the microphone to start'
+        return ''
     }
   }
 
   if (!isSupported) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-destructive" />
@@ -179,7 +180,7 @@ export function VoiceModal({
   if (showConfirmation) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -240,7 +241,7 @@ export function VoiceModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Voice Assistant</DialogTitle>
@@ -268,32 +269,32 @@ export function VoiceModal({
             onClick={handleToggleVoice}
           />
 
-          {/* Status message */}
+          {/* Instructional text */}
           <p className={cn(
             'text-sm text-center',
             state === 'error' ? 'text-destructive' : 'text-muted-foreground'
           )}>
-            {getStatusMessage()}
+            {state === 'idle' ? 'Click to start recording' : getStatusMessage()}
           </p>
 
           {/* Visual feedback */}
           <div className="flex items-center gap-2">
             {state === 'listening' && (
-              <>
-                <Mic className="h-4 w-4 text-rose-500 animate-pulse" />
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 bg-rose-500 rounded-full animate-pulse"
-                      style={{
-                        height: `${Math.random() * 20 + 10}px`,
-                        animationDelay: `${i * 100}ms`
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "w-1.5 bg-rose-500 rounded-full transition-all duration-100",
+                      isSpeaking && "animate-pulse"
+                    )}
+                    style={{
+                      height: `${Math.random() * 20 + 10}px`,
+                      animationDelay: isSpeaking ? `${i * 100}ms` : '0ms'
+                    }}
+                  />
+                ))}
+              </div>
             )}
             {state === 'responding' && (
               <>
@@ -316,9 +317,9 @@ export function VoiceModal({
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          {state !== 'idle' && (
+          {state !== 'idle' && state !== 'error' && (
             <Button variant="destructive" onClick={stopSession}>
-              Stop
+              Stop Recording
             </Button>
           )}
         </div>

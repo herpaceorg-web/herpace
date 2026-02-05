@@ -48,7 +48,7 @@ export function LogWorkoutModal({ open, onOpenChange, onWorkoutLogged, distanceU
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Log a Workout</DialogTitle>
         </DialogHeader>

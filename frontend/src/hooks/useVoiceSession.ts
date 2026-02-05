@@ -22,6 +22,7 @@ interface UseVoiceSessionReturn {
   state: VoiceSessionState
   error: string | null
   isSupported: boolean
+  isSpeaking: boolean
   startSession: () => Promise<void>
   stopSession: () => void
   sendTextMessage: (text: string) => void
@@ -41,12 +42,16 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   const [state, setState] = useState<VoiceSessionState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [isSupported, setIsSupported] = useState(true)
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
   const wsRef = useRef<WebSocket | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
   const audioProcessorRef = useRef<{ start: () => void; stop: () => void } | null>(null)
   const audioQueueRef = useRef<AudioQueue>(new AudioQueue())
   const setupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
 
   // Check browser support on mount
   useEffect(() => {
@@ -177,6 +182,41 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       const stream = await requestMicrophoneAccess()
       mediaStreamRef.current = stream
 
+      // Set up audio level detection for visual feedback
+      try {
+        const audioContext = new AudioContext()
+        const analyser = audioContext.createAnalyser()
+        analyser.fftSize = 256
+        analyser.smoothingTimeConstant = 0.8
+
+        const source = audioContext.createMediaStreamSource(stream)
+        source.connect(analyser)
+
+        audioContextRef.current = audioContext
+        analyserRef.current = analyser
+
+        // Start monitoring audio levels
+        const dataArray = new Uint8Array(analyser.frequencyBinCount)
+        const SPEECH_THRESHOLD = 30 // Adjust this value based on testing
+
+        const checkAudioLevel = () => {
+          if (!analyserRef.current) return
+
+          analyser.getByteFrequencyData(dataArray)
+          const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
+
+          // Update isSpeaking state based on audio level
+          setIsSpeaking(average > SPEECH_THRESHOLD)
+
+          animationFrameRef.current = requestAnimationFrame(checkAudioLevel)
+        }
+
+        checkAudioLevel()
+      } catch (err) {
+        console.warn('Failed to set up audio level detection:', err)
+        // Non-fatal error - voice session can continue without visual feedback
+      }
+
       // Get ephemeral token from backend
       const request: VoiceSessionTokenRequest = sessionId ? { sessionId } : {}
       const tokenResponse = await api.post<VoiceSessionTokenRequest, VoiceSessionTokenResponse>(
@@ -282,6 +322,18 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
         wsRef.current = null
         audioQueueRef.current.clear()
 
+        // Cleanup audio level detection
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current)
+          animationFrameRef.current = null
+        }
+        if (audioContextRef.current) {
+          audioContextRef.current.close()
+          audioContextRef.current = null
+        }
+        analyserRef.current = null
+        setIsSpeaking(false)
+
         if (event.code !== 1000 && event.code !== 1001) {
           // Abnormal closure — surface the error instead of silently resetting to idle.
           // onerror may have already set an error message; preserve it if so.
@@ -386,6 +438,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
     state,
     error,
     isSupported,
+    isSpeaking,
     startSession,
     stopSession,
     sendTextMessage
