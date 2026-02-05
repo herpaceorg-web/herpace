@@ -34,7 +34,7 @@ interface OnboardingProps {
   initialStep?: OnboardingStep
 }
 
-export function Onboarding({ initialStep = 1 }: OnboardingProps = {}) {
+export function Onboarding({ initialStep = 1 }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(initialStep)
   const [profileData, setProfileData] = useState<ProfileFormValues | null>(null)
   const [cycleData, setCycleData] = useState<CycleFormValues | null>(null)

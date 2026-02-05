@@ -81,7 +81,6 @@ export function CycleStep({ onComplete, onBack, defaultValues }: CycleStepProps)
   }
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
@@ -92,7 +91,6 @@ export function CycleStep({ onComplete, onBack, defaultValues }: CycleStepProps)
   })
 
   const cycleRegularity = watch('cycleRegularity')
-  const birthControlType = watch('birthControlType')
   const minCycleLength = watch('minCycleLength')
   const maxCycleLength = watch('maxCycleLength')
   const periodDuration = watch('periodDuration')

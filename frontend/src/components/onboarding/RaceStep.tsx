@@ -73,20 +73,6 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
         )}
       </div>
 
-      {/* Location (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="location">Location (Optional)</Label>
-        <Input
-          id="location"
-          {...register('location')}
-          placeholder="e.g., Chicago, IL"
-          disabled={isSubmitting}
-        />
-        {errors.location && (
-          <p className="text-sm text-destructive">{errors.location.message}</p>
-        )}
-      </div>
-
       {/* Race Date */}
       <div className="space-y-2">
         <Label>Race Date *</Label>
@@ -177,44 +163,22 @@ export function RaceStep({ onComplete, onBack, defaultValues }: RaceStepProps) {
         <Label htmlFor="distanceType">Distance Type *</Label>
         <Select
           onValueChange={handleDistanceTypeChange}
-          defaultValue={defaultValues?.distanceType || 'FiveK'}
+          defaultValue={defaultValues?.distanceType || 'HalfMarathon'}
           disabled={isSubmitting}
         >
           <SelectTrigger id="distanceType">
             <SelectValue placeholder="Select distance type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="FiveK">5K (5 km)</SelectItem>
-            <SelectItem value="TenK">10K (10 km)</SelectItem>
             <SelectItem value="HalfMarathon">Half Marathon (21.1 km)</SelectItem>
             <SelectItem value="Marathon">Marathon (42.2 km)</SelectItem>
-            <SelectItem value="Custom">Custom Distance</SelectItem>
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground">
+          HerPace is excited to offer Training Plans for all distances in the near future
+        </p>
         {errors.distanceType && (
           <p className="text-sm text-destructive">{errors.distanceType.message}</p>
-        )}
-      </div>
-
-      {/* Distance */}
-      <div className="space-y-2">
-        <Label htmlFor="distance">Distance (kilometers) *</Label>
-        <Input
-          id="distance"
-          type="number"
-          step="0.01"
-          {...register('distance', { valueAsNumber: true })}
-          placeholder="e.g., 5"
-          disabled={isSubmitting || distanceType !== 'Custom'}
-          className={distanceType !== 'Custom' ? 'bg-muted' : ''}
-        />
-        <p className="text-xs text-muted-foreground">
-          {distanceType !== 'Custom'
-            ? 'Distance is set automatically for standard race types'
-            : 'Enter your custom race distance in kilometers'}
-        </p>
-        {errors.distance && (
-          <p className="text-sm text-destructive">{errors.distance.message}</p>
         )}
       </div>
 
