@@ -93,6 +93,24 @@ export const PlanStatus = {
 
 export type PlanStatus = typeof PlanStatus[keyof typeof PlanStatus]
 
+export const TrainingStage = {
+  Base: 0,
+  Build: 1,
+  Peak: 2,
+  Taper: 3
+} as const
+
+export type TrainingStage = typeof TrainingStage[keyof typeof TrainingStage]
+
+export interface TrainingStageInfoDto {
+  name: string
+  tagline: string
+  description: string
+  focus: string
+  whatToExpect: string
+  tip: string
+}
+
 // Auth DTOs
 export interface LoginRequest {
   email: string
@@ -175,6 +193,8 @@ export interface SessionDetailDto {
   totalSessionsInPhase?: number
   menstruationDay?: number
   workoutTips?: string[]
+  trainingStage?: TrainingStage
+  trainingStageInfo?: TrainingStageInfoDto
   isCompleted: boolean
   isSkipped: boolean
   actualDistance?: number
@@ -342,6 +362,7 @@ export interface SessionSummary {
   intensityLevel: IntensityLevel
   cyclePhase?: CyclePhase
   phaseGuidance?: string
+  trainingStage?: TrainingStage
   completedAt?: string
   isSkipped: boolean
 }

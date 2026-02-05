@@ -62,6 +62,10 @@ public class SessionDetailDto
     public bool IsSkipped { get; set; }
     public string? SkipReason { get; set; }
 
+    // Training stage (computed from plan timeline, not persisted)
+    public TrainingStage? TrainingStage { get; set; }
+    public TrainingStageInfoDto? TrainingStageInfo { get; set; }
+
     // Computed fields
     public bool WasModified { get; set; } // >20% deviation from planned
     public bool IsCompleted { get; set; } // CompletedAt != null && !IsSkipped

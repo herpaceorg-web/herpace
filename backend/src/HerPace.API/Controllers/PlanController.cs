@@ -1,3 +1,4 @@
+using HerPace.Core;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
 using HerPace.Infrastructure.Data;
@@ -175,6 +176,7 @@ public class PlanController : ControllerBase
                     IntensityLevel = s.IntensityLevel,
                     CyclePhase = s.CyclePhase,
                     PhaseGuidance = s.PhaseGuidance,
+                    TrainingStage = TrainingStageLibrary.CalculateStage(s.ScheduledDate, activePlan.StartDate, activePlan.EndDate),
                     CompletedAt = s.CompletedAt,
                     IsSkipped = s.IsSkipped
                 })
@@ -244,6 +246,7 @@ public class PlanController : ControllerBase
                     IntensityLevel = s.IntensityLevel,
                     CyclePhase = s.CyclePhase,
                     PhaseGuidance = s.PhaseGuidance,
+                    TrainingStage = TrainingStageLibrary.CalculateStage(s.ScheduledDate, plan.StartDate, plan.EndDate),
                     CompletedAt = s.CompletedAt,
                     IsSkipped = s.IsSkipped
                 })
@@ -334,6 +337,7 @@ public class SessionSummary
     public IntensityLevel IntensityLevel { get; set; }
     public CyclePhase? CyclePhase { get; set; }
     public string? PhaseGuidance { get; set; }
+    public TrainingStage? TrainingStage { get; set; }
     public DateTime? CompletedAt { get; set; }
     public bool IsSkipped { get; set; }
 }

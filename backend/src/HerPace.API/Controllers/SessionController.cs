@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Hangfire;
+using HerPace.Core;
 using HerPace.Core.DTOs;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
@@ -264,7 +265,7 @@ public class SessionController : ControllerBase
         DateTime today;
         if (!string.IsNullOrEmpty(clientDate) && DateTime.TryParse(clientDate, out var parsedDate))
         {
-            today = parsedDate.Date;
+            today = DateTime.SpecifyKind(parsedDate.Date, DateTimeKind.Utc);
             _logger.LogInformation("Using client date {Today} for today's session lookup", today);
         }
         else
@@ -347,6 +348,8 @@ public class SessionController : ControllerBase
                 UserNotes = todaysSessionEntity.UserNotes,
                 IsSkipped = todaysSessionEntity.IsSkipped,
                 SkipReason = todaysSessionEntity.SkipReason,
+                TrainingStage = TrainingStageLibrary.CalculateStage(todaysSessionEntity.ScheduledDate, activePlan.StartDate, activePlan.EndDate),
+                TrainingStageInfo = TrainingStageLibrary.GetInfo(TrainingStageLibrary.CalculateStage(todaysSessionEntity.ScheduledDate, activePlan.StartDate, activePlan.EndDate)),
                 WasModified = todaysSessionEntity.WasModified,
                 IsCompleted = todaysSessionEntity.CompletedAt.HasValue && !todaysSessionEntity.IsSkipped
             };
