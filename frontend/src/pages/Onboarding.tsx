@@ -100,7 +100,12 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
         marathonPR: formatTimeSpan(data.marathonPR)
       }
 
-      await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
+      const response = await api.post<CreateProfileRequest, ProfileResponse>('/api/profiles/me', request)
+
+      // Verify profile was created before moving to next step
+      if (!response || !response.id) {
+        throw new Error('Profile creation failed - no profile ID returned')
+      }
 
       // Success - move to next step
       setCurrentStep(2)
@@ -154,8 +159,15 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
       setCurrentStep(3)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } }
-        setError(axiosError.response?.data?.message || 'Failed to update cycle information. Please try again.')
+        const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
+
+        // If profile not found, go back to step 1
+        if (axiosError.response?.status === 404) {
+          setError('Profile not found. Please complete your profile information first.')
+          setTimeout(() => setCurrentStep(1), 2000)
+        } else {
+          setError(axiosError.response?.data?.message || 'Failed to update cycle information. Please try again.')
+        }
       } else {
         setError('An unexpected error occurred. Please try again.')
       }
