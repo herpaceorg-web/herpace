@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { DurationInput } from '@/components/ui/duration-input'
 import { cn } from '@/lib/utils'
 import type { DateRange } from 'react-day-picker'
 import { useState } from 'react'
@@ -46,6 +47,12 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
   const cycleRegularity = watch('cycleRegularity')
   const showCycleFields = cycleRegularity !== 'DoNotTrack'
   const dateOfBirth = watch('dateOfBirth')
+
+  // Watch PR values for DurationInput
+  const fiveKPR = watch('fiveKPR')
+  const tenKPR = watch('tenKPR')
+  const halfMarathonPR = watch('halfMarathonPR')
+  const marathonPR = watch('marathonPR')
 
   // State for period date range picker
   const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => {
@@ -297,12 +304,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
           {/* 5K PR */}
           <div className="space-y-2">
             <Label htmlFor="fiveKPR">5K PR</Label>
-            <Input
+            <DurationInput
               id="fiveKPR"
-              type="time"
-              step="1"
-              {...register('fiveKPR')}
-              placeholder="00:25:30"
+              value={fiveKPR}
+              onChange={(value) => setValue('fiveKPR', value)}
               disabled={isSubmitting}
             />
             {errors.fiveKPR && (
@@ -313,12 +318,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
           {/* 10K PR */}
           <div className="space-y-2">
             <Label htmlFor="tenKPR">10K PR</Label>
-            <Input
+            <DurationInput
               id="tenKPR"
-              type="time"
-              step="1"
-              {...register('tenKPR')}
-              placeholder="00:55:20"
+              value={tenKPR}
+              onChange={(value) => setValue('tenKPR', value)}
               disabled={isSubmitting}
             />
             {errors.tenKPR && (
@@ -329,12 +332,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
           {/* Half Marathon PR */}
           <div className="space-y-2">
             <Label htmlFor="halfMarathonPR">Half Marathon PR</Label>
-            <Input
+            <DurationInput
               id="halfMarathonPR"
-              type="time"
-              step="1"
-              {...register('halfMarathonPR')}
-              placeholder="01:45:30"
+              value={halfMarathonPR}
+              onChange={(value) => setValue('halfMarathonPR', value)}
               disabled={isSubmitting}
             />
             {errors.halfMarathonPR && (
@@ -345,12 +346,10 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
           {/* Marathon PR */}
           <div className="space-y-2">
             <Label htmlFor="marathonPR">Marathon PR</Label>
-            <Input
+            <DurationInput
               id="marathonPR"
-              type="time"
-              step="1"
-              {...register('marathonPR')}
-              placeholder="03:30:00"
+              value={marathonPR}
+              onChange={(value) => setValue('marathonPR', value)}
               disabled={isSubmitting}
             />
             {errors.marathonPR && (
