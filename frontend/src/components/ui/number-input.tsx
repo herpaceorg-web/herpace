@@ -9,10 +9,11 @@ export interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInp
   min?: number
   max?: number
   step?: number
+  suffix?: string
 }
 
 export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ className, value = 0, onChange, min = 0, max = 999, step = 1, disabled, ...props }, ref) => {
+  ({ className, value = 0, onChange, min = 0, max = 999, step = 1, suffix, disabled, ...props }, ref) => {
     const handleDecrement = () => {
       const newValue = Math.max(min, (value || 0) - step)
       onChange?.(newValue)
@@ -43,16 +44,25 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           className
         )}
       >
-        <input
-          ref={ref}
-          type="text"
-          inputMode="decimal"
-          value={value}
-          onChange={handleInputChange}
-          disabled={disabled}
-          className="flex-1 bg-transparent px-3 py-2 text-sm text-center outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          {...props}
-        />
+        <div className="flex-1 flex items-center justify-center px-3">
+          <div className="flex items-center gap-2">
+            <input
+              ref={ref}
+              type="text"
+              inputMode="decimal"
+              value={value}
+              onChange={handleInputChange}
+              disabled={disabled}
+              className="w-12 bg-transparent py-2 text-sm text-center outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              {...props}
+            />
+            {suffix && (
+              <span className="text-sm text-foreground whitespace-nowrap">
+                {suffix}
+              </span>
+            )}
+          </div>
+        </div>
         <div className="flex h-full items-center">
           <Button
             type="button"

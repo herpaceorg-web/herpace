@@ -281,6 +281,7 @@ export function CycleStep({ onComplete, onBack, defaultValues }: CycleStepProps)
               min={1}
               max={10}
               step={1}
+              suffix="Days"
               placeholder="e.g., 5"
               disabled={isSubmitting}
             />
@@ -304,6 +305,7 @@ export function CycleStep({ onComplete, onBack, defaultValues }: CycleStepProps)
               min={0}
               max={14}
               step={1}
+              suffix="Days"
               placeholder="e.g., 3"
               disabled={isSubmitting}
             />

@@ -159,6 +159,7 @@ export function ProfileStep({ onComplete, onNameChange, defaultValues }: Profile
           min={0}
           max={200}
           step={5}
+          suffix="Miles"
           placeholder="e.g., 25"
           disabled={isSubmitting}
         />
