@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
@@ -18,6 +19,7 @@ import {
 import { Loader2, Sparkles } from 'lucide-react'
 
 export function Dashboard() {
+  const navigate = useNavigate()
   const [planSummary, setPlanSummary] = useState<PlanSummaryDto | null>(null)
   const [upcomingSessions, setUpcomingSessions] = useState<SessionDetailDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -107,9 +109,14 @@ export function Dashboard() {
 
   if (error) {
     return (
-      <Alert variant="error">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <div className="space-y-4">
+        <Alert variant="error">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button onClick={() => navigate('/onboarding')}>
+          Create Training Plan
+        </Button>
+      </div>
     )
   }
 
@@ -119,10 +126,13 @@ export function Dashboard() {
         <CardHeader>
           <CardTitle>Welcome to HerPace</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-muted-foreground">
             You don't have an active training plan yet. Create a race goal to get started!
           </p>
+          <Button onClick={() => navigate('/onboarding')}>
+            Create Training Plan
+          </Button>
         </CardContent>
       </Card>
     )

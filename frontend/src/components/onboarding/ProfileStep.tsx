@@ -12,8 +12,6 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { DurationInput } from '@/components/ui/duration-input'
 import { cn } from '@/lib/utils'
-import type { DateRange } from 'react-day-picker'
-import { useState } from 'react'
 
 interface ProfileStepProps {
   onComplete: (data: ProfileFormValues) => void
@@ -28,7 +26,6 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
     today.getDate()
   )
   const resolvedDefaults: Partial<ProfileFormValues> = {
-    cycleRegularity: 'Regular' as const,
     distanceUnit: 'Miles' as const,
     dateOfBirth: defaultBirthDate,
     ...defaultValues
@@ -44,8 +41,6 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
     defaultValues: resolvedDefaults
   })
 
-  const cycleRegularity = watch('cycleRegularity')
-  const showCycleFields = cycleRegularity !== 'DoNotTrack'
   const dateOfBirth = watch('dateOfBirth')
 
   // Watch PR values for DurationInput
@@ -53,24 +48,6 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
   const tenKPR = watch('tenKPR')
   const halfMarathonPR = watch('halfMarathonPR')
   const marathonPR = watch('marathonPR')
-
-  // State for period date range picker
-  const [periodRange, setPeriodRange] = useState<DateRange | undefined>(() => {
-    if (defaultValues?.lastPeriodStart || defaultValues?.lastPeriodEnd) {
-      return {
-        from: defaultValues.lastPeriodStart,
-        to: defaultValues.lastPeriodEnd
-      }
-    }
-    return undefined
-  })
-
-  // Handler for period date range selection
-  const handlePeriodRangeSelect = (range: DateRange | undefined) => {
-    setPeriodRange(range)
-    setValue('lastPeriodStart', range?.from)
-    setValue('lastPeriodEnd', range?.to)
-  }
 
   return (
     <form onSubmit={handleSubmit(onComplete)} className="space-y-6">
@@ -105,7 +82,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
               {dateOfBirth ? format(dateOfBirth, 'PPP') : 'Pick a date'}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 rounded-lg" align="start">
             <Calendar
               mode="single"
               selected={dateOfBirth}
@@ -116,6 +93,7 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
               toYear={today.getFullYear()}
               disabled={(date: Date) => date > new Date() || date < new Date('1900-01-01')}
               initialFocus
+              className="rounded-lg"
             />
           </PopoverContent>
         </Popover>
@@ -186,110 +164,6 @@ export function ProfileStep({ onComplete, defaultValues }: ProfileStepProps) {
           <p className="text-sm text-destructive">{errors.distanceUnit.message}</p>
         )}
       </div>
-
-      {/* Cycle Regularity */}
-      <div className="space-y-2">
-        <Label htmlFor="cycleRegularity">Menstrual Cycle Tracking *</Label>
-        <Select
-          onValueChange={(value: 'Regular' | 'Irregular' | 'DoNotTrack') => setValue('cycleRegularity', value)}
-          defaultValue={defaultValues?.cycleRegularity || 'Regular'}
-          disabled={isSubmitting}
-        >
-          <SelectTrigger id="cycleRegularity">
-            <SelectValue placeholder="Select cycle regularity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Regular">Regular cycle - Track for better training</SelectItem>
-            <SelectItem value="Irregular">Irregular cycle - Track with flexibility</SelectItem>
-            <SelectItem value="DoNotTrack">I prefer not to track</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.cycleRegularity && (
-          <p className="text-sm text-destructive">{errors.cycleRegularity.message}</p>
-        )}
-      </div>
-
-      {/* Conditional Cycle Fields */}
-      {showCycleFields && (
-        <>
-          {/* Cycle Length */}
-          <div className="space-y-2">
-            <Label htmlFor="cycleLength">Cycle Length (days) *</Label>
-            <Input
-              id="cycleLength"
-              type="number"
-              {...register('cycleLength', { valueAsNumber: true })}
-              placeholder="28"
-              disabled={isSubmitting}
-            />
-            <p className="text-xs text-muted-foreground">
-              Typically 21-45 days
-            </p>
-            {errors.cycleLength && (
-              <p className="text-sm text-destructive">{errors.cycleLength.message}</p>
-            )}
-          </div>
-
-          {/* Last Period Date Range */}
-          <div className="space-y-2">
-            <Label>Last Period (Optional)</Label>
-            <p className="text-xs text-muted-foreground">
-              Select when your period started. You can also select a range if it has ended.
-            </p>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !periodRange?.from && 'text-muted-foreground'
-                  )}
-                  disabled={isSubmitting}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {periodRange?.from ? (
-                    <>
-                      {format(periodRange.from, 'PPP')}
-                      {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (
-                        <> - {format(periodRange.to, 'PPP')}</>
-                      )}
-                    </>
-                  ) : (
-                    'Pick a date or date range'
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={periodRange}
-                  onSelect={handlePeriodRangeSelect}
-                  disabled={(date: Date) => date > new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {periodRange?.from && (
-              <div className="p-3 bg-muted rounded-lg text-sm">
-                <strong>Selected:</strong>{' '}
-                {periodRange.from.toLocaleDateString()}
-                {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (
-                  <> - {periodRange.to.toLocaleDateString()}</>
-                )}
-                {!periodRange.to && (
-                  <span className="text-muted-foreground"> (single day)</span>
-                )}
-              </div>
-            )}
-            {errors.lastPeriodStart && (
-              <p className="text-sm text-destructive">{errors.lastPeriodStart.message}</p>
-            )}
-            {errors.lastPeriodEnd && (
-              <p className="text-sm text-destructive">{errors.lastPeriodEnd.message}</p>
-            )}
-          </div>
-        </>
-      )}
 
       {/* Personal Records Section (Optional) */}
       <div className="space-y-4 pt-4 border-t">

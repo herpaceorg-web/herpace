@@ -66,8 +66,9 @@ export function Onboarding() {
         distanceUnit: DistanceUnit[data.distanceUnit],
         dateOfBirth: data.dateOfBirth?.toISOString(),
         typicalWeeklyMileage: data.typicalWeeklyMileage,
-        cycleRegularity: CycleRegularity[data.cycleRegularity],
-        cycleLength: data.cycleLength,
+        // Default cycle values - will be updated in next onboarding step
+        cycleRegularity: data.cycleRegularity ? CycleRegularity[data.cycleRegularity] : CycleRegularity.Regular,
+        cycleLength: data.cycleLength || 28,
         lastPeriodStart: data.lastPeriodStart?.toISOString(),
         lastPeriodEnd: data.lastPeriodEnd?.toISOString(),
         // Format PR times to TimeSpan format (HH:MM:SS with leading zeros)
