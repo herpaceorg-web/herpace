@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { X, Mic, Volume2, AlertCircle, CheckCircle } from 'lucide-react'
 import {
   Dialog,
@@ -34,6 +34,7 @@ export function VoiceModal({
   const [completionData, setCompletionData] = useState<Partial<VoiceCompletionRequest>>({})
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const hasAttemptedConnection = useRef(false)
 
   const handleTranscript = useCallback((text: string, isFinal: boolean) => {
     if (isFinal) {
@@ -76,21 +77,26 @@ export function VoiceModal({
     }
   })
 
-  // Start session when modal opens
+  // Start session when modal opens (only once per modal open)
   useEffect(() => {
-    if (open && isSupported && state === 'idle') {
+    if (open && isSupported && state === 'idle' && !hasAttemptedConnection.current) {
+      hasAttemptedConnection.current = true
       startSession()
     }
   }, [open, isSupported, state, startSession])
 
-  // Stop session when modal closes
+  // Stop session when modal closes and reset connection flag
   useEffect(() => {
-    if (!open && state !== 'idle') {
-      stopSession()
+    if (!open) {
+      if (state !== 'idle') {
+        stopSession()
+      }
+      // Reset flag when modal closes so next open will attempt connection
+      hasAttemptedConnection.current = false
     }
   }, [open, state, stopSession])
 
-  // Reset state when modal opens
+  // Reset UI state when modal opens
   useEffect(() => {
     if (open) {
       setTranscript('')

@@ -81,6 +81,12 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
         return
       }
 
+      // Handle goAway message (server is about to disconnect)
+      if ((message as { goAway?: { timeLeft?: string } }).goAway) {
+        console.warn('Gemini server sent goAway, will disconnect soon:', (message as { goAway?: { timeLeft?: string } }).goAway)
+        return
+      }
+
       // Handle setup complete
       if (message.setupComplete) {
         console.log('Setup complete received, transitioning to listening state')
@@ -169,7 +175,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           setup: {
             model: tokenResponse.model || 'models/gemini-2.5-flash-native-audio-preview-12-2025',
             generationConfig: {
-              responseModalities: 'audio',
+              responseModalities: ['AUDIO'],
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
@@ -201,11 +207,28 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       }
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason)
-        if (state !== 'idle' && state !== 'error') {
-          onComplete?.()
+        console.log('WebSocket closed:', event.code, event.reason, 'wasClean:', event.wasClean)
+
+        // Common close codes:
+        // 1000 = Normal closure
+        // 1001 = Going away (page closing)
+        // 1006 = Abnormal closure (no close frame received)
+        // 1011 = Server error
+        if (event.code !== 1000 && event.code !== 1001) {
+          console.warn('WebSocket closed unexpectedly with code:', event.code)
         }
-        cleanup()
+
+        // Only call onComplete if we had an active session
+        onComplete?.()
+
+        // Stop audio processor but don't close WebSocket again (it's already closed)
+        audioProcessorRef.current?.stop()
+        audioProcessorRef.current = null
+        mediaStreamRef.current?.getTracks().forEach(track => track.stop())
+        mediaStreamRef.current = null
+        wsRef.current = null
+        audioQueueRef.current.clear()
+
         updateState('idle')
       }
 
