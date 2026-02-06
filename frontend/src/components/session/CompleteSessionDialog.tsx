@@ -98,27 +98,6 @@ export function CompleteSessionDialog({
     stopSessionRef.current = stopSession
   }, [stopSession])
 
-  // Debug logging - REMOVE after diagnosing
-  useEffect(() => {
-    console.log('🎤 CompleteSessionDialog Debug:', {
-      open,
-      inputMode,
-      isSupported,
-      isRestDay: session.workoutType === WorkoutType.Rest,
-      voiceState: state,
-      error,
-      sessionType: session.workoutType,
-      sessionName: session.sessionName,
-      showConfirmation,
-      hasAttemptedConnection: hasAttemptedConnection.current
-    })
-  }, [open, inputMode, isSupported, isRestDay, state, error, session, showConfirmation])
-
-  // Debug: Log when reset effect runs
-  useEffect(() => {
-    console.log('🔄 Reset effect triggered - open:', open, 'state:', state)
-  }, [open, state])
-
   // Start session when voice mode is selected
   useEffect(() => {
     if (inputMode === 'voice' && isSupported && state === 'idle' && !hasAttemptedConnection.current) {
@@ -402,17 +381,6 @@ export function CompleteSessionDialog({
             How did your {session.sessionName} go?
           </p>
         </DialogHeader>
-
-        {/* DEBUG PANEL - Remove after diagnosis */}
-        <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4 text-xs font-mono">
-          <div><strong>Debug Info:</strong></div>
-          <div>inputMode: {inputMode}</div>
-          <div>isSupported: {String(isSupported)}</div>
-          <div>isRestDay: {String(isRestDay)}</div>
-          <div>state: {state}</div>
-          {error && <div className="text-red-600">error: {error}</div>}
-          <div>Conditions met: {String(inputMode === 'initial' && isSupported && !isRestDay)}</div>
-        </div>
 
         <form onSubmit={handleManualSubmit}>
           {/* Show why voice is not available */}

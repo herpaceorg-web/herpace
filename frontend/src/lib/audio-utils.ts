@@ -1,6 +1,7 @@
 /**
  * Audio utilities for Gemini Live API voice interaction.
- * Handles microphone capture and audio playback.
+ * Uses AudioWorklet for both capture and playback to avoid
+ * race conditions and per-chunk AudioBufferSourceNode overhead.
  */
 
 // Audio configuration for Gemini Live API
@@ -19,23 +20,19 @@ export const AUDIO_CONFIG = {
 } as const
 
 /**
- * AudioContext for playback using hardware's native sample rate.
- * We let the browser resample from 24kHz (Gemini's output) to hardware rate.
- * Note: Explicit 24kHz sample rate caused audio issues in some browsers.
+ * AudioContext for playback at 24kHz (matches Gemini output — no resampling needed).
  */
 let playbackContext: AudioContext | null = null
 
 export function getPlaybackContext(): AudioContext {
   if (!playbackContext) {
-    // Use hardware rate - browser will resample 24kHz audio buffers automatically
-    playbackContext = new AudioContext()
+    playbackContext = new AudioContext({ sampleRate: AUDIO_CONFIG.output.sampleRate })
   }
   return playbackContext
 }
 
 /**
  * Shared AudioContext for capture at 16kHz (Gemini's input sample rate)
- * Reused for both audio processing and level detection to avoid conflicts
  */
 let captureContext: AudioContext | null = null
 
@@ -88,16 +85,24 @@ export async function requestMicrophoneAccess(): Promise<MediaStream> {
 }
 
 /**
- * Creates an audio processor that captures audio from the microphone
- * and converts it to base64-encoded PCM for Gemini Live API.
- * Uses the shared capture context to avoid multiple AudioContext conflicts.
- * Also creates an analyser node for audio level detection (visual feedback).
+ * Creates an AudioWorklet-based audio processor that captures audio from the
+ * microphone and converts it to base64-encoded PCM for Gemini Live API.
+ * Also creates an AnalyserNode for audio level detection (visual feedback).
  */
-export function createAudioProcessor(
+export async function createAudioProcessor(
   stream: MediaStream,
   onAudioData: (base64Data: string) => void
-): { start: () => void; stop: () => void; analyser: AnalyserNode } {
+): Promise<{ start: () => void; stop: () => void; analyser: AnalyserNode }> {
   const context = getCaptureContext()
+
+  // Resume if suspended (browser autoplay policy)
+  if (context.state === 'suspended') {
+    await context.resume()
+  }
+
+  // Load the capture worklet module
+  await context.audioWorklet.addModule('/capture.worklet.js')
+
   const source = context.createMediaStreamSource(stream)
 
   // Create analyser for audio level detection (used for visual feedback)
@@ -105,20 +110,18 @@ export function createAudioProcessor(
   analyser.fftSize = 256
   analyser.smoothingTimeConstant = 0.8
 
-  // Use ScriptProcessorNode for audio processing
-  // (AudioWorklet would be better but requires more setup)
-  const bufferSize = 4096
-  const processor = context.createScriptProcessor(bufferSize, 1, 1)
+  // Create the AudioWorkletNode for capture
+  const captureNode = new AudioWorkletNode(context, 'capture-processor')
 
   let isProcessing = false
 
-  processor.onaudioprocess = (event) => {
+  captureNode.port.onmessage = (event: MessageEvent) => {
     if (!isProcessing) return
 
-    const inputBuffer = event.inputBuffer.getChannelData(0)
+    const float32Buffer = new Float32Array(event.data)
 
     // Convert Float32 to Int16 PCM
-    const pcmData = float32ToInt16(inputBuffer)
+    const pcmData = float32ToInt16(float32Buffer)
 
     // Convert to base64
     const base64 = arrayBufferToBase64(pcmData.buffer as ArrayBuffer)
@@ -129,20 +132,79 @@ export function createAudioProcessor(
   return {
     start: () => {
       isProcessing = true
-      // Chain: source → analyser → processor → destination
-      // This allows level detection without creating duplicate MediaStreamSource
+      // Chain: source → analyser → captureNode
       source.connect(analyser)
-      analyser.connect(processor)
-      processor.connect(context.destination)
+      analyser.connect(captureNode)
+      // Connect captureNode to destination to keep it alive (outputs silence)
+      captureNode.connect(context.destination)
     },
     stop: () => {
       isProcessing = false
-      processor.disconnect()
+      captureNode.port.postMessage({ command: 'stop' })
+      captureNode.disconnect()
       analyser.disconnect()
       source.disconnect()
-      // Don't close the shared context - it will be reused
     },
-    analyser // Expose analyser for level detection
+    analyser
+  }
+}
+
+/**
+ * WorkletPlaybackManager — manages audio playback via an AudioWorklet ring buffer.
+ * A single worklet processor continuously reads from a circular buffer on a
+ * dedicated audio thread. No scheduling, no race conditions, no per-chunk source nodes.
+ */
+export class WorkletPlaybackManager {
+  private playbackNode: AudioWorkletNode | null = null
+  private context: AudioContext | null = null
+  private initialized = false
+
+  async initialize(): Promise<void> {
+    if (this.initialized) return
+
+    const ctx = getPlaybackContext()
+    this.context = ctx
+
+    // Resume if suspended (browser autoplay policy)
+    if (ctx.state === 'suspended') {
+      await ctx.resume()
+    }
+
+    // Load the playback worklet module
+    await ctx.audioWorklet.addModule('/playback.worklet.js')
+
+    // Create the worklet node (mono output at 24kHz context rate)
+    this.playbackNode = new AudioWorkletNode(ctx, 'playback-processor', {
+      outputChannelCount: [1]
+    })
+    this.playbackNode.connect(ctx.destination)
+
+    this.initialized = true
+  }
+
+  enqueue(base64Data: string): void {
+    if (!this.playbackNode) return
+
+    // Decode base64 to ArrayBuffer (Int16 PCM)
+    const pcmBuffer = base64ToArrayBuffer(base64Data)
+
+    // Transfer the buffer to the worklet thread (zero-copy)
+    this.playbackNode.port.postMessage(pcmBuffer, [pcmBuffer])
+  }
+
+  clear(): void {
+    if (!this.playbackNode) return
+    this.playbackNode.port.postMessage({ command: 'endOfAudio' })
+  }
+
+  dispose(): void {
+    if (this.playbackNode) {
+      this.playbackNode.port.postMessage({ command: 'endOfAudio' })
+      this.playbackNode.disconnect()
+      this.playbackNode = null
+    }
+    this.context = null
+    this.initialized = false
   }
 }
 
@@ -184,159 +246,6 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
 }
 
 /**
- * Play PCM audio data from Gemini (24kHz, 16-bit, mono)
- * Returns the BufferSource for scheduling and cleanup
- */
-export async function playPcmAudio(
-  base64Data: string,
-  startTime?: number
-): Promise<{ source: AudioBufferSourceNode; duration: number }> {
-  const context = getPlaybackContext()
-
-  // Resume context if suspended (browser autoplay policy)
-  if (context.state === 'suspended') {
-    await context.resume()
-  }
-
-  // Decode base64 to ArrayBuffer
-  const pcmData = base64ToArrayBuffer(base64Data)
-
-  // Convert Int16 PCM to Float32 for Web Audio API
-  const int16Array = new Int16Array(pcmData)
-  const float32Array = new Float32Array(int16Array.length)
-
-  for (let i = 0; i < int16Array.length; i++) {
-    float32Array[i] = int16Array[i] / (int16Array[i] < 0 ? 0x8000 : 0x7fff)
-  }
-
-  // Create audio buffer with proper sample rate
-  // Gemini sends 24kHz audio, but we need to resample to hardware rate
-  const audioBuffer = context.createBuffer(
-    AUDIO_CONFIG.output.channelCount,
-    float32Array.length,
-    AUDIO_CONFIG.output.sampleRate // 24kHz source rate
-  )
-
-  audioBuffer.getChannelData(0).set(float32Array)
-
-  // Create and configure the audio source
-  const source = context.createBufferSource()
-  source.buffer = audioBuffer
-  source.connect(context.destination)
-
-  // Calculate actual duration in seconds
-  const duration = audioBuffer.duration
-
-  // Start playback at specified time or immediately
-  if (startTime !== undefined && startTime > context.currentTime) {
-    source.start(startTime)
-  } else {
-    source.start()
-  }
-
-  // Auto-disconnect after playback to prevent memory leaks
-  source.onended = () => {
-    source.disconnect()
-  }
-
-  return { source, duration }
-}
-
-/**
- * Audio queue for managing sequential playback of audio chunks
- * with seamless scheduling and pre-buffering
- */
-export class AudioQueue {
-  private queue: string[] = []
-  private isPlaying = false
-  private nextScheduledTime = 0
-  private activeSources: AudioBufferSourceNode[] = []
-  // Increased buffer count for smoother playback and resilience against network jitter
-  private readonly PRE_BUFFER_COUNT = 5
-
-  async enqueue(base64Data: string): Promise<void> {
-    this.queue.push(base64Data)
-
-    // Start playback only after pre-buffering initial chunks
-    if (!this.isPlaying && this.queue.length >= this.PRE_BUFFER_COUNT) {
-      this.startPlayback()
-    }
-  }
-
-  private startPlayback(): void {
-    if (this.isPlaying) return
-
-    this.isPlaying = true
-    const context = getPlaybackContext()
-
-    // Initialize scheduling time with a small buffer (100ms) to allow for processing
-    this.nextScheduledTime = context.currentTime + 0.1
-
-    // Schedule all queued chunks
-    this.scheduleNext()
-  }
-
-  private async scheduleNext(): Promise<void> {
-    while (this.queue.length > 0) {
-      const audioData = this.queue.shift()!
-
-      try {
-        const context = getPlaybackContext()
-
-        // If we're behind schedule, reset to current time
-        if (this.nextScheduledTime < context.currentTime) {
-          this.nextScheduledTime = context.currentTime
-        }
-
-        const { source, duration } = await playPcmAudio(audioData, this.nextScheduledTime)
-
-        // Track active source for cleanup
-        this.activeSources.push(source)
-
-        // Remove from tracking when it ends
-        source.onended = () => {
-          const index = this.activeSources.indexOf(source)
-          if (index > -1) {
-            this.activeSources.splice(index, 1)
-          }
-          source.disconnect()
-        }
-
-        // Schedule next chunk to start exactly when this one ends (seamless playback)
-        this.nextScheduledTime += duration
-
-      } catch (error) {
-        console.error('Error scheduling audio:', error)
-        // Continue with next chunk despite error
-      }
-    }
-
-    this.isPlaying = false
-  }
-
-  clear(): void {
-    // Stop and disconnect all active sources
-    this.activeSources.forEach(source => {
-      try {
-        source.stop()
-        source.disconnect()
-      } catch (error) {
-        // Source may have already ended
-      }
-    })
-
-    this.activeSources = []
-    this.queue = []
-    this.isPlaying = false
-    this.nextScheduledTime = 0
-  }
-
-  get length(): number {
-    return this.queue.length
-  }
-}
-
-/**
  * Check if the browser supports required audio APIs
  */
 export function checkAudioSupport(): { supported: boolean; error?: string } {
@@ -359,6 +268,14 @@ export function checkAudioSupport(): { supported: boolean; error?: string } {
     return {
       supported: false,
       error: 'Browser does not support Web Audio API. Please use a modern browser.'
+    }
+  }
+
+  // AudioWorklet is required for capture and playback
+  if (!window.AudioContext || !AudioContext.prototype.audioWorklet) {
+    return {
+      supported: false,
+      error: 'Browser does not support AudioWorklet. Please update to Chrome 66+, Firefox 76+, or Safari 14.1+.'
     }
   }
 

@@ -3,7 +3,7 @@ import { api } from '../lib/api-client'
 import {
   requestMicrophoneAccess,
   createAudioProcessor,
-  AudioQueue,
+  WorkletPlaybackManager,
   checkAudioSupport,
   closeAudioContexts
 } from '../lib/audio-utils'
@@ -48,7 +48,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   const wsRef = useRef<WebSocket | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
   const audioProcessorRef = useRef<{ start: () => void; stop: () => void } | null>(null)
-  const audioQueueRef = useRef<AudioQueue>(new AudioQueue())
+  const playbackManagerRef = useRef<WorkletPlaybackManager>(new WorkletPlaybackManager())
   const setupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const animationFrameRef = useRef<number | null>(null)
@@ -136,7 +136,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
 
         if (interrupted) {
           // User interrupted the model - clear audio queue
-          audioQueueRef.current.clear()
+          playbackManagerRef.current.clear()
           updateState('listening')
           return
         }
@@ -152,7 +152,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
             if (part.inlineData?.mimeType.startsWith('audio/')) {
               updateState('responding')
               onAudioResponse?.(part.inlineData.data)
-              audioQueueRef.current.enqueue(part.inlineData.data)
+              playbackManagerRef.current.enqueue(part.inlineData.data)
             }
           }
         }
@@ -178,14 +178,15 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       setError(null)
       updateState('connecting')
 
+      // Initialize the playback manager (loads worklet module)
+      await playbackManagerRef.current.initialize()
+
       // Request microphone access
       const stream = await requestMicrophoneAccess()
       mediaStreamRef.current = stream
 
-      // Create audio processor - it uses the shared capture context and includes
-      // an analyser node for level detection (no duplicate MediaStreamSource needed)
-      // The callback uses wsRef.current so it works once WebSocket is connected
-      const processor = createAudioProcessor(stream, (base64Data) => {
+      // Create audio processor (async — loads capture worklet module)
+      const processor = await createAudioProcessor(stream, (base64Data) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
           const message = {
             realtimeInput: {
@@ -201,7 +202,6 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       audioProcessorRef.current = processor
 
       // Use the analyser from the processor for audio level detection
-      // This avoids creating duplicate MediaStreamSource nodes which could cause interference
       analyserRef.current = processor.analyser
 
       // Start monitoring audio levels for visual feedback
@@ -325,7 +325,7 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
         mediaStreamRef.current?.getTracks().forEach(track => track.stop())
         mediaStreamRef.current = null
         wsRef.current = null
-        audioQueueRef.current.clear()
+        playbackManagerRef.current.clear()
 
         // Cleanup audio level detection
         if (animationFrameRef.current) {
@@ -420,8 +420,8 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       wsRef.current = null
     }
 
-    // Clear audio queue
-    audioQueueRef.current.clear()
+    // Dispose playback manager
+    playbackManagerRef.current.dispose()
 
     // Close shared audio contexts (playback + capture)
     closeAudioContexts()
