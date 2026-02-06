@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart } from 'lucide-react'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart, Ban, Check } from 'lucide-react'
 import { cn, displayDistance, rpeToIntensityLevel } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
@@ -290,7 +291,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   sessionDateOnly.setHours(0, 0, 0, 0)
 
   let dateString = `${dayOfWeek} ${monthDay}`
-  if (sessionDateOnly.getTime() === today.getTime()) {
+  const isToday = sessionDateOnly.getTime() === today.getTime()
+  if (isToday) {
     dateString = `Today, ${dayOfWeek} ${monthDay}`
   } else if (sessionDateOnly.getTime() === tomorrow.getTime()) {
     dateString = `Tomorrow, ${dayOfWeek} ${monthDay}`
@@ -374,7 +376,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               )}
               <Popover>
                 <PopoverTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-sm text-[#696863] font-medium cursor-pointer hover:text-[#3d3826] transition-colors">
+                  <div className="flex items-center gap-1.5 text-xs text-[#696863] font-normal cursor-pointer hover:text-[#3d3826] transition-colors">
                     <TrendingUp className="h-4 w-4" />
                     <p className="leading-[20px]">{stageInfo.name} Stage</p>
                   </div>
@@ -409,9 +411,9 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
       >
         <CardContent className="p-4">
           {/* Header with session name, metrics, and phase box side by side */}
-          <div className="flex gap-4 items-start mb-4">
+          <div className="flex flex-wrap gap-4 items-start mb-4">
             {/* Session name and metrics */}
-            <div className="flex-1 flex flex-col gap-2">
+            <div className="flex-1 min-w-[300px] flex flex-col gap-2">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-2xl font-normal text-[#3d3826] font-[family-name:'Petrona']">
@@ -528,10 +530,69 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           )}
           </div>
 
+          {/* Session Summary for completed sessions */}
+          {!isRestDay && localSession?.isCompleted && (
+            <Accordion type="single" collapsible defaultValue={isToday ? "session-summary" : undefined} className="w-full">
+              <AccordionItem value="session-summary" className="border-none">
+                <div className="bg-[#f3f0e7] rounded-lg">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <span className="text-lg font-normal text-foreground font-[family-name:'Petrona']">Session Summary</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4 pt-0">
+                  {/* Actual metrics */}
+                  <div className="space-y-2">
+                    {localSession.actualDistance && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-[#85837d]">Distance</span>
+                        <span className="text-sm font-medium text-[#3d3826]">
+                          {displayDistance(localSession.actualDistance, distanceUnit)} {distanceUnit}
+                        </span>
+                      </div>
+                    )}
+                    {localSession.actualDuration && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-[#85837d]">Duration</span>
+                        <span className="text-sm font-medium text-[#3d3826]">
+                          {localSession.actualDuration} min
+                        </span>
+                      </div>
+                    )}
+                    {localSession.rpe && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-[#85837d]">RPE</span>
+                        <span className="text-sm font-medium text-[#3d3826]">
+                          {localSession.rpe}/10
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* User notes */}
+                  {localSession.userNotes && (
+                    <div className="pt-2 border-t border-[#ebe8e2] mt-4">
+                      <p className="text-xs font-medium text-[#3d3826] mb-1">Notes</p>
+                      <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+                        {localSession.userNotes}
+                      </p>
+                    </div>
+                  )}
+                  </AccordionContent>
+                </div>
+              </AccordionItem>
+            </Accordion>
+          )}
+
           {/* Tabs for Warmup/Session/Recover - Only show for non-rest days AND non-completed sessions */}
           {!isRestDay && !localSession?.isCompleted && (
-            <Tabs defaultValue="session" className="w-full">
-              <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-4">
+            <Accordion type="single" collapsible defaultValue={isToday ? "session-details" : undefined} className="w-full">
+              <AccordionItem value="session-details" className="border-none">
+                <div className="bg-[#f3f0e7] rounded-lg">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <span className="text-lg font-normal text-foreground font-[family-name:'Petrona']">Session Details</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4 pt-0">
+                    <Tabs defaultValue="session" className="w-full">
+                      <TabsList className="w-full bg-[#fcf9f3] p-[2px] h-auto rounded-[10px] mb-4">
                 {warmupContent && (
                   <TabsTrigger
                     value="warmup"
@@ -655,44 +716,16 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   <div className="bg-[#f3f0e7] rounded-lg p-4">{recoverContent}</div>
                 </TabsContent>
               )}
-            </Tabs>
+                    </Tabs>
+                  </AccordionContent>
+                </div>
+              </AccordionItem>
+            </Accordion>
           )}
 
-          {/* Completion status and action buttons (only in session mode) */}
+          {/* Action buttons (only in session mode) */}
           {isSessionMode && localSession && (
-            <div className="mt-6 space-y-4">
-              {/* Completion status - hide for rest days */}
-              {!isRestDay && localSession.isCompleted && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-green-800">✓ Completed</p>
-                  {localSession.actualDistance && (
-                    <p className="text-xs text-green-700 mt-1">
-                      Actual: {displayDistance(localSession.actualDistance, distanceUnit)} {distanceUnit} in {localSession.actualDuration} min
-                    </p>
-                  )}
-                  {localSession.rpe && (
-                    <p className="text-xs text-green-700">RPE: {localSession.rpe}/10</p>
-                  )}
-                </div>
-              )}
-
-              {/* Logged summary - show if user added notes */}
-              {!isRestDay && localSession.isCompleted && localSession.userNotes && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900 mb-2">Your Notes:</p>
-                  <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">
-                    {localSession.userNotes}
-                  </p>
-                </div>
-              )}
-
-              {!isRestDay && localSession.isSkipped && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-800">Skipped</p>
-                </div>
-              )}
-
-
+            <div className="mt-4 space-y-4">
               {/* Action buttons */}
               {isRestDay ? (
                 /* Rest day: completed by default. Only offer optional workout log
@@ -702,28 +735,49 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                     Log Optional Session
                   </Button>
                 )
+              ) : localSession.isCompleted ? (
+                /* Completed workout: show disabled success button */
+                <Button
+                  size="sm"
+                  disabled
+                  className="w-full bg-[#677344] hover:bg-[#677344] text-white cursor-default opacity-100"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Session Completed
+                </Button>
+              ) : localSession.isSkipped ? (
+                /* Skipped workout: show disabled button */
+                <Button
+                  size="sm"
+                  disabled
+                  variant="outline"
+                  className="w-full cursor-default opacity-100 text-foreground"
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  Session Skipped
+                </Button>
               ) : (
                 /* Regular workout day: full action set */
-                !localSession.isCompleted && !localSession.isSkipped && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSkip}
-                      disabled={isSkipping}
-                      className="flex-1"
-                    >
-                      {isSkipping ? 'Skipping...' : 'Skip Session'}
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setIsCompleteDialogOpen(true)}
-                      className="flex-1"
-                    >
-                      Complete Session
-                    </Button>
-                  </div>
-                )
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSkip}
+                    disabled={isSkipping}
+                    className="flex-1 text-foreground"
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {isSkipping ? 'Skipping...' : 'Skip Session'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsCompleteDialogOpen(true)}
+                    className="flex-1"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Complete Session
+                  </Button>
+                </div>
               )}
             </div>
           )}

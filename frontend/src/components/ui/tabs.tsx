@@ -26,11 +26,13 @@ const TabsList = React.forwardRef<
       const listRect = list.getBoundingClientRect()
       const tabRect = activeTab.getBoundingClientRect()
 
+      // Add 1px margin on all sides to prevent overlap
+      const margin = 1
       setIndicatorStyle({
-        left: tabRect.left - listRect.left,
-        width: tabRect.width,
-        height: tabRect.height,
-        top: tabRect.top - listRect.top,
+        left: tabRect.left - listRect.left + margin,
+        width: tabRect.width - (margin * 2),
+        height: tabRect.height - (margin * 2),
+        top: tabRect.top - listRect.top + margin,
       })
     }
   }, [])

@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { Snowflake, Sun, Leaf, Sprout } from 'lucide-react'
-import { IntensityLevel, WorkoutType, CyclePhase } from '@/types/api'
+import { IntensityLevel, WorkoutType, CyclePhase, TrainingStage } from '@/types/api'
 import type { SessionDetailDto } from '@/types/api'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ToastContainer } from '@/components/ui/toast-container'
+import { TRAINING_STAGES } from '@/lib/trainingStages'
 
 const meta = {
   title: 'Components/Session/WorkoutSessionCard',
@@ -384,11 +385,39 @@ export const SessionList: Story = {
         isSkipped: false,
         sessionNumberInPhase: 5,
         totalSessionsInPhase: 15,
+        trainingStage: TrainingStage.Base,
+        trainingStageInfo: TRAINING_STAGES[TrainingStage.Base],
         warmUp: '5 minutes easy walking\nDynamic stretches: leg swings, walking lunges, high knees\nStart run at very easy pace for first 5 minutes',
         sessionDescription: 'Keep your heart rate in Zone 2-3 (comfortable aerobic pace)\nYou should be able to hold a conversation without gasping for breath',
         workoutTips: [
           'Maintain a conversational pace throughout the run',
           'Focus on consistent breathing and good running form',
+        ]
+      },
+      {
+        id: '1.5',
+        sessionName: 'Tempo Run',
+        workoutType: WorkoutType.Tempo,
+        scheduledDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+        distance: 8,
+        durationMinutes: 45,
+        intensityLevel: IntensityLevel.Moderate,
+        cyclePhase: CyclePhase.Follicular,
+        isCompleted: true,
+        isSkipped: false,
+        sessionNumberInPhase: 4,
+        totalSessionsInPhase: 15,
+        trainingStage: TrainingStage.Base,
+        trainingStageInfo: TRAINING_STAGES[TrainingStage.Base],
+        actualDistance: 8.2,
+        actualDuration: 43,
+        rpe: 7,
+        userNotes: 'Felt strong today! Maintained tempo pace well in the final 20 minutes.',
+        warmUp: '10 minutes easy jogging\nDynamic stretches\nGradually build to tempo pace',
+        sessionDescription: 'Run at a comfortably hard pace\nMaintain steady effort throughout',
+        workoutTips: [
+          'Focus on breathing rhythm',
+          'Keep shoulders relaxed',
         ]
       },
       {
@@ -404,6 +433,8 @@ export const SessionList: Story = {
         isSkipped: false,
         sessionNumberInPhase: 3,
         totalSessionsInPhase: 10,
+        trainingStage: TrainingStage.Build,
+        trainingStageInfo: TRAINING_STAGES[TrainingStage.Build],
         warmUp: '10-15 minutes easy jogging\nDynamic stretches: leg swings, high knees, butt kicks\n2-3 strides at 80% effort to prepare for speed work\nMental preparation for high-intensity intervals',
         sessionDescription: 'Focus on maintaining consistent splits across all intervals\nKeep form tight - avoid over-striding when fatigued\nListen to your body - it\'s okay to adjust pace if needed',
         workoutTips: [
@@ -424,6 +455,8 @@ export const SessionList: Story = {
         isSkipped: false,
         sessionNumberInPhase: 12,
         totalSessionsInPhase: 15,
+        trainingStage: TrainingStage.Peak,
+        trainingStageInfo: TRAINING_STAGES[TrainingStage.Peak],
         warmUp: '10 minutes easy jogging\nDynamic stretches focusing on hips and legs\nGradually increase pace over first mile',
         sessionDescription: 'Keep effort steady and relaxed for the first 70 minutes\nMonitor energy levels throughout\nPush through mental fatigue in the tempo finish - you\'ve got this!',
         workoutTips: [
@@ -445,6 +478,8 @@ export const SessionList: Story = {
         isSkipped: false,
         sessionNumberInPhase: 1,
         totalSessionsInPhase: 8,
+        trainingStage: TrainingStage.Taper,
+        trainingStageInfo: TRAINING_STAGES[TrainingStage.Taper],
         menstruationDay: 2, // This will display as "Follicular Phase - Menstruation Day 2"
         warmUp: '5 minutes easy walking\nGentle dynamic stretches\nStart running at very easy pace',
         sessionDescription: 'Very easy effort, slower than normal easy runs\nFocus on movement quality over speed or distance\nListen to your body and adjust as needed',
@@ -454,22 +489,6 @@ export const SessionList: Story = {
         ]
       },
     ]
-
-    // Helper to get flowing background gradient
-    const getFlowingBackground = (level: IntensityLevel) => {
-      const opacities = level === IntensityLevel.Low
-        ? { main: 0.10, secondary: 0.08 }
-        : level === IntensityLevel.Moderate
-        ? { main: 0.16, secondary: 0.13 }
-        : { main: 0.24, secondary: 0.20 }
-
-      return `
-        radial-gradient(ellipse 150% 100% at -50% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
-        radial-gradient(ellipse 150% 100% at 150% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
-        radial-gradient(ellipse 100% 150% at 50% -50%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%),
-        radial-gradient(ellipse 100% 150% at 50% 150%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%)
-      `
-    }
 
     // Helper to get zone info based on intensity
     const getZoneInfo = (level: IntensityLevel) => {
@@ -490,21 +509,13 @@ export const SessionList: Story = {
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-12">Upcoming Sessions</h2>
         <div className="space-y-12">
           {sessions.map((session) => (
-            <div key={session.id} className="relative">
-              <WorkoutSessionCard
-                session={session}
-                zone={getZoneInfo(session.intensityLevel)}
-                onSessionUpdated={() => console.log('Session updated')}
-                distanceUnit="km"
-              />
-              {/* Flowing gradient overlay - only on card, not phase section */}
-              <div
-                className="absolute top-[30px] left-0 right-0 bottom-0 pointer-events-none rounded-tl-none rounded-tr-2xl rounded-b-2xl"
-                style={{
-                  background: getFlowingBackground(session.intensityLevel)
-                }}
-              />
-            </div>
+            <WorkoutSessionCard
+              key={session.id}
+              session={session}
+              zone={getZoneInfo(session.intensityLevel)}
+              onSessionUpdated={() => console.log('Session updated')}
+              distanceUnit="km"
+            />
           ))}
         </div>
       </div>
@@ -1001,6 +1012,8 @@ export const SessionCTAs: Story = {
       isSkipped: false,
       sessionNumberInPhase: 5,
       totalSessionsInPhase: 15,
+      trainingStage: TrainingStage.Base,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Base],
       warmUp: '5 minutes easy walking\nDynamic stretches: leg swings, walking lunges, high knees\nStart run at very easy pace for first 5 minutes',
       sessionDescription: 'Focus on consistent breathing and good running form\nYou should be able to hold a conversation without gasping for breath\nIf you start to feel winded, slow down',
       workoutTips: [
@@ -1017,6 +1030,8 @@ export const SessionCTAs: Story = {
       intensityLevel: IntensityLevel.Moderate,
       distance: 15,
       durationMinutes: 90,
+      trainingStage: TrainingStage.Peak,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Peak],
       warmUp: '10 minutes easy jogging\nDynamic stretches focusing on hips and legs\nGradually increase pace over first mile',
       sessionDescription: 'Run majority at comfortable, conversational pace\nStay hydrated - plan water stops or carry fluids\nFinal 20 minutes at tempo pace (comfortably hard)',
       isCompleted: true,
@@ -1032,6 +1047,8 @@ export const SessionCTAs: Story = {
       intensityLevel: IntensityLevel.High,
       distance: 6,
       durationMinutes: 40,
+      trainingStage: TrainingStage.Build,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Build],
       warmUp: '10-15 minutes easy jogging\nDynamic stretches: leg swings, high knees, butt kicks\n2-3 strides at 80% effort to prepare for speed work',
       sessionDescription: 'Run each 400m at 5K race pace or slightly faster\nRecovery: 90 seconds easy jog between repeats\nFocus on maintaining consistent splits',
       isSkipped: true
@@ -1045,6 +1062,8 @@ export const SessionCTAs: Story = {
       distance: undefined,
       durationMinutes: undefined,
       intensityLevel: IntensityLevel.Low,
+      trainingStage: TrainingStage.Taper,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Taper],
       isCompleted: true
     }
 
@@ -1113,6 +1132,8 @@ export const PhaseGuidanceDesigns: Story = {
       isSkipped: false,
       sessionNumberInPhase: 5,
       totalSessionsInPhase: 15,
+      trainingStage: TrainingStage.Base,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Base],
       menstruationDay: 2,
       warmUp: '5 minutes easy walking\nGentle dynamic stretches\nStart running at very easy pace',
       sessionDescription: 'Very easy effort - slower than normal easy runs\nFocus on movement quality over speed\nListen to your body and adjust as needed',
@@ -1145,6 +1166,87 @@ export const CyclePhaseExamples: Story = {
     layout: 'padded',
   },
   render: () => {
+    const follicularSession: SessionDetailDto = {
+      id: '1',
+      sessionName: '30 Minute Easy Run',
+      workoutType: WorkoutType.Easy,
+      scheduledDate: new Date().toISOString(),
+      distance: 5,
+      durationMinutes: 30,
+      intensityLevel: IntensityLevel.Low,
+      cyclePhase: CyclePhase.Follicular,
+      isCompleted: false,
+      isSkipped: false,
+      sessionNumberInPhase: 5,
+      totalSessionsInPhase: 15,
+      trainingStage: TrainingStage.Base,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Base],
+      warmUp: '5 minutes easy walking\nDynamic stretches\nStart run at very easy pace',
+      sessionDescription: 'Maintain a conversational pace throughout the run',
+      workoutTips: []
+    }
+
+    const menstruationSession: SessionDetailDto = {
+      id: '2',
+      sessionName: '30 Minute Easy Run',
+      workoutType: WorkoutType.Easy,
+      scheduledDate: new Date().toISOString(),
+      distance: 5,
+      durationMinutes: 30,
+      intensityLevel: IntensityLevel.Low,
+      cyclePhase: CyclePhase.Menstrual,
+      menstruationDay: 1,
+      isCompleted: false,
+      isSkipped: false,
+      sessionNumberInPhase: 1,
+      totalSessionsInPhase: 15,
+      trainingStage: TrainingStage.Base,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Base],
+      warmUp: '5 minutes easy walking\nGentle stretches\nListen to your body',
+      sessionDescription: 'Very easy effort\nFocus on how you feel',
+      workoutTips: []
+    }
+
+    const ovulationSession: SessionDetailDto = {
+      id: '3',
+      sessionName: 'Speed Intervals - 400m Repeats',
+      workoutType: WorkoutType.Interval,
+      scheduledDate: new Date().toISOString(),
+      distance: 6,
+      durationMinutes: 40,
+      intensityLevel: IntensityLevel.High,
+      cyclePhase: CyclePhase.Ovulatory,
+      isCompleted: false,
+      isSkipped: false,
+      sessionNumberInPhase: 12,
+      totalSessionsInPhase: 15,
+      trainingStage: TrainingStage.Build,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Build],
+      warmUp: '10-15 minutes easy jogging\nDynamic stretches\n2-3 strides at 80% effort',
+      sessionDescription: 'Run each 400m at 5K race pace\nRecovery: 90 seconds easy jog',
+      workoutTips: []
+    }
+
+    const lutealSession: SessionDetailDto = {
+      id: '4',
+      sessionName: 'Long Run with Tempo Finish',
+      workoutType: WorkoutType.Long,
+      scheduledDate: new Date().toISOString(),
+      distance: 15,
+      durationMinutes: 90,
+      intensityLevel: IntensityLevel.Moderate,
+      cyclePhase: CyclePhase.Luteal,
+      isCompleted: false,
+      isSkipped: false,
+      sessionNumberInPhase: 8,
+      totalSessionsInPhase: 15,
+      trainingStage: TrainingStage.Peak,
+      trainingStageInfo: TRAINING_STAGES[TrainingStage.Peak],
+      warmUp: '10 minutes easy jogging\nDynamic stretches\nGradually increase pace',
+      sessionDescription: 'Run at comfortable, conversational pace\nStay hydrated',
+      workoutTips: []
+    }
+
     return (
       <div className="max-w-4xl mx-auto space-y-12">
         {/* Just Follicular Phase */}
@@ -1152,38 +1254,9 @@ export const CyclePhaseExamples: Story = {
           <h2 className="text-2xl font-semibold mb-4">1. Follicular Phase (no special event)</h2>
           <p className="text-sm text-muted-foreground mb-6">User is in follicular phase, not menstruating or ovulating</p>
           <WorkoutSessionCard
-            sessionName="30 Minute Easy Run"
-            distance={5}
+            session={follicularSession}
+            onSessionUpdated={() => console.log('Session updated')}
             distanceUnit="km"
-            durationMinutes={30}
-            zone="Zone 2-3 / RPE 2-4"
-            intensityLevel={IntensityLevel.Low}
-            cyclePhases={[
-              {
-                phaseName: 'Follicular Phase',
-                icon: <Sprout className="h-4 w-4" />,
-              },
-            ]}
-            sessionProgress="Session 5/15 This Phase"
-            warmupContent={(
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
-                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
-                  5 minutes easy walking{'\n'}Dynamic stretches{'\n'}Start run at very easy pace
-                </p>
-              </div>
-            )}
-            sessionContent={{
-              heading: 'Easy Run Instructions',
-              steps: [
-                {
-                  number: 1,
-                  title: 'Easy Pace Run',
-                  duration: 30,
-                  instructions: ['Maintain a conversational pace'],
-                },
-              ],
-            }}
           />
         </div>
 
@@ -1192,42 +1265,9 @@ export const CyclePhaseExamples: Story = {
           <h2 className="text-2xl font-semibold mb-4">2. Follicular Phase - Menstruation Day 1</h2>
           <p className="text-sm text-muted-foreground mb-6">User is in follicular phase AND menstruating</p>
           <WorkoutSessionCard
-            sessionName="30 Minute Easy Run"
-            distance={5}
+            session={menstruationSession}
+            onSessionUpdated={() => console.log('Session updated')}
             distanceUnit="km"
-            durationMinutes={30}
-            zone="Zone 2-3 / RPE 2-4"
-            intensityLevel={IntensityLevel.Low}
-            cyclePhases={[
-              {
-                phaseName: 'Follicular Phase Day 1',
-                icon: <Sprout className="h-4 w-4" />,
-              },
-              {
-                phaseName: 'Menstruation Day 1',
-                icon: <Snowflake className="h-4 w-4" />,
-              },
-            ]}
-            sessionProgress="Session 1/15 This Phase"
-            warmupContent={(
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
-                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
-                  5 minutes easy walking{'\n'}Gentle stretches{'\n'}Listen to your body
-                </p>
-              </div>
-            )}
-            sessionContent={{
-              heading: 'Easy Run Instructions',
-              steps: [
-                {
-                  number: 1,
-                  title: 'Easy Pace Run',
-                  duration: 30,
-                  instructions: ['Very easy effort', 'Focus on how you feel'],
-                },
-              ],
-            }}
           />
         </div>
 
@@ -1236,42 +1276,9 @@ export const CyclePhaseExamples: Story = {
           <h2 className="text-2xl font-semibold mb-4">3. Follicular Phase - Predicted Ovulation Day</h2>
           <p className="text-sm text-muted-foreground mb-6">User is in follicular phase near ovulation</p>
           <WorkoutSessionCard
-            sessionName="Speed Intervals - 400m Repeats"
-            distance={6}
+            session={ovulationSession}
+            onSessionUpdated={() => console.log('Session updated')}
             distanceUnit="km"
-            durationMinutes={40}
-            zone="Zone 4-5 / RPE 7-9"
-            intensityLevel={IntensityLevel.High}
-            cyclePhases={[
-              {
-                phaseName: 'Follicular Phase',
-                icon: <Sprout className="h-4 w-4" />,
-              },
-              {
-                phaseName: 'Predicted Ovulation Day',
-                icon: <Sun className="h-4 w-4" />,
-              },
-            ]}
-            sessionProgress="Session 12/15 This Phase"
-            warmupContent={(
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
-                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
-                  10-15 minutes easy jogging{'\n'}Dynamic stretches{'\n'}2-3 strides at 80% effort
-                </p>
-              </div>
-            )}
-            sessionContent={{
-              heading: 'Interval Workout',
-              steps: [
-                {
-                  number: 1,
-                  title: '8x 400m Repeats',
-                  duration: 25,
-                  instructions: ['Run each 400m at 5K race pace', 'Recovery: 90 seconds easy jog'],
-                },
-              ],
-            }}
           />
         </div>
 
@@ -1280,38 +1287,9 @@ export const CyclePhaseExamples: Story = {
           <h2 className="text-2xl font-semibold mb-4">4. Luteal Phase</h2>
           <p className="text-sm text-muted-foreground mb-6">User is in luteal phase</p>
           <WorkoutSessionCard
-            sessionName="Long Run with Tempo Finish"
-            distance={15}
+            session={lutealSession}
+            onSessionUpdated={() => console.log('Session updated')}
             distanceUnit="km"
-            durationMinutes={90}
-            zone="Zone 2-4 / RPE 3-7"
-            intensityLevel={IntensityLevel.Moderate}
-            cyclePhases={[
-              {
-                phaseName: 'Luteal Phase',
-                icon: <Leaf className="h-4 w-4" />,
-              },
-            ]}
-            sessionProgress="Session 8/15 This Phase"
-            warmupContent={(
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
-                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
-                  10 minutes easy jogging{'\n'}Dynamic stretches{'\n'}Gradually increase pace
-                </p>
-              </div>
-            )}
-            sessionContent={{
-              heading: 'Main Workout',
-              steps: [
-                {
-                  number: 1,
-                  title: 'Easy Pace Base',
-                  duration: 70,
-                  instructions: ['Run at comfortable, conversational pace', 'Stay hydrated'],
-                },
-              ],
-            }}
           />
         </div>
       </div>

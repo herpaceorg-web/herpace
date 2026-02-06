@@ -217,22 +217,13 @@ export function Dashboard() {
       <div>
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Workout</h2>
         {planSummary.todaysSession ? (
-          <div className="relative w-full lg:w-2/3 mx-auto">
+          <div className="w-full lg:w-2/3 mx-auto">
             <WorkoutSessionCard
               session={planSummary.todaysSession}
               cyclePhaseTips={planSummary.cyclePhaseTips}
               onSessionUpdated={loadDashboardData}
               distanceUnit={distanceUnit}
             />
-            {/* Flowing gradient overlay - only on card, not phase section */}
-            {planSummary.todaysSession.intensityLevel !== undefined && (
-              <div
-                className="absolute top-[30px] left-0 right-0 bottom-0 pointer-events-none rounded-tl-none rounded-tr-2xl rounded-b-2xl"
-                style={{
-                  background: getFlowingBackground(planSummary.todaysSession.intensityLevel)
-                }}
-              />
-            )}
           </div>
         ) : (
           <Card>
@@ -292,18 +283,12 @@ export function Dashboard() {
         {upcomingSessions.length > 0 ? (
           <div className="w-full lg:w-2/3 mx-auto space-y-12">
             {upcomingSessions.map((session) => (
-              <div key={session.id} className="relative">
-                <WorkoutSessionCard session={session} onSessionUpdated={loadDashboardData} distanceUnit={distanceUnit} />
-                {/* Flowing gradient overlay - only on card, not phase section */}
-                {session.intensityLevel !== undefined && (
-                  <div
-                    className="absolute top-[30px] left-0 right-0 bottom-0 pointer-events-none rounded-tl-none rounded-tr-2xl rounded-b-2xl"
-                    style={{
-                      background: getFlowingBackground(session.intensityLevel)
-                    }}
-                  />
-                )}
-              </div>
+              <WorkoutSessionCard
+                key={session.id}
+                session={session}
+                onSessionUpdated={loadDashboardData}
+                distanceUnit={distanceUnit}
+              />
             ))}
           </div>
         ) : (
