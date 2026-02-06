@@ -34,6 +34,7 @@ export function Dashboard() {
 
   useEffect(() => {
     loadDashboardData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Poll for recalculation status when pending (optimized - only fetches plan summary)
@@ -61,6 +62,7 @@ export function Dashboard() {
     }
 
     prevRecalculationState.current = isRecalculating
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planSummary?.hasPendingRecalculation])
 
   // Show summary modal when recalculation completes
@@ -96,7 +98,8 @@ export function Dashboard() {
       if (summary.todaysSession) {
         const sessionDateStr = summary.todaysSession.scheduledDate.slice(0, 10)
         if (sessionDateStr !== clientDate) {
-          console.warn(
+          // eslint-disable-next-line no-console
+          console.warn.call(console,
             `plan-summary returned todaysSession dated ${sessionDateStr} but client date is ${clientDate} — discarding`
           )
           summary.todaysSession = undefined
@@ -116,7 +119,8 @@ export function Dashboard() {
           : []
 
       if (!Array.isArray(sessionsPayload.sessions) && !Array.isArray(sessionsPayload.Sessions)) {
-        console.warn('Unexpected /api/sessions/upcoming response shape', sessionsResponse)
+        // eslint-disable-next-line no-console
+        console.warn.call(console, 'Unexpected /api/sessions/upcoming response shape', sessionsResponse)
       }
 
       setPlanSummary(summary)
@@ -161,7 +165,8 @@ export function Dashboard() {
     } catch (err) {
       // Silently fail during polling - don't disrupt the user experience
       // The main loadDashboardData will handle errors on initial load
-      console.error('Poll failed:', err)
+      // eslint-disable-next-line no-console
+      console.error.call(console, 'Poll failed:', err)
     }
   }
 
@@ -172,7 +177,8 @@ export function Dashboard() {
       // Refresh to clear the summary from planSummary
       await loadDashboardData()
     } catch (err) {
-      console.error('Failed to dismiss summary:', err)
+      // eslint-disable-next-line no-console
+      console.error.call(console, 'Failed to dismiss summary:', err)
       // Still close the modal even if API call fails
       setShowSummaryModal(false)
     }
@@ -295,8 +301,8 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Today's workout or pre-training message */}
-      <div>
+      {/* Today's workout or pre-training message - temporarily disabled for debugging */}
+      {/* <div>
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Session</h2>
         {planSummary?.todaysSession ? (
           <div className="w-full lg:w-2/3 mx-auto">
@@ -307,6 +313,13 @@ export function Dashboard() {
               distanceUnit={distanceUnit}
               pendingConfirmation={planSummary.pendingConfirmation}
             />
+          </div>
+        ) : ( */}
+      <div>
+        <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Session</h2>
+        {planSummary?.todaysSession ? (
+          <div className="p-6 text-center text-muted-foreground border border-dashed rounded-lg">
+            Today's session temporarily disabled for debugging
           </div>
         ) : (
           <Card>
@@ -347,23 +360,16 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Upcoming sessions */}
-      <div>
+      {/* Upcoming sessions - temporarily disabled for debugging */}
+      {/* <div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona']">Upcoming Sessions</h2>
-          {/* Buttons commented out - links available in navigation
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate('/calendar')}>
-              View Full Calendar
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/history')}>
-              View Training History
-            </Button>
-          </div>
-          */}
         </div>
 
         {upcomingSessionsContent}
+      </div> */}
+      <div className="p-6 text-center text-muted-foreground border border-dashed rounded-lg">
+        Upcoming sessions temporarily disabled for debugging
       </div>
 
       {/* Recalculation summary modal */}

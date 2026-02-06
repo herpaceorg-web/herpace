@@ -17,6 +17,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
+  build: {
+    sourcemap: true // Enable source maps for debugging
+  },
   server: {
     port: 5163 // Match Blazor dev port
   },
