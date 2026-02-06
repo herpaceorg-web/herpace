@@ -198,7 +198,7 @@ export function Dashboard() {
 
       {/* Today's workout or pre-training message */}
       <div>
-        <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Workout</h2>
+        <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Session</h2>
         {planSummary.todaysSession ? (
           <div className="w-full lg:w-2/3 mx-auto">
             <WorkoutSessionCard
