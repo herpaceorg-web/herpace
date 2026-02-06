@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto } from '@/types/api'
@@ -31,20 +31,37 @@ export function Dashboard() {
   const [showRecalculationModal, setShowRecalculationModal] = useState(false)
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
+  const prevRecalculationState = useRef<boolean>(false)
 
   useEffect(() => {
     loadDashboardData()
   }, [])
 
-  // Poll for recalculation status when pending
+  // Poll for recalculation status when pending (optimized - only fetches plan summary)
   useEffect(() => {
-    if (!planSummary?.hasPendingRecalculation) return
+    if (!planSummary?.hasPendingRecalculation) {
+      prevRecalculationState.current = false
+      return
+    }
 
     const pollInterval = setInterval(() => {
-      loadDashboardData()
-    }, 5000) // Poll every 5 seconds
+      pollPlanSummary()
+    }, 8000) // Poll every 8 seconds (less aggressive than 5s)
 
     return () => clearInterval(pollInterval)
+  }, [planSummary?.hasPendingRecalculation])
+
+  // Detect when recalculation completes and refresh all data once
+  useEffect(() => {
+    const wasRecalculating = prevRecalculationState.current
+    const isRecalculating = planSummary?.hasPendingRecalculation ?? false
+
+    // If we were recalculating and now we're done, refresh everything
+    if (wasRecalculating && !isRecalculating) {
+      loadDashboardData()
+    }
+
+    prevRecalculationState.current = isRecalculating
   }, [planSummary?.hasPendingRecalculation])
 
   // Show summary modal when recalculation completes
@@ -113,6 +130,31 @@ export function Dashboard() {
     }
   }
 
+  // Lightweight polling function - only fetches plan summary to check recalculation status
+  // This avoids the jarring "refresh" feeling by not re-fetching all data or showing loading state
+  const pollPlanSummary = async () => {
+    try {
+      const now = new Date()
+      const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+      const summary = await api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`)
+
+      // Sanity-check for today's session
+      if (summary.todaysSession) {
+        const sessionDateStr = summary.todaysSession.scheduledDate.slice(0, 10)
+        if (sessionDateStr !== clientDate) {
+          summary.todaysSession = undefined
+        }
+      }
+
+      setPlanSummary(summary)
+    } catch (err) {
+      // Silently fail during polling - don't disrupt the user experience
+      // The main loadDashboardData will handle errors on initial load
+      console.error('Poll failed:', err)
+    }
+  }
+
   const handleDismissSummary = async () => {
     try {
       await api.post('/api/sessions/dismiss-summary', {})
@@ -135,6 +177,40 @@ export function Dashboard() {
     // User declined - refresh to clear pending state
     loadDashboardData()
   }
+
+  // Memoize handlers to prevent unnecessary re-renders
+  const handlePeriodLogged = useCallback((updated: CyclePositionDto) => {
+    setCyclePosition(updated)
+  }, [])
+
+  // Memoize upcoming sessions rendering to prevent re-renders during polling
+  // (upcomingSessions array doesn't change during recalculation polling)
+  const upcomingSessionsContent = useMemo(() => {
+    if (upcomingSessions.length === 0) {
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground text-center">
+              No upcoming sessions found.
+            </p>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <div className="w-full lg:w-2/3 mx-auto space-y-12">
+        {upcomingSessions.map((session) => (
+          <WorkoutSessionCard
+            key={session.id}
+            session={session}
+            onSessionUpdated={loadDashboardData}
+            distanceUnit={distanceUnit}
+          />
+        ))}
+      </div>
+    )
+  }, [upcomingSessions, distanceUnit])
 
   if (isLoading) {
     return (
@@ -205,7 +281,7 @@ export function Dashboard() {
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Your Hormone Cycle</h2>
         <HormoneCycleChart
           cyclePosition={cyclePosition}
-          onPeriodLogged={(updated) => setCyclePosition(updated)}
+          onPeriodLogged={handlePeriodLogged}
         />
       </div>
 
@@ -276,26 +352,7 @@ export function Dashboard() {
           */}
         </div>
 
-        {upcomingSessions.length > 0 ? (
-          <div className="w-full lg:w-2/3 mx-auto space-y-12">
-            {upcomingSessions.map((session) => (
-              <WorkoutSessionCard
-                key={session.id}
-                session={session}
-                onSessionUpdated={loadDashboardData}
-                distanceUnit={distanceUnit}
-              />
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground text-center">
-                No upcoming sessions found.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {upcomingSessionsContent}
       </div>
 
       {/* Recalculation summary modal */}
