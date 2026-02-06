@@ -843,15 +843,15 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         />
       )} */}
 
-      {/* Recalculation Confirmation Modal - temporarily disabled for debugging */}
-      {/* {isSessionMode && (
+      {/* Recalculation Confirmation Modal */}
+      {isSessionMode && (
         <RecalculationConfirmationModal
           open={showRecalculationModal}
           onOpenChange={setShowRecalculationModal}
           onConfirmed={handleRecalculationConfirmed}
           onDeclined={handleRecalculationDeclined}
         />
-      )} */}
+      )}
     </div>
   )
 }

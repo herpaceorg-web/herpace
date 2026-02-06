@@ -291,14 +291,10 @@ export function Dashboard() {
       {/* Hormone Cycle Chart */}
       <div>
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Your Hormone Cycle</h2>
-        {/* Temporarily disabled to debug */}
-        {/* <HormoneCycleChart
+        <HormoneCycleChart
           cyclePosition={cyclePosition}
           onPeriodLogged={handlePeriodLogged}
-        /> */}
-        <div className="p-6 text-center text-muted-foreground border border-dashed rounded-lg">
-          Chart temporarily disabled
-        </div>
+        />
       </div>
 
       {/* Today's workout or pre-training message */}
@@ -353,16 +349,13 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Upcoming sessions - temporarily disabled for debugging */}
-      {/* <div>
+      {/* Upcoming sessions */}
+      <div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona']">Upcoming Sessions</h2>
         </div>
 
         {upcomingSessionsContent}
-      </div> */}
-      <div className="p-6 text-center text-muted-foreground border border-dashed rounded-lg">
-        Upcoming sessions temporarily disabled for debugging
       </div>
 
       {/* Recalculation summary modal */}
