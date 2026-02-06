@@ -29,6 +29,15 @@ export function RecalculationConfirmationModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const handleOpenChange = async (newOpen: boolean) => {
+    if (!newOpen) {
+      // Closing via X button or overlay click = decline
+      await handleDecline()
+      return
+    }
+    onOpenChange(newOpen)
+  }
+
   const handleConfirm = async () => {
     setIsSubmitting(true)
     setError(null)
@@ -68,7 +77,7 @@ export function RecalculationConfirmationModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

@@ -5,7 +5,6 @@ import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, Profil
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
-import { RecalculationConfirmationModal } from '@/components/session/RecalculationConfirmationModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -28,7 +27,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [showSummaryModal, setShowSummaryModal] = useState(false)
   const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
-  const [showRecalculationModal, setShowRecalculationModal] = useState(false)
+
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
   const prevRecalculationState = useRef<boolean>(false)
@@ -71,12 +70,6 @@ export function Dashboard() {
     }
   }, [planSummary?.recalculationSummary])
 
-  // Show recalculation confirmation modal when pending
-  useEffect(() => {
-    if (planSummary?.pendingConfirmation && !showRecalculationModal) {
-      setShowRecalculationModal(true)
-    }
-  }, [planSummary?.pendingConfirmation])
 
   const loadDashboardData = async () => {
     try {
@@ -185,15 +178,6 @@ export function Dashboard() {
     }
   }
 
-  const handleRecalculationConfirmed = () => {
-    // User confirmed - refresh to start polling for job completion
-    loadDashboardData()
-  }
-
-  const handleRecalculationDeclined = () => {
-    // User declined - refresh to clear pending state
-    loadDashboardData()
-  }
 
   // Memoize handlers to prevent unnecessary re-renders
   const handlePeriodLogged = useCallback((updated: CyclePositionDto) => {
@@ -225,11 +209,12 @@ export function Dashboard() {
             session={session}
             onSessionUpdated={loadDashboardData}
             distanceUnit={distanceUnit}
+            pendingConfirmation={planSummary?.pendingConfirmation}
           />
         ))}
       </div>
     )
-  }, [upcomingSessions, distanceUnit])
+  }, [upcomingSessions, distanceUnit, planSummary?.pendingConfirmation])
 
   if (isLoading) {
     return (
@@ -314,6 +299,7 @@ export function Dashboard() {
               cyclePhaseTips={planSummary.cyclePhaseTips}
               onSessionUpdated={loadDashboardData}
               distanceUnit={distanceUnit}
+              pendingConfirmation={planSummary.pendingConfirmation}
             />
           </div>
         ) : (
@@ -425,13 +411,7 @@ export function Dashboard() {
         distanceUnit={distanceUnit}
       />
 
-      {/* Recalculation Confirmation Modal */}
-      <RecalculationConfirmationModal
-        open={showRecalculationModal}
-        onOpenChange={setShowRecalculationModal}
-        onConfirmed={handleRecalculationConfirmed}
-        onDeclined={handleRecalculationDeclined}
-      />
+
     </div>
   )
 }

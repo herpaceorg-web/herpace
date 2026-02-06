@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart, Ban, Check } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart, Ban, Check, AlertCircle } from 'lucide-react'
 import { cn, displayDistance, rpeToIntensityLevel } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
@@ -34,6 +34,7 @@ export interface WorkoutSessionCardProps {
   session?: SessionDetailDto
   cyclePhaseTips?: CyclePhaseTipsDto
   onSessionUpdated?: () => void
+  pendingConfirmation?: boolean
 
   // Legacy props (for Storybook)
   sessionName?: string
@@ -457,6 +458,16 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                     <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       Recently Updated
+                    </Badge>
+                  )}
+                  {props.pendingConfirmation && (
+                    <Badge
+                      variant="outline"
+                      className="bg-orange-50 border-orange-200 text-orange-700 text-xs flex items-center gap-1 cursor-pointer hover:bg-orange-100 transition-colors"
+                      onClick={() => setShowRecalculationModal(true)}
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      Needs Attention
                     </Badge>
                   )}
                 </div>
