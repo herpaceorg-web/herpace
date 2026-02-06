@@ -78,10 +78,12 @@ const TabsList = React.forwardRef<
   return (
     <TabsPrimitive.List
       ref={(node) => {
+        // @ts-ignore - assigning to mutable ref
         listRef.current = node
         if (typeof ref === 'function') {
           ref(node)
         } else if (ref) {
+          // @ts-ignore - forwarding ref
           ref.current = node
         }
       }}
