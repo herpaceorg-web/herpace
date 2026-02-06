@@ -218,7 +218,7 @@ export function Dashboard() {
       )}
 
       {/* Hormone Cycle Chart */}
-      <div className="w-full lg:w-2/3 mx-auto">
+      <div>
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Your Hormone Cycle</h2>
         <HormoneCycleChart
           cyclePosition={cyclePosition}

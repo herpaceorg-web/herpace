@@ -312,17 +312,17 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
           {/* Header */}
           <div className="flex items-start justify-between px-6 w-full">
             <div className="flex flex-col gap-2">
-              <h2 className="text-2xl font-semibold leading-7 font-['Petrona'] text-foreground">
+              <h2 className="text-2xl font-normal leading-7 font-['Petrona'] text-foreground">
                 Today is {formatDate(new Date())}
               </h2>
               <div className="flex gap-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Cycle Day</span>
-                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{currentDayInCycle}</span>
+                  <span className="font-petrona text-2xl font-normal leading-7 text-[#3D3826]">{currentDayInCycle}</span>
                 </div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Next Period in</span>
-                  <span className="font-petrona text-2xl font-semibold leading-7 text-[#3D3826]">{daysUntilNextPeriod} Days</span>
+                  <span className="font-petrona text-2xl font-normal leading-7 text-[#3D3826]">{daysUntilNextPeriod} Days</span>
                 </div>
               </div>
             </div>
