@@ -19,18 +19,43 @@ export const AUDIO_CONFIG = {
 } as const
 
 /**
- * Audio context singleton for reuse
- * Uses hardware sample rate for best compatibility
+ * Dedicated AudioContext for playback at 24kHz (Gemini's output sample rate)
+ * Using explicit sample rate avoids browser resampling artifacts
  */
-let audioContext: AudioContext | null = null
+let playbackContext: AudioContext | null = null
 
-export function getAudioContext(): AudioContext {
-  if (!audioContext) {
-    // Use hardware's native sample rate (typically 44.1kHz or 48kHz)
-    // We'll resample Gemini's 24kHz audio to match
-    audioContext = new AudioContext()
+export function getPlaybackContext(): AudioContext {
+  if (!playbackContext) {
+    playbackContext = new AudioContext({ sampleRate: AUDIO_CONFIG.output.sampleRate })
   }
-  return audioContext
+  return playbackContext
+}
+
+/**
+ * Shared AudioContext for capture at 16kHz (Gemini's input sample rate)
+ * Reused for both audio processing and level detection to avoid conflicts
+ */
+let captureContext: AudioContext | null = null
+
+export function getCaptureContext(): AudioContext {
+  if (!captureContext) {
+    captureContext = new AudioContext({ sampleRate: AUDIO_CONFIG.input.sampleRate })
+  }
+  return captureContext
+}
+
+/**
+ * Close and reset audio contexts (for cleanup)
+ */
+export function closeAudioContexts(): void {
+  if (playbackContext) {
+    playbackContext.close().catch(() => {})
+    playbackContext = null
+  }
+  if (captureContext) {
+    captureContext.close().catch(() => {})
+    captureContext = null
+  }
 }
 
 /**
@@ -62,13 +87,14 @@ export async function requestMicrophoneAccess(): Promise<MediaStream> {
 
 /**
  * Creates an audio processor that captures audio from the microphone
- * and converts it to base64-encoded PCM for Gemini Live API
+ * and converts it to base64-encoded PCM for Gemini Live API.
+ * Uses the shared capture context to avoid multiple AudioContext conflicts.
  */
 export function createAudioProcessor(
   stream: MediaStream,
   onAudioData: (base64Data: string) => void
-): { start: () => void; stop: () => void } {
-  const context = new AudioContext({ sampleRate: AUDIO_CONFIG.input.sampleRate })
+): { start: () => void; stop: () => void; context: AudioContext } {
+  const context = getCaptureContext()
   const source = context.createMediaStreamSource(stream)
 
   // Use ScriptProcessorNode for audio processing
@@ -102,8 +128,9 @@ export function createAudioProcessor(
       isProcessing = false
       processor.disconnect()
       source.disconnect()
-      context.close()
-    }
+      // Don't close the shared context - it will be reused
+    },
+    context // Expose context for level detection reuse
   }
 }
 
@@ -152,7 +179,7 @@ export async function playPcmAudio(
   base64Data: string,
   startTime?: number
 ): Promise<{ source: AudioBufferSourceNode; duration: number }> {
-  const context = getAudioContext()
+  const context = getPlaybackContext()
 
   // Resume context if suspended (browser autoplay policy)
   if (context.state === 'suspended') {
@@ -212,7 +239,8 @@ export class AudioQueue {
   private isPlaying = false
   private nextScheduledTime = 0
   private activeSources: AudioBufferSourceNode[] = []
-  private readonly PRE_BUFFER_COUNT = 2 // Buffer 2 chunks before starting playback
+  // Increased buffer count for smoother playback and resilience against network jitter
+  private readonly PRE_BUFFER_COUNT = 5
 
   async enqueue(base64Data: string): Promise<void> {
     this.queue.push(base64Data)
@@ -227,7 +255,7 @@ export class AudioQueue {
     if (this.isPlaying) return
 
     this.isPlaying = true
-    const context = getAudioContext()
+    const context = getPlaybackContext()
 
     // Initialize scheduling time with a small buffer (100ms) to allow for processing
     this.nextScheduledTime = context.currentTime + 0.1
@@ -241,7 +269,7 @@ export class AudioQueue {
       const audioData = this.queue.shift()!
 
       try {
-        const context = getAudioContext()
+        const context = getPlaybackContext()
 
         // If we're behind schedule, reset to current time
         if (this.nextScheduledTime < context.currentTime) {

@@ -4,7 +4,8 @@ import {
   requestMicrophoneAccess,
   createAudioProcessor,
   AudioQueue,
-  checkAudioSupport
+  checkAudioSupport,
+  closeAudioContexts
 } from '../lib/audio-utils'
 import type {
   VoiceSessionState,
@@ -182,17 +183,35 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       const stream = await requestMicrophoneAccess()
       mediaStreamRef.current = stream
 
-      // Set up audio level detection for visual feedback
+      // Create audio processor early - it uses the shared capture context
+      // which we'll also use for level detection (consolidating AudioContext instances)
+      // The callback uses wsRef.current so it works once WebSocket is connected
+      const processor = createAudioProcessor(stream, (base64Data) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          const message = {
+            realtimeInput: {
+              mediaChunks: [{
+                mimeType: 'audio/pcm;rate=16000',
+                data: base64Data
+              }]
+            }
+          }
+          wsRef.current.send(JSON.stringify(message))
+        }
+      })
+      audioProcessorRef.current = processor
+
+      // Set up audio level detection using the shared capture context
       try {
-        const audioContext = new AudioContext()
-        const analyser = audioContext.createAnalyser()
+        const captureContext = processor.context
+        const analyser = captureContext.createAnalyser()
         analyser.fftSize = 256
         analyser.smoothingTimeConstant = 0.8
 
-        const source = audioContext.createMediaStreamSource(stream)
+        const source = captureContext.createMediaStreamSource(stream)
         source.connect(analyser)
 
-        audioContextRef.current = audioContext
+        audioContextRef.current = captureContext
         analyserRef.current = analyser
 
         // Start monitoring audio levels
@@ -327,12 +346,13 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           cancelAnimationFrame(animationFrameRef.current)
           animationFrameRef.current = null
         }
-        if (audioContextRef.current) {
-          audioContextRef.current.close()
-          audioContextRef.current = null
-        }
+        // Don't close the shared context here - it will be closed by closeAudioContexts()
+        audioContextRef.current = null
         analyserRef.current = null
         setIsSpeaking(false)
+
+        // Close shared audio contexts (playback + capture)
+        closeAudioContexts()
 
         if (event.code !== 1000 && event.code !== 1001) {
           // Abnormal closure — surface the error instead of silently resetting to idle.
@@ -348,21 +368,6 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           updateState('idle')
         }
       }
-
-      // Create audio processor for microphone input
-      audioProcessorRef.current = createAudioProcessor(stream, (base64Data) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          const message = {
-            realtimeInput: {
-              mediaChunks: [{
-                mimeType: 'audio/pcm;rate=16000',
-                data: base64Data
-              }]
-            }
-          }
-          ws.send(JSON.stringify(message))
-        }
-      })
 
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to start voice session'
@@ -409,6 +414,15 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       setupTimeoutRef.current = null
     }
 
+    // Cancel animation frame for level detection
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+    audioContextRef.current = null
+    analyserRef.current = null
+    setIsSpeaking(false)
+
     // Stop audio processor
     audioProcessorRef.current?.stop()
     audioProcessorRef.current = null
@@ -425,6 +439,9 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
 
     // Clear audio queue
     audioQueueRef.current.clear()
+
+    // Close shared audio contexts (playback + capture)
+    closeAudioContexts()
   }, [])
 
   // Cleanup on unmount
