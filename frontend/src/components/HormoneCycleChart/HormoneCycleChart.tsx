@@ -272,7 +272,8 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
   const ovulationPct = (ovulatoryDays / ovulatoryEnd) * 100;
 
   const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
+    // Use call() to ensure proper this binding and avoid "Illegal invocation" errors
+    return Date.prototype.toLocaleDateString.call(date, "en-US", {
       weekday: "long",
       month: "short",
       day: "numeric",
@@ -288,8 +289,8 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
     try {
       setIsSubmitting(true);
       const response = await api.post<ReportPeriodRequest, ReportPeriodResponse>("/api/cycle/report", {
-        periodStartDate: startDate.toISOString(),
-        periodEndDate: endDate.toISOString(),
+        periodStartDate: Date.prototype.toISOString.call(startDate),
+        periodEndDate: Date.prototype.toISOString.call(endDate),
       });
 
       if (response.success && response.updatedCyclePosition) {
