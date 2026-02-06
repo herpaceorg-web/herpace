@@ -307,8 +307,10 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
   // Format date for display with Today/Tomorrow prefix
   const sessionDate = isSessionMode && localSession ? new Date(localSession.scheduledDate) : new Date()
-  const dayOfWeek = sessionDate.toLocaleDateString('en-US', { weekday: 'short' })
-  const monthDay = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const dayOfWeek = DAYS[sessionDate.getDay()]
+  const monthDay = `${MONTHS[sessionDate.getMonth()]} ${sessionDate.getDate()}`
 
   // Check if date is today or tomorrow
   const today = new Date()
@@ -829,8 +831,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         </CardContent>
       </Card>
 
-      {/* Complete Session Dialog */}
-      {isSessionMode && localSession && (
+      {/* Complete Session Dialog - temporarily disabled for debugging */}
+      {/* {isSessionMode && localSession && (
         <CompleteSessionDialog
           session={localSession}
           open={isCompleteDialogOpen}
@@ -839,17 +841,17 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           distanceUnit={distanceUnit}
           startInLogMode={isRestDay}
         />
-      )}
+      )} */}
 
-      {/* Recalculation Confirmation Modal */}
-      {isSessionMode && (
+      {/* Recalculation Confirmation Modal - temporarily disabled for debugging */}
+      {/* {isSessionMode && (
         <RecalculationConfirmationModal
           open={showRecalculationModal}
           onOpenChange={setShowRecalculationModal}
           onConfirmed={handleRecalculationConfirmed}
           onDeclined={handleRecalculationDeclined}
         />
-      )}
+      )} */}
     </div>
   )
 }
