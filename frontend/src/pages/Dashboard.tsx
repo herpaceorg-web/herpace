@@ -90,10 +90,11 @@ export function Dashboard() {
 
       // Load plan summary, upcoming sessions, profile, and cycle position in parallel
       // Cycle position returns 404 for DoNotTrack users — catch and treat as null
+      // Profile returns 404 if user hasn't completed onboarding — catch and treat as null
       const [summary, sessionsResponse, profile, cyclePos] = await Promise.all([
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
         api.get<UpcomingSessionsResponse>(`/api/sessions/upcoming?count=7&clientDate=${clientDate}`),
-        api.get<ProfileResponse>('/api/profiles/me'),
+        api.get<ProfileResponse>('/api/profiles/me').catch(() => null),
         api.get<CyclePositionDto>(`/api/cycle/position?clientDate=${clientDate}`).catch(() => null)
       ])
 
@@ -127,7 +128,7 @@ export function Dashboard() {
 
       setPlanSummary(summary)
       setUpcomingSessions(normalizedSessions)
-      setDistanceUnit(profile.distanceUnit === 1 ? 'mi' : 'km')
+      setDistanceUnit(profile?.distanceUnit === 1 ? 'mi' : 'km')
       setCyclePosition(cyclePos)
 
     } catch (err: unknown) {
