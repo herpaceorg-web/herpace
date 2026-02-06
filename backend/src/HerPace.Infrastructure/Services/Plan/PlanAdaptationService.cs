@@ -79,33 +79,35 @@ public class PlanAdaptationService : IPlanAdaptationService
             recentSessions.Count,
             offTrackPercentage);
 
-        // Check if threshold met (33%)
-        if (offTrackPercentage < 0.33m)
+        // Check if threshold met (20%)
+        if (offTrackPercentage < 0.20m)
         {
             _logger.LogInformation("Plan {PlanId}: Threshold not met, no recalculation needed", trainingPlanId);
             return false;
         }
 
+        // COMMENTED OUT FOR DEMO: Cooldown period restriction
         // Cooldown: Don't recalculate if last recalc was within 7 days
-        if (plan.LastRecalculatedAt.HasValue &&
-            (DateTime.UtcNow - plan.LastRecalculatedAt.Value).Days < 7)
-        {
-            _logger.LogInformation(
-                "Plan {PlanId}: Last recalculation was {Days} days ago, cooldown period active",
-                trainingPlanId,
-                (DateTime.UtcNow - plan.LastRecalculatedAt.Value).Days);
-            return false;
-        }
+        // if (plan.LastRecalculatedAt.HasValue &&
+        //     (DateTime.UtcNow - plan.LastRecalculatedAt.Value).Days < 7)
+        // {
+        //     _logger.LogInformation(
+        //         "Plan {PlanId}: Last recalculation was {Days} days ago, cooldown period active",
+        //         trainingPlanId,
+        //         (DateTime.UtcNow - plan.LastRecalculatedAt.Value).Days);
+        //     return false;
+        // }
 
+        // COMMENTED OUT FOR DEMO: Early plan exemption restriction
         // Early plan exemption: Don't recalculate within first 14 days
-        if ((DateTime.UtcNow - plan.StartDate).Days < 14)
-        {
-            _logger.LogInformation(
-                "Plan {PlanId}: Plan is only {Days} days old, too early for recalculation",
-                trainingPlanId,
-                (DateTime.UtcNow - plan.StartDate).Days);
-            return false;
-        }
+        // if ((DateTime.UtcNow - plan.StartDate).Days < 14)
+        // {
+        //     _logger.LogInformation(
+        //         "Plan {PlanId}: Plan is only {Days} days old, too early for recalculation",
+        //         trainingPlanId,
+        //         (DateTime.UtcNow - plan.StartDate).Days);
+        //     return false;
+        // }
 
         // Check if recalculation already in progress
         if (!string.IsNullOrEmpty(plan.LastRecalculationJobId))
