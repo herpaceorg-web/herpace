@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart } from 'lucide-react'
-import { cn, displayDistance } from '@/lib/utils'
+import { cn, displayDistance, rpeToIntensityLevel } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
@@ -296,6 +296,17 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
     dateString = `Tomorrow, ${dayOfWeek} ${monthDay}`
   }
 
+  // Determine whether to show planned or actual values
+  const showActualValues = localSession?.isCompleted && !isRestDay
+  const displayDistanceValue = showActualValues && localSession?.actualDistance
+    ? displayDistance(localSession.actualDistance, distanceUnit)
+    : distance
+  const displayDurationValue = showActualValues && localSession?.actualDuration
+    ? localSession.actualDuration
+    : durationMinutes
+  const displayIntensityLevel = showActualValues && localSession?.rpe
+    ? rpeToIntensityLevel(localSession.rpe)
+    : (isSessionMode ? localSession?.intensityLevel : props.intensityLevel)
 
   // Build session progress text
   const progressText = isSessionMode && localSession?.sessionNumberInPhase && localSession?.totalSessionsInPhase
@@ -427,22 +438,22 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               {/* Metrics badges - only show for non-rest days */}
               {!isRestDay && (
                 <div className="flex gap-2 flex-wrap">
-                  {distance && (
+                  {displayDistanceValue && (
                     <Badge
                       variant="outline"
                       className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
                     >
                       <Route className="h-3.5 w-3.5 mr-1.5" />
-                      {distance} {distanceUnit === 'mi' ? 'mi' : 'km'}
+                      {displayDistanceValue} {distanceUnit === 'mi' ? 'mi' : 'km'}
                     </Badge>
                   )}
-                  {durationMinutes && (
+                  {displayDurationValue && (
                     <Badge
                       variant="outline"
                       className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
                     >
                       <Timer className="h-3.5 w-3.5 mr-1.5" />
-                      {durationMinutes} Min
+                      {displayDurationValue} Min
                     </Badge>
                   )}
                   {zone && (
@@ -455,13 +466,13 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                     </Badge>
                   )}
                   {/* Intensity hearts display */}
-                  {(isSessionMode ? localSession?.intensityLevel : props.intensityLevel) !== undefined && (
+                  {displayIntensityLevel !== undefined && (
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-normal text-[#696863]">Intensity</span>
                       <div className="flex gap-1 items-center">
                         {[...Array(3)].map((_, i) => {
-                          const level = isSessionMode ? localSession!.intensityLevel : props.intensityLevel!
-                          const heartCount = level === IntensityLevel.Low ? 1 : level === IntensityLevel.Moderate ? 2 : 3
+                          const heartCount = displayIntensityLevel === IntensityLevel.Low ? 1
+                            : displayIntensityLevel === IntensityLevel.Moderate ? 2 : 3
                           const heartColor = 'rgb(161, 65, 57)' // #A14139
                           return (
                             <Heart
@@ -517,8 +528,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
             </div>
           )}
 
-          {/* Tabs for Warmup/Session/Recover - Only show for non-rest days */}
-          {!isRestDay && (
+          {/* Tabs for Warmup/Session/Recover - Only show for non-rest days AND non-completed sessions */}
+          {!isRestDay && !localSession?.isCompleted && (
             <Tabs defaultValue="session" className="w-full">
               <TabsList className="w-full bg-[#f3f0e7] p-[3px] h-auto rounded-[10px] mb-4">
                 {warmupContent && (
@@ -662,6 +673,16 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   {localSession.rpe && (
                     <p className="text-xs text-green-700">RPE: {localSession.rpe}/10</p>
                   )}
+                </div>
+              )}
+
+              {/* Logged summary - show if user added notes */}
+              {!isRestDay && localSession.isCompleted && localSession.userNotes && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Your Notes:</p>
+                  <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">
+                    {localSession.userNotes}
+                  </p>
                 </div>
               )}
 
