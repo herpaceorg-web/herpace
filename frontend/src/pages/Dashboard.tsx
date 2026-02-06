@@ -71,7 +71,7 @@ export function Dashboard() {
   }, [planSummary?.recalculationSummary])
 
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -138,7 +138,7 @@ export function Dashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   // Lightweight polling function - only fetches plan summary to check recalculation status
   // This avoids the jarring "refresh" feeling by not re-fetching all data or showing loading state
@@ -214,7 +214,7 @@ export function Dashboard() {
         ))}
       </div>
     )
-  }, [upcomingSessions, distanceUnit, planSummary?.pendingConfirmation])
+  }, [upcomingSessions, distanceUnit, planSummary?.pendingConfirmation, loadDashboardData])
 
   if (isLoading) {
     return (
