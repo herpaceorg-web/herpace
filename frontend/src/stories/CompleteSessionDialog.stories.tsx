@@ -2,8 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { CompleteSessionDialog } from '@/components/session/CompleteSessionDialog'
 import { WorkoutType, IntensityLevel, CyclePhase } from '@/types/api'
 import type { SessionDetailDto } from '@/types/api'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 
 const meta = {
   title: 'Components/Session/CompleteSessionDialog',
@@ -67,48 +65,6 @@ const mockRestDaySession: SessionDetailDto = {
   totalSessionsInPhase: 8,
 }
 
-// Wrapper component to handle dialog state
-function DialogWrapper({ session, distanceUnit = 'km', startInLogMode = false }: {
-  session: SessionDetailDto
-  distanceUnit?: 'km' | 'mi'
-  startInLogMode?: boolean
-}) {
-  const [open, setOpen] = useState(true)
-
-  return (
-    <div>
-      <Button onClick={() => setOpen(true)}>Open Dialog</Button>
-      <CompleteSessionDialog
-        session={session}
-        open={open}
-        onOpenChange={setOpen}
-        onComplete={async (data) => {
-          console.log('Session completed with data:', data)
-          alert('Session completed! Check console for details.')
-        }}
-        distanceUnit={distanceUnit}
-        startInLogMode={startInLogMode}
-      />
-    </div>
-  )
-}
-
-export const EasyRun = {
-  render: () => <DialogWrapper session={mockSession} distanceUnit="km" />,
-} as unknown as Story
-
-export const LongRun = {
-  render: () => <DialogWrapper session={mockLongRunSession} distanceUnit="km" />,
-} as unknown as Story
-
-export const RestDay = {
-  render: () => <DialogWrapper session={mockRestDaySession} distanceUnit="km" />,
-} as unknown as Story
-
-export const WithMiles = {
-  render: () => <DialogWrapper session={mockSession} distanceUnit="mi" />,
-} as unknown as Story
-
 // Design mockup showing integrated voice feature
 export const IntegratedVoiceDesign = {
   parameters: {
@@ -122,7 +78,7 @@ export const IntegratedVoiceDesign = {
           Users can choose to manually enter data OR chat about their training session
         </p>
 
-        <div className="bg-card border border-border rounded-lg p-6 max-w-[500px] shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-6 max-w-[600px] shadow-lg">
           <div className="space-y-6">
             {/* Header */}
             <div>
@@ -215,7 +171,7 @@ export const IntegratedVoiceDesign = {
           User tapped the microphone - now recording. Bars animate when user speaks, stay still when silent.
         </p>
 
-        <div className="bg-card border border-border rounded-lg p-6 max-w-[500px] shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-6 max-w-[600px] shadow-lg">
           <div className="space-y-6">
             {/* Header */}
             <div>
@@ -281,7 +237,7 @@ export const IntegratedVoiceDesign = {
           User stopped recording - ready to process
         </p>
 
-        <div className="bg-card border border-border rounded-lg p-6 max-w-[500px] shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-6 max-w-[600px] shadow-lg">
           <div className="space-y-6">
             {/* Header */}
             <div>
@@ -335,7 +291,7 @@ export const IntegratedVoiceDesign = {
           AI is analyzing the transcript and extracting data
         </p>
 
-        <div className="bg-card border border-border rounded-lg p-6 max-w-[500px] shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-6 max-w-[600px] shadow-lg">
           <div className="space-y-6">
             {/* Header */}
             <div>
@@ -378,7 +334,7 @@ export const IntegratedVoiceDesign = {
           AI has extracted data - user can review and confirm
         </p>
 
-        <div className="bg-card border border-border rounded-lg p-6 max-w-[500px] shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-6 max-w-[600px] shadow-lg">
           <div className="space-y-6">
             {/* Header */}
             <div>
