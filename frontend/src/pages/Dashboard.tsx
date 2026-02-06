@@ -260,15 +260,17 @@ export function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Race header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg p-6">
-        <h1 className="text-3xl font-bold mb-2">{planSummary.raceName}</h1>
-        <p className="text-lg opacity-90">
-          {planSummary.daysUntilRace} days until race day
-        </p>
-      </div>
+      {planSummary && (
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg p-6">
+          <h1 className="text-3xl font-bold mb-2">{planSummary.raceName}</h1>
+          <p className="text-lg opacity-90">
+            {planSummary.daysUntilRace} days until race day
+          </p>
+        </div>
+      )}
 
       {/* Recalculation status banner */}
-      {planSummary.hasPendingRecalculation && (
+      {planSummary?.hasPendingRecalculation && (
         <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-900">
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertDescription className="ml-2">
@@ -292,7 +294,7 @@ export function Dashboard() {
       {/* Today's workout or pre-training message */}
       <div>
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Session</h2>
-        {planSummary.todaysSession ? (
+        {planSummary?.todaysSession ? (
           <div className="w-full lg:w-2/3 mx-auto">
             <WorkoutSessionCard
               session={planSummary.todaysSession}
@@ -310,7 +312,7 @@ export function Dashboard() {
                   No workout scheduled for today. Your training plan starts soon!
                 </p>
 
-                {planSummary.cyclePhaseTips && (
+                {planSummary?.cyclePhaseTips && (
                   <div className="mt-4 pt-4 border-t">
                     <h3 className="font-semibold mb-2">Current Cycle Phase Tips</h3>
                     <div className="text-sm space-y-2">

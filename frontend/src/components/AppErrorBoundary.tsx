@@ -18,7 +18,9 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Unhandled render error', error, errorInfo)
+    // Use console methods properly bound to avoid "Illegal invocation" errors
+    // eslint-disable-next-line no-console
+    console.error.call(console, 'Unhandled render error', error, errorInfo)
   }
 
   private handleReload = () => {
