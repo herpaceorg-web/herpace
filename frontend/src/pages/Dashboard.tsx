@@ -109,8 +109,24 @@ export function Dashboard() {
         }
       }
 
+      // Be defensive about response shape so one malformed payload
+      // doesn't crash rendering with a white screen.
+      const sessionsPayload = sessionsResponse as unknown as {
+        sessions?: SessionDetailDto[]
+        Sessions?: SessionDetailDto[]
+      }
+      const normalizedSessions = Array.isArray(sessionsPayload.sessions)
+        ? sessionsPayload.sessions
+        : Array.isArray(sessionsPayload.Sessions)
+          ? sessionsPayload.Sessions
+          : []
+
+      if (!Array.isArray(sessionsPayload.sessions) && !Array.isArray(sessionsPayload.Sessions)) {
+        console.warn('Unexpected /api/sessions/upcoming response shape', sessionsResponse)
+      }
+
       setPlanSummary(summary)
-      setUpcomingSessions(sessionsResponse.sessions)
+      setUpcomingSessions(normalizedSessions)
       setDistanceUnit(profile.distanceUnit === 1 ? 'mi' : 'km')
       setCyclePosition(cyclePos)
 
@@ -186,7 +202,9 @@ export function Dashboard() {
   // Memoize upcoming sessions rendering to prevent re-renders during polling
   // (upcomingSessions array doesn't change during recalculation polling)
   const upcomingSessionsContent = useMemo(() => {
-    if (upcomingSessions.length === 0) {
+    const safeUpcomingSessions = Array.isArray(upcomingSessions) ? upcomingSessions : []
+
+    if (safeUpcomingSessions.length === 0) {
       return (
         <Card>
           <CardContent className="pt-6">
@@ -200,7 +218,7 @@ export function Dashboard() {
 
     return (
       <div className="w-full lg:w-2/3 mx-auto space-y-12">
-        {upcomingSessions.map((session) => (
+        {safeUpcomingSessions.map((session) => (
           <WorkoutSessionCard
             key={session.id}
             session={session}
@@ -310,11 +328,11 @@ export function Dashboard() {
                     <h3 className="font-semibold mb-2">Current Cycle Phase Tips</h3>
                     <div className="text-sm space-y-2">
                       <p><strong>Phase:</strong> {planSummary.cyclePhaseTips.phase}</p>
-                      {planSummary.cyclePhaseTips.nutritionTips.length > 0 && (
+                      {(Array.isArray(planSummary.cyclePhaseTips.nutritionTips) ? planSummary.cyclePhaseTips.nutritionTips : []).length > 0 && (
                         <div>
                           <strong>Nutrition:</strong>
                           <ul className="list-disc ml-5">
-                            {planSummary.cyclePhaseTips.nutritionTips.map((tip, i) => (
+                            {(Array.isArray(planSummary.cyclePhaseTips.nutritionTips) ? planSummary.cyclePhaseTips.nutritionTips : []).map((tip, i) => (
                               <li key={i}>{tip}</li>
                             ))}
                           </ul>

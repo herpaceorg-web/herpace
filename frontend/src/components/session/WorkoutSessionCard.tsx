@@ -357,11 +357,18 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const cycleWellnessTips = React.useMemo(() => {
     const tips: string[] = []
     if (props.cyclePhaseTips) {
-      if (props.cyclePhaseTips.nutritionTips.length > 0) {
-        tips.push(...props.cyclePhaseTips.nutritionTips.slice(0, 1)) // Take first nutrition tip
+      const nutritionTips = Array.isArray(props.cyclePhaseTips.nutritionTips)
+        ? props.cyclePhaseTips.nutritionTips
+        : []
+      const restTips = Array.isArray(props.cyclePhaseTips.restTips)
+        ? props.cyclePhaseTips.restTips
+        : []
+
+      if (nutritionTips.length > 0) {
+        tips.push(...nutritionTips.slice(0, 1)) // Take first nutrition tip
       }
-      if (props.cyclePhaseTips.restTips.length > 0) {
-        tips.push(...props.cyclePhaseTips.restTips.slice(0, 1)) // Take first rest tip
+      if (restTips.length > 0) {
+        tips.push(...restTips.slice(0, 1)) // Take first rest tip
       }
     }
     return tips
