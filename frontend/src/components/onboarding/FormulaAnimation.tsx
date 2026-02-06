@@ -5,10 +5,22 @@ import { cn } from '@/lib/utils'
 const ctaBounceKeyframes = `
   @keyframes subtle-bounce {
     0%, 100% {
-      transform: scale(1.05);
+      transform: translateY(0px);
     }
     50% {
-      transform: scale(1.08);
+      transform: translateY(-3px);
+    }
+  }
+`
+
+// Floating animation for active formula elements
+const floatKeyframes = `
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-4px);
     }
   }
 `
@@ -88,10 +100,10 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
 
   const elements = [
     { text: 'Gemini 3', active: progress >= 0 && progress < 20 },
-    { text: 'Your Profile', active: progress >= 0 && progress < 20 },
-    { text: 'Your Cycle', active: progress >= 20 && progress < 40 },
-    { text: 'Your Training Preferences', active: progress >= 40 && progress < 100 },
-    { text: 'Your HerPace Training Plan', active: progress >= 100 }
+    { text: 'Your Profile', active: progress >= 20 && progress < 40 },
+    { text: 'Your Cycle', active: progress >= 40 && progress < 60 },
+    { text: 'Your Training Preferences', active: progress >= 60 && progress < 80 },
+    { text: 'Your HerPace Training Plan', active: progress >= 80 && progress < 100 }
   ]
 
   const getElementClass = (index: number, isActive: boolean) => {
@@ -133,7 +145,9 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
       case 'progress-synced':
         return cn(
           baseClass,
-          isActive ? 'text-primary font-semibold scale-105' : 'text-muted-foreground'
+          isActive
+            ? 'text-primary font-semibold scale-105'
+            : 'text-muted-foreground'
         )
 
       case 'mixing-bowl':
@@ -153,13 +167,18 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
     }
   }
 
-  const getElementStyle = (index: number) => {
+  const getElementStyle = (index: number, isActive: boolean = false) => {
+    const styles: React.CSSProperties = {}
+
     if (animationStyle === 'math-equation' || animationStyle === 'card-flip') {
-      return {
-        animationDelay: `${index * 150}ms`
-      }
+      styles.animationDelay = `${index * 150}ms`
     }
-    return undefined
+
+    if (animationStyle === 'progress-synced' && isActive) {
+      styles.animation = 'float 2s ease-in-out infinite'
+    }
+
+    return Object.keys(styles).length > 0 ? styles : undefined
   }
 
   // Special rendering for mixing animations
@@ -217,11 +236,12 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
   return (
     <>
       <style>{ctaBounceKeyframes}</style>
+      <style>{floatKeyframes}</style>
       <div className="text-center space-y-2 w-full max-w-full">
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-6 text-sm font-normal font-sans text-center">
         {/* Gemini 3 */}
         {(visibleElements >= 1 || animationStyle === 'progress-synced') && (
-          <span className={getElementClass(0, elements[0].active)} style={getElementStyle(0)}>
+          <span className={getElementClass(0, elements[0].active)} style={getElementStyle(0, elements[0].active)}>
             Gemini 3
           </span>
         )}
@@ -230,7 +250,7 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
         {(visibleElements >= 1 || animationStyle === 'progress-synced') && (
           <>
             <span className="text-muted-foreground font-normal">+</span>
-            <span className={getElementClass(1, elements[1].active)} style={getElementStyle(1)}>
+            <span className={getElementClass(1, elements[1].active)} style={getElementStyle(1, elements[1].active)}>
               Your Profile
             </span>
           </>
@@ -240,7 +260,7 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
         {(visibleElements >= 2 || animationStyle === 'progress-synced') && (
           <>
             <span className="text-muted-foreground font-normal">+</span>
-            <span className={getElementClass(2, elements[2].active)} style={getElementStyle(2)}>
+            <span className={getElementClass(2, elements[2].active)} style={getElementStyle(2, elements[2].active)}>
               Your Cycle
             </span>
           </>
@@ -250,7 +270,7 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
         {(visibleElements >= 3 || animationStyle === 'progress-synced') && (
           <>
             <span className="text-muted-foreground font-normal">+</span>
-            <span className={getElementClass(3, elements[3].active)} style={getElementStyle(3)}>
+            <span className={getElementClass(3, elements[3].active)} style={getElementStyle(3, elements[3].active)}>
               Your Training Preferences
             </span>
           </>
@@ -261,32 +281,33 @@ export function FormulaAnimation({ animationStyle, progress = 0, showProgressTex
           <>
             <span className="text-muted-foreground font-normal text-lg">=</span>
             {progress >= 100 && onResultClick ? (
-              <button
-                onClick={onResultClick}
-                className={cn(
-                  'transition-all duration-500',
-                  'px-6 py-3 rounded-lg',
-                  'bg-primary text-primary-foreground',
-                  'font-semibold text-base',
-                  'hover:scale-110 hover:shadow-lg',
-                  'active:scale-100',
-                  'cursor-pointer',
-                  'ml-2',
-                  'shadow-md'
-                )}
-                style={{
-                  animation: 'subtle-bounce 2s ease-in-out infinite'
-                }}
+              <div
+                key="cta-wrapper"
+                className="animate-in fade-in zoom-in-50 duration-500 inline-block"
               >
-                Review Training Plan
-              </button>
+                <button
+                  onClick={onResultClick}
+                  className={cn(
+                    'px-6 py-3 rounded-lg',
+                    'bg-primary text-primary-foreground',
+                    'font-semibold text-base',
+                    'hover:scale-110 hover:shadow-lg hover:transition-transform',
+                    'active:scale-100',
+                    'cursor-pointer',
+                    'shadow-md'
+                  )}
+                  style={{
+                    animation: 'subtle-bounce 2s ease-in-out infinite 800ms'
+                  }}
+                >
+                  Review Training Plan
+                </button>
+              </div>
             ) : (
               <span
-                className={cn(
-                  getElementClass(4, elements[4].active),
-                  'font-semibold text-primary'
-                )}
-                style={getElementStyle(4)}
+                key="text-span"
+                className={getElementClass(4, elements[4].active)}
+                style={getElementStyle(4, elements[4].active)}
               >
                 Your HerPace Training Plan
               </span>

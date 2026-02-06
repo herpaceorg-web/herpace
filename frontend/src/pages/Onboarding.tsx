@@ -45,6 +45,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
   const [userName, setUserName] = useState<string>('')
   const [nameDisplayState, setNameDisplayState] = useState<'default' | 'fading-out' | 'showing-name'>('default')
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false)
+  const [isPlanComplete, setIsPlanComplete] = useState(false)
   const navigate = useNavigate()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -231,22 +232,29 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
       // Note: api-client already has 5-minute timeout configured
       await api.post<GeneratePlanRequest, any>('/api/plans', request)
 
-      // Success - redirect to dashboard
-      navigate('/dashboard')
+      // Success - plan generation complete, show "Review Training Plan" button
+      setIsPlanComplete(true)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
 
         if (axiosError.response?.status === 409) {
-          // Plan already exists - skip to dashboard
+          // Plan already exists - go directly to dashboard
           navigate('/dashboard')
         } else {
           setError(axiosError.response?.data?.message || 'Failed to generate training plan. Please try again.')
+          setIsGeneratingPlan(false)
         }
       } else {
         setError('An unexpected error occurred. Please try again.')
+        setIsGeneratingPlan(false)
       }
     }
+  }
+
+  // Handle review plan button click
+  const handleReviewPlan = () => {
+    navigate('/dashboard')
   }
 
   // Handle back navigation
@@ -271,27 +279,32 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
     <div className="relative min-h-screen flex items-center justify-center bg-white p-4">
       <HormoneWaveBackground opacity={0.3} />
       <Card className="relative z-10 w-full max-w-2xl flex flex-col max-h-[90vh]">
-        <CardHeader className="space-y-1 flex-shrink-0">
-          <CardTitle className="font-petrona text-[32px] font-normal text-foreground">
-            Hello,{' '}
-            {nameDisplayState === 'default' && (
-              <span className="inline-block">Runner!</span>
-            )}
-            {nameDisplayState === 'fading-out' && (
-              <span className="inline-block animate-fade-out">Runner!</span>
-            )}
-            {nameDisplayState === 'showing-name' && (
-              <span className="inline-block animate-scale-in">{userName}!</span>
-            )}
-          </CardTitle>
-          <CardDescription className="text-sm font-normal text-[#696863]">
-            Let's set up your personalized training plan in just a few steps
-          </CardDescription>
-        </CardHeader>
+        {/* Hide header when generating plan */}
+        {!isGeneratingPlan && (
+          <CardHeader className="space-y-1 flex-shrink-0">
+            <CardTitle className="font-petrona text-[32px] font-normal text-foreground">
+              Hello,{' '}
+              {nameDisplayState === 'default' && (
+                <span className="inline-block">Runner!</span>
+              )}
+              {nameDisplayState === 'fading-out' && (
+                <span className="inline-block animate-fade-out">Runner!</span>
+              )}
+              {nameDisplayState === 'showing-name' && (
+                <span className="inline-block animate-scale-in">{userName}!</span>
+              )}
+            </CardTitle>
+            <CardDescription className="text-sm font-normal text-[#696863]">
+              Let's set up your personalized training plan in just a few steps
+            </CardDescription>
+          </CardHeader>
+        )}
 
         <CardContent ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Stepper */}
-          <Stepper currentStep={currentStep} steps={STEPS} />
+          {/* Hide stepper when generating plan */}
+          {!isGeneratingPlan && (
+            <Stepper currentStep={currentStep} steps={STEPS} />
+          )}
 
           {/* Error Alert */}
           {error && currentStep !== 3 && (
@@ -335,7 +348,11 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
                         </button>
                       </div>
                     ) : (
-                      <GeneratingPlanStep />
+                      <GeneratingPlanStep
+                        initialProgress={isPlanComplete ? 100 : undefined}
+                        initialComplete={isPlanComplete}
+                        onReviewPlan={isPlanComplete ? handleReviewPlan : undefined}
+                      />
                     )}
                   </>
                 ) : (

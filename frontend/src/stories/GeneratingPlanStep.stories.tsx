@@ -109,3 +109,69 @@ export const Completed: Story = {
     },
   },
 }
+
+export const InAppBrokenVariant: Story = {
+  args: {
+    initialProgress: 100,
+    initialComplete: true,
+    // No onReviewPlan prop - replicates the bug in the actual app
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: '**BUG REPRODUCTION (Static):** This story replicates the broken behavior in the actual app at `Onboarding.tsx:338` where `GeneratingPlanStep` is called without the `onReviewPlan` prop. Notice that when progress reaches 100%, the "Review Training Plan" button does NOT appear - it just shows static text "Your HerPace Training Plan" instead. This is because `FormulaAnimation` only shows the button when BOTH `progress >= 100` AND `onResultClick` prop are provided.',
+      },
+    },
+  },
+}
+
+export const InAppBrokenAnimated: Story = {
+  render: () => {
+    const [progress, setProgress] = useState(0)
+    const [isComplete, setIsComplete] = useState(false)
+    const [key, setKey] = useState(0)
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          const increment = 100 / (15 * 10) // 15 seconds total
+          const newProgress = prev + increment
+
+          if (newProgress >= 100) {
+            setIsComplete(true)
+            clearInterval(interval)
+
+            // Wait 5 seconds at completion, then restart
+            setTimeout(() => {
+              setKey((k) => k + 1)
+              setProgress(0)
+              setIsComplete(false)
+            }, 5000)
+
+            return 100
+          }
+
+          return newProgress
+        })
+      }, 100)
+
+      return () => clearInterval(interval)
+    }, [key])
+
+    return (
+      <GeneratingPlanStep
+        key={key}
+        initialProgress={progress}
+        initialComplete={isComplete}
+        // No onReviewPlan prop - replicates the bug!
+      />
+    )
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: '**BUG REPRODUCTION (Animated):** Same as `WithCTA` story but WITHOUT the `onReviewPlan` prop. Watch the full 15-second animation and notice that at 100% completion, the "Review Training Plan" button never appears - it stays as static text. This exactly replicates what users see in the actual app. Loops automatically after 5-second pause.',
+      },
+    },
+  },
+}
