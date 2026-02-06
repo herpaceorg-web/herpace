@@ -397,7 +397,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         )}
       >
         <CardContent className="p-4">
-          {/* Header with session name and metrics */}
+          {/* Header with session name, metrics, and phase box side by side */}
           <div className="flex gap-4 items-start mb-4">
             {/* Session name and metrics */}
             <div className="flex-1 flex flex-col gap-2">
@@ -479,11 +479,10 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Phase box - show cycle phase with guidance */}
-          {!isRestDay && (cyclePhases || phaseGuidance || progressText) && (
-            <div className="mb-4 p-4 bg-[#fdfbf7] border border-[#ebe8e2] rounded-lg">
+            {/* Phase box - show cycle phase with guidance */}
+            {!isRestDay && (cyclePhases || phaseGuidance || progressText) && (
+              <div className="p-4 bg-[#fdfbf7] border border-[#ebe8e2] rounded-lg flex-shrink-0">
               <div className={`flex items-center gap-2 ${phaseGuidance ? 'mb-2' : ''}`}>
                 {cyclePhases && cyclePhases.map((phase, index) => (
                   <React.Fragment key={index}>
@@ -516,6 +515,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               )}
             </div>
           )}
+          </div>
 
           {/* Tabs for Warmup/Session/Recover - Only show for non-rest days */}
           {!isRestDay && (

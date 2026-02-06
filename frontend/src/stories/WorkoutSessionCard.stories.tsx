@@ -1200,13 +1200,12 @@ export const CyclePhaseExamples: Story = {
             intensityLevel={IntensityLevel.Low}
             cyclePhases={[
               {
-                phaseName: 'Follicular Phase - Menstruation Day 1',
-                icon: (
-                  <div className="flex items-center gap-1.5">
-                    <Sprout className="h-4 w-4" />
-                    <Snowflake className="h-4 w-4" />
-                  </div>
-                ),
+                phaseName: 'Follicular Phase Day 1',
+                icon: <Sprout className="h-4 w-4" />,
+              },
+              {
+                phaseName: 'Menstruation Day 1',
+                icon: <Snowflake className="h-4 w-4" />,
               },
             ]}
             sessionProgress="Session 1/15 This Phase"
@@ -1245,13 +1244,12 @@ export const CyclePhaseExamples: Story = {
             intensityLevel={IntensityLevel.High}
             cyclePhases={[
               {
-                phaseName: 'Follicular Phase - Predicted Ovulation Day',
-                icon: (
-                  <div className="flex items-center gap-1.5">
-                    <Sprout className="h-4 w-4" />
-                    <Sun className="h-4 w-4" />
-                  </div>
-                ),
+                phaseName: 'Follicular Phase',
+                icon: <Sprout className="h-4 w-4" />,
+              },
+              {
+                phaseName: 'Predicted Ovulation Day',
+                icon: <Sun className="h-4 w-4" />,
               },
             ]}
             sessionProgress="Session 12/15 This Phase"
