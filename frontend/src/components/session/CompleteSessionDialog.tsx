@@ -88,6 +88,20 @@ export function CompleteSessionDialog({
     }
   })
 
+  // Debug logging - REMOVE after diagnosing
+  useEffect(() => {
+    console.log('🎤 CompleteSessionDialog Debug:', {
+      open,
+      inputMode,
+      isSupported,
+      isRestDay: session.workoutType === WorkoutType.Rest,
+      voiceState: state,
+      error,
+      sessionType: session.workoutType,
+      sessionName: session.sessionName
+    })
+  }, [open, inputMode, isSupported, isRestDay, state, error, session])
+
   // Start session when voice mode is selected
   useEffect(() => {
     if (inputMode === 'voice' && isSupported && state === 'idle' && !hasAttemptedConnection.current) {
@@ -370,7 +384,28 @@ export function CompleteSessionDialog({
           </p>
         </DialogHeader>
 
+        {/* DEBUG PANEL - Remove after diagnosis */}
+        <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4 text-xs font-mono">
+          <div><strong>Debug Info:</strong></div>
+          <div>inputMode: {inputMode}</div>
+          <div>isSupported: {String(isSupported)}</div>
+          <div>isRestDay: {String(isRestDay)}</div>
+          <div>state: {state}</div>
+          {error && <div className="text-red-600">error: {error}</div>}
+          <div>Conditions met: {String(inputMode === 'initial' && isSupported && !isRestDay)}</div>
+        </div>
+
         <form onSubmit={handleManualSubmit}>
+          {/* Show why voice is not available */}
+          {inputMode === 'initial' && !isRestDay && !isSupported && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h4 className="text-sm font-semibold text-yellow-900 mb-1">Voice chat unavailable</h4>
+              <p className="text-sm text-yellow-800">
+                {error || 'Your browser may not support voice features. Please use a modern browser like Chrome or Firefox.'}
+              </p>
+            </div>
+          )}
+
           {inputMode === 'initial' && isSupported && !isRestDay && (
             <>
               {/* Voice Option */}
