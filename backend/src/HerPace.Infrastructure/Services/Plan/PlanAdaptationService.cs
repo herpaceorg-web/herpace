@@ -48,12 +48,10 @@ public class PlanAdaptationService : IPlanAdaptationService
             return false;
         }
 
-        var today = DateTime.UtcNow.Date;
-
-        // Get last 7 completed/skipped sessions before today
+        // Get last 7 completed/skipped sessions (including future skipped sessions for demo)
+        // This allows users to skip future sessions and trigger recalculation
         var recentSessions = plan.Sessions
-            .Where(s => s.ScheduledDate < today &&
-                       (s.CompletedAt.HasValue || s.IsSkipped))
+            .Where(s => s.CompletedAt.HasValue || s.IsSkipped)
             .OrderByDescending(s => s.ScheduledDate)
             .Take(7)
             .ToList();
