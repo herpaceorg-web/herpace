@@ -300,24 +300,32 @@ export class AudioQueue {
  * Check if the browser supports required audio APIs
  */
 export function checkAudioSupport(): { supported: boolean; error?: string } {
+  // Check HTTPS requirement (getUserMedia requires secure context)
+  if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return {
+      supported: false,
+      error: 'Voice features require HTTPS for security. Please use https:// instead of http://'
+    }
+  }
+
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return {
       supported: false,
-      error: 'Your browser does not support microphone access. Please use a modern browser like Chrome, Firefox, or Safari.'
+      error: 'Browser does not support microphone access. Try Chrome, Firefox, or Safari.'
     }
   }
 
   if (!window.AudioContext && !(window as unknown as { webkitAudioContext: unknown }).webkitAudioContext) {
     return {
       supported: false,
-      error: 'Your browser does not support Web Audio API. Please use a modern browser.'
+      error: 'Browser does not support Web Audio API. Please use a modern browser.'
     }
   }
 
   if (!window.WebSocket) {
     return {
       supported: false,
-      error: 'Your browser does not support WebSocket connections.'
+      error: 'Browser does not support WebSocket connections.'
     }
   }
 
