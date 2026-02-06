@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto } from '@/types/api'
+import { IntensityLevel } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
+import { RecalculationConfirmationModal } from '@/components/session/RecalculationConfirmationModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -27,6 +29,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [showSummaryModal, setShowSummaryModal] = useState(false)
   const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
+  const [showRecalculationModal, setShowRecalculationModal] = useState(false)
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
 
@@ -51,6 +54,13 @@ export function Dashboard() {
       setShowSummaryModal(true)
     }
   }, [planSummary?.recalculationSummary])
+
+  // Show recalculation confirmation modal when pending
+  useEffect(() => {
+    if (planSummary?.pendingConfirmation && !showRecalculationModal) {
+      setShowRecalculationModal(true)
+    }
+  }, [planSummary?.pendingConfirmation])
 
   const loadDashboardData = async () => {
     try {
@@ -115,6 +125,32 @@ export function Dashboard() {
       // Still close the modal even if API call fails
       setShowSummaryModal(false)
     }
+  }
+
+  const handleRecalculationConfirmed = () => {
+    // User confirmed - refresh to start polling for job completion
+    loadDashboardData()
+  }
+
+  const handleRecalculationDeclined = () => {
+    // User declined - refresh to clear pending state
+    loadDashboardData()
+  }
+
+  // Helper to get flowing background gradient based on intensity
+  const getFlowingBackground = (level: IntensityLevel) => {
+    const opacities = level === IntensityLevel.Low
+      ? { main: 0.10, secondary: 0.08 }
+      : level === IntensityLevel.Moderate
+      ? { main: 0.16, secondary: 0.13 }
+      : { main: 0.24, secondary: 0.20 }
+
+    return `
+      radial-gradient(ellipse 150% 100% at -50% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
+      radial-gradient(ellipse 150% 100% at 150% 50%, rgba(161, 65, 57, ${opacities.main}) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 150% at 50% -50%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 150% at 50% 150%, rgba(161, 65, 57, ${opacities.secondary}) 0%, transparent 50%)
+    `
   }
 
   if (isLoading) {
@@ -334,6 +370,14 @@ export function Dashboard() {
         onOpenChange={setShowLogWorkoutModal}
         onWorkoutLogged={loadDashboardData}
         distanceUnit={distanceUnit}
+      />
+
+      {/* Recalculation Confirmation Modal */}
+      <RecalculationConfirmationModal
+        open={showRecalculationModal}
+        onOpenChange={setShowRecalculationModal}
+        onConfirmed={handleRecalculationConfirmed}
+        onDeclined={handleRecalculationDeclined}
       />
     </div>
   )

@@ -171,6 +171,7 @@ export interface PlanSummaryDto {
   raceDate: string
   daysUntilRace: number
   hasPendingRecalculation: boolean
+  pendingConfirmation: boolean // NEW - user needs to confirm recalculation
   recalculationSummary?: string
   latestAdaptation?: LatestAdaptationDto
   todaysSession?: SessionDetailDto
@@ -255,7 +256,15 @@ export interface SkipSessionRequest {
 export interface SessionCompletionResponse {
   sessionId: string
   success: boolean
-  recalculationTriggered: boolean
+  recalculationTriggered: boolean // Legacy - kept for compatibility
+  recalculationRequested: boolean // NEW - threshold met, recalculation needed
+  pendingConfirmation: boolean // NEW - user needs to respond to confirmation modal
+  message?: string
+}
+
+export interface RecalculationConfirmationResponse {
+  success: boolean
+  recalculationEnqueued: boolean
   message?: string
 }
 

@@ -23,17 +23,20 @@ public class SessionController : ControllerBase
     private readonly ISessionCompletionService _sessionCompletionService;
     private readonly ICyclePhaseTipsService _cyclePhaseTipsService;
     private readonly HerPaceDbContext _context;
+    private readonly IPlanAdaptationService _planAdaptationService;
     private readonly ILogger<SessionController> _logger;
 
     public SessionController(
         ISessionCompletionService sessionCompletionService,
         ICyclePhaseTipsService cyclePhaseTipsService,
         HerPaceDbContext context,
+        IPlanAdaptationService planAdaptationService,
         ILogger<SessionController> logger)
     {
         _sessionCompletionService = sessionCompletionService;
         _cyclePhaseTipsService = cyclePhaseTipsService;
         _context = context;
+        _planAdaptationService = planAdaptationService;
         _logger = logger;
     }
 
@@ -169,14 +172,22 @@ public class SessionController : ControllerBase
                 : BadRequest(result.ErrorMessage);
         }
 
+        // Get the active plan to check pending confirmation state
+        var activePlan = await _context.TrainingPlans
+            .FirstOrDefaultAsync(p => p.RunnerId == runnerId && p.Status == PlanStatus.Active);
+
         var response = new SessionCompletionResponse
         {
             SessionId = id,
             Success = true,
-            RecalculationTriggered = result.RecalculationTriggered,
-            Message = result.RecalculationTriggered
-                ? "Session completed. Your training plan is being adapted based on your recent performance."
-                : "Session completed successfully."
+            RecalculationTriggered = result.RecalculationTriggered && activePlan?.PendingRecalculationConfirmation == false,
+            RecalculationRequested = result.RecalculationTriggered,
+            PendingConfirmation = activePlan?.PendingRecalculationConfirmation ?? false,
+            Message = activePlan?.PendingRecalculationConfirmation == true
+                ? "Session completed. We've detected changes in your training pattern."
+                : result.RecalculationTriggered
+                    ? "Session completed. Your training plan is being adapted based on your recent performance."
+                    : "Session completed successfully."
         };
 
         return Ok(response);
@@ -217,17 +228,119 @@ public class SessionController : ControllerBase
                 : BadRequest(result.ErrorMessage);
         }
 
+        // Get the active plan to check pending confirmation state
+        var activePlan = await _context.TrainingPlans
+            .FirstOrDefaultAsync(p => p.RunnerId == runnerId && p.Status == PlanStatus.Active);
+
         var response = new SessionCompletionResponse
         {
             SessionId = id,
             Success = true,
-            RecalculationTriggered = result.RecalculationTriggered,
-            Message = result.RecalculationTriggered
-                ? "Session skipped. Your training plan is being adapted based on your recent performance."
-                : "Session skipped successfully."
+            RecalculationTriggered = result.RecalculationTriggered && activePlan?.PendingRecalculationConfirmation == false,
+            RecalculationRequested = result.RecalculationTriggered,
+            PendingConfirmation = activePlan?.PendingRecalculationConfirmation ?? false,
+            Message = activePlan?.PendingRecalculationConfirmation == true
+                ? "Session skipped. We've detected changes in your training pattern."
+                : result.RecalculationTriggered
+                    ? "Session skipped. Your training plan is being adapted based on your recent performance."
+                    : "Session skipped successfully."
         };
 
         return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Confirm plan recalculation after user approval.
+    /// POST /api/sessions/confirm-recalculation
+    /// </summary>
+    [HttpPost("confirm-recalculation")]
+    [ProducesResponseType(typeof(RecalculationConfirmationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ConfirmRecalculation()
+    {
+        try
+        {
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Confirming recalculation for runner {RunnerId}", runnerId);
+
+            // Find active plan
+            var activePlan = await _context.TrainingPlans
+                .Where(p => p.RunnerId == runnerId && p.Status == PlanStatus.Active)
+                .FirstOrDefaultAsync();
+
+            if (activePlan == null)
+            {
+                return NotFound("No active training plan found");
+            }
+
+            var success = await _planAdaptationService.ConfirmRecalculationAsync(activePlan.Id);
+
+            if (!success)
+            {
+                return BadRequest("Could not confirm recalculation. No pending confirmation found or job already in progress.");
+            }
+
+            return Ok(new RecalculationConfirmationResponse
+            {
+                Success = true,
+                RecalculationEnqueued = true,
+                Message = "Your training plan is being adapted. This usually takes 1-2 minutes."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Profile not found for authenticated user");
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Decline plan recalculation after user rejection.
+    /// POST /api/sessions/decline-recalculation
+    /// </summary>
+    [HttpPost("decline-recalculation")]
+    [ProducesResponseType(typeof(RecalculationConfirmationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeclineRecalculation()
+    {
+        try
+        {
+            var runnerId = GetRunnerIdFromClaims();
+            _logger.LogInformation("Declining recalculation for runner {RunnerId}", runnerId);
+
+            // Find active plan
+            var activePlan = await _context.TrainingPlans
+                .Where(p => p.RunnerId == runnerId && p.Status == PlanStatus.Active)
+                .FirstOrDefaultAsync();
+
+            if (activePlan == null)
+            {
+                return NotFound("No active training plan found");
+            }
+
+            var success = await _planAdaptationService.DeclineRecalculationAsync(activePlan.Id);
+
+            if (!success)
+            {
+                return BadRequest("Could not decline recalculation.");
+            }
+
+            return Ok(new RecalculationConfirmationResponse
+            {
+                Success = true,
+                RecalculationEnqueued = false,
+                Message = "Got it! We'll keep your current plan as-is."
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -428,6 +541,7 @@ public class SessionController : ControllerBase
             RaceDate = activePlan.Race.RaceDate,
             DaysUntilRace = (activePlan.Race.RaceDate - DateTime.UtcNow.Date).Days,
             HasPendingRecalculation = hasPendingRecalculation,
+            PendingConfirmation = activePlan.PendingRecalculationConfirmation,
             RecalculationSummary = recalculationSummary,
             LatestAdaptation = latestAdaptation,
             TodaysSession = todaysSession,
