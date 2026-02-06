@@ -44,6 +44,9 @@ export function CompleteSessionDialog({
   const [showConfirmation, setShowConfirmation] = useState(false)
   const hasAttemptedConnection = useRef(false)
 
+  // Use a ref to hold stopSession to avoid temporal dead zone issues
+  const stopSessionRef = useRef<() => void>(() => {})
+
   const isRestDay = session.workoutType === WorkoutType.Rest
 
   const handleTranscript = useCallback((text: string, isFinal: boolean) => {
@@ -64,10 +67,10 @@ export function CompleteSessionDialog({
         voiceTranscript: transcript
       })
       setShowConfirmation(true)
-      // Stop voice session when showing confirmation
-      stopSession()
+      // Stop voice session when showing confirmation - use ref to avoid TDZ
+      stopSessionRef.current()
     }
-  }, [transcript, stopSession])
+  }, [transcript])
 
   const handleError = useCallback((error: Error) => {
     console.error('Voice session error:', error)
@@ -89,6 +92,11 @@ export function CompleteSessionDialog({
       // Session ended naturally
     }
   })
+
+  // Keep the ref in sync with the actual stopSession function
+  useEffect(() => {
+    stopSessionRef.current = stopSession
+  }, [stopSession])
 
   // Debug logging - REMOVE after diagnosing
   useEffect(() => {
