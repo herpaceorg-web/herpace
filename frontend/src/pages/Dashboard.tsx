@@ -94,7 +94,7 @@ export function Dashboard() {
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
         api.get<UpcomingSessionsResponse>(`/api/sessions/upcoming?count=7&clientDate=${clientDate}`),
         api.get<ProfileResponse>('/api/profiles/me'),
-        api.get<CyclePositionDto>('/api/cycle/position').catch(() => null)
+        api.get<CyclePositionDto>(`/api/cycle/position?clientDate=${clientDate}`).catch(() => null)
       ])
 
       // Sanity-check: if the backend returned a todaysSession whose date doesn't

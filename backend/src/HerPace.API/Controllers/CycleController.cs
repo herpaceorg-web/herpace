@@ -34,14 +34,29 @@ public class CycleController : ControllerBase
     /// Gets the current cycle position for the authenticated user.
     /// Returns 404 if cycle tracking is not enabled.
     /// </summary>
+    /// <param name="clientDate">Optional client's local date in YYYY-MM-DD format (e.g., 2026-01-15)</param>
     [HttpGet("position")]
-    public async Task<IActionResult> GetCyclePosition()
+    public async Task<IActionResult> GetCyclePosition([FromQuery] string? clientDate = null)
     {
         var runnerId = await GetRunnerIdForUser();
 
-        _logger.LogInformation("Getting cycle position for runner {RunnerId}", runnerId);
+        _logger.LogInformation("Getting cycle position for runner {RunnerId}, clientDate: {ClientDate}", runnerId, clientDate);
 
-        var position = await _cycleTrackingService.GetCurrentCyclePositionAsync(runnerId);
+        // Parse clientDate if provided
+        DateTime? parsedDate = null;
+        if (!string.IsNullOrEmpty(clientDate))
+        {
+            if (DateTime.TryParse(clientDate, out var date))
+            {
+                parsedDate = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            }
+            else
+            {
+                return BadRequest(new { message = "Invalid clientDate format. Expected YYYY-MM-DD." });
+            }
+        }
+
+        var position = await _cycleTrackingService.GetCurrentCyclePositionAsync(runnerId, parsedDate);
 
         if (position == null)
         {
