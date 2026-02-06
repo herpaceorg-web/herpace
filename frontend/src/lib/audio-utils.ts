@@ -19,14 +19,16 @@ export const AUDIO_CONFIG = {
 } as const
 
 /**
- * Dedicated AudioContext for playback at 24kHz (Gemini's output sample rate)
- * Using explicit sample rate avoids browser resampling artifacts
+ * AudioContext for playback using hardware's native sample rate.
+ * We let the browser resample from 24kHz (Gemini's output) to hardware rate.
+ * Note: Explicit 24kHz sample rate caused audio issues in some browsers.
  */
 let playbackContext: AudioContext | null = null
 
 export function getPlaybackContext(): AudioContext {
   if (!playbackContext) {
-    playbackContext = new AudioContext({ sampleRate: AUDIO_CONFIG.output.sampleRate })
+    // Use hardware rate - browser will resample 24kHz audio buffers automatically
+    playbackContext = new AudioContext()
   }
   return playbackContext
 }
@@ -89,13 +91,19 @@ export async function requestMicrophoneAccess(): Promise<MediaStream> {
  * Creates an audio processor that captures audio from the microphone
  * and converts it to base64-encoded PCM for Gemini Live API.
  * Uses the shared capture context to avoid multiple AudioContext conflicts.
+ * Also creates an analyser node for audio level detection (visual feedback).
  */
 export function createAudioProcessor(
   stream: MediaStream,
   onAudioData: (base64Data: string) => void
-): { start: () => void; stop: () => void; context: AudioContext } {
+): { start: () => void; stop: () => void; analyser: AnalyserNode } {
   const context = getCaptureContext()
   const source = context.createMediaStreamSource(stream)
+
+  // Create analyser for audio level detection (used for visual feedback)
+  const analyser = context.createAnalyser()
+  analyser.fftSize = 256
+  analyser.smoothingTimeConstant = 0.8
 
   // Use ScriptProcessorNode for audio processing
   // (AudioWorklet would be better but requires more setup)
@@ -121,16 +129,20 @@ export function createAudioProcessor(
   return {
     start: () => {
       isProcessing = true
-      source.connect(processor)
+      // Chain: source → analyser → processor → destination
+      // This allows level detection without creating duplicate MediaStreamSource
+      source.connect(analyser)
+      analyser.connect(processor)
       processor.connect(context.destination)
     },
     stop: () => {
       isProcessing = false
       processor.disconnect()
+      analyser.disconnect()
       source.disconnect()
       // Don't close the shared context - it will be reused
     },
-    context // Expose context for level detection reuse
+    analyser // Expose analyser for level detection
   }
 }
 

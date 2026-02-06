@@ -50,7 +50,6 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
   const audioProcessorRef = useRef<{ start: () => void; stop: () => void } | null>(null)
   const audioQueueRef = useRef<AudioQueue>(new AudioQueue())
   const setupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const animationFrameRef = useRef<number | null>(null)
 
@@ -183,8 +182,8 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       const stream = await requestMicrophoneAccess()
       mediaStreamRef.current = stream
 
-      // Create audio processor early - it uses the shared capture context
-      // which we'll also use for level detection (consolidating AudioContext instances)
+      // Create audio processor - it uses the shared capture context and includes
+      // an analyser node for level detection (no duplicate MediaStreamSource needed)
       // The callback uses wsRef.current so it works once WebSocket is connected
       const processor = createAudioProcessor(stream, (base64Data) => {
         if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -201,40 +200,27 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       })
       audioProcessorRef.current = processor
 
-      // Set up audio level detection using the shared capture context
-      try {
-        const captureContext = processor.context
-        const analyser = captureContext.createAnalyser()
-        analyser.fftSize = 256
-        analyser.smoothingTimeConstant = 0.8
+      // Use the analyser from the processor for audio level detection
+      // This avoids creating duplicate MediaStreamSource nodes which could cause interference
+      analyserRef.current = processor.analyser
 
-        const source = captureContext.createMediaStreamSource(stream)
-        source.connect(analyser)
+      // Start monitoring audio levels for visual feedback
+      const dataArray = new Uint8Array(processor.analyser.frequencyBinCount)
+      const SPEECH_THRESHOLD = 30
 
-        audioContextRef.current = captureContext
-        analyserRef.current = analyser
+      const checkAudioLevel = () => {
+        if (!analyserRef.current) return
 
-        // Start monitoring audio levels
-        const dataArray = new Uint8Array(analyser.frequencyBinCount)
-        const SPEECH_THRESHOLD = 30 // Adjust this value based on testing
+        analyserRef.current.getByteFrequencyData(dataArray)
+        const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
 
-        const checkAudioLevel = () => {
-          if (!analyserRef.current) return
+        // Update isSpeaking state based on audio level
+        setIsSpeaking(average > SPEECH_THRESHOLD)
 
-          analyser.getByteFrequencyData(dataArray)
-          const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
-
-          // Update isSpeaking state based on audio level
-          setIsSpeaking(average > SPEECH_THRESHOLD)
-
-          animationFrameRef.current = requestAnimationFrame(checkAudioLevel)
-        }
-
-        checkAudioLevel()
-      } catch (err) {
-        console.warn('Failed to set up audio level detection:', err)
-        // Non-fatal error - voice session can continue without visual feedback
+        animationFrameRef.current = requestAnimationFrame(checkAudioLevel)
       }
+
+      checkAudioLevel()
 
       // Get ephemeral token from backend
       const request: VoiceSessionTokenRequest = sessionId ? { sessionId } : {}
@@ -346,8 +332,6 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
           cancelAnimationFrame(animationFrameRef.current)
           animationFrameRef.current = null
         }
-        // Don't close the shared context here - it will be closed by closeAudioContexts()
-        audioContextRef.current = null
         analyserRef.current = null
         setIsSpeaking(false)
 
@@ -419,7 +403,6 @@ export function useVoiceSession(options: UseVoiceSessionOptions = {}): UseVoiceS
       cancelAnimationFrame(animationFrameRef.current)
       animationFrameRef.current = null
     }
-    audioContextRef.current = null
     analyserRef.current = null
     setIsSpeaking(false)
 
