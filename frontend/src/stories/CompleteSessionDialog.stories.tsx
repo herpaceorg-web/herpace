@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { CompleteSessionDialog } from '@/components/session/CompleteSessionDialog'
-import { WorkoutType, IntensityLevel, CyclePhase } from '@/types/api'
-import type { SessionDetailDto } from '@/types/api'
 
 const meta = {
   title: 'Components/Session/CompleteSessionDialog',
@@ -14,56 +12,6 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof meta>
-
-// Mock session data
-const mockSession: SessionDetailDto = {
-  id: '1',
-  sessionName: '30 Minute Easy Run',
-  workoutType: WorkoutType.Easy,
-  scheduledDate: new Date().toISOString(),
-  distance: 5,
-  durationMinutes: 30,
-  intensityLevel: IntensityLevel.Low,
-  cyclePhase: CyclePhase.Follicular,
-  isCompleted: false,
-  isSkipped: false,
-  sessionNumberInPhase: 5,
-  totalSessionsInPhase: 15,
-  workoutTips: [
-    'Focus on maintaining an easy, conversational pace',
-    'Keep your heart rate in Zone 2 for optimal aerobic development',
-  ]
-}
-
-const mockLongRunSession: SessionDetailDto = {
-  id: '2',
-  sessionName: 'Long Run with Tempo Finish',
-  workoutType: WorkoutType.Long,
-  scheduledDate: new Date().toISOString(),
-  distance: 15,
-  durationMinutes: 90,
-  intensityLevel: IntensityLevel.Moderate,
-  cyclePhase: CyclePhase.Luteal,
-  isCompleted: false,
-  isSkipped: false,
-  sessionNumberInPhase: 12,
-  totalSessionsInPhase: 15,
-}
-
-const mockRestDaySession: SessionDetailDto = {
-  id: '3',
-  sessionName: 'Rest Day',
-  workoutType: WorkoutType.Rest,
-  scheduledDate: new Date().toISOString(),
-  distance: undefined,
-  durationMinutes: undefined,
-  intensityLevel: IntensityLevel.Low,
-  cyclePhase: CyclePhase.Menstrual,
-  isCompleted: true,
-  isSkipped: false,
-  sessionNumberInPhase: 1,
-  totalSessionsInPhase: 8,
-}
 
 // Design mockup showing integrated voice feature
 export const IntegratedVoiceDesign = {
