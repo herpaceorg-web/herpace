@@ -1,12 +1,16 @@
 import { CyclePhase } from '@/types/api'
 import { Sprout, Sun, Leaf, Snowflake } from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
 
 const CYCLE_PHASE_ITEMS = [
   {
     phase: CyclePhase.Follicular,
     icon: Sprout,
     label: 'Follicular Phase',
+  },
+  {
+    phase: CyclePhase.Ovulatory,
+    icon: Sun,
+    label: 'Ovulation',
   },
   {
     phase: CyclePhase.Luteal,
@@ -18,11 +22,6 @@ const CYCLE_PHASE_ITEMS = [
     icon: Snowflake,
     label: 'Menstruation',
   },
-  {
-    phase: CyclePhase.Ovulatory,
-    icon: Sun,
-    label: 'Ovulation',
-  },
 ]
 
 export function CyclePhaseLegend() {
@@ -32,14 +31,14 @@ export function CyclePhaseLegend() {
         const Icon = item.icon
         return (
           <div key={item.phase} className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Icon className="w-5 h-5 text-foreground" />
-              <span className="text-sm font-normal text-foreground whitespace-nowrap">
+            <div className="flex items-center gap-1.5">
+              <Icon className="w-4 h-4 text-foreground -mt-0.5" />
+              <span className="text-base font-normal text-foreground whitespace-nowrap font-petrona leading-none">
                 {item.label}
               </span>
             </div>
             {index < CYCLE_PHASE_ITEMS.length - 1 && (
-              <Separator orientation="vertical" className="h-4" />
+              <div className="h-4 border-l border-border" style={{ width: '0px' }} />
             )}
           </div>
         )

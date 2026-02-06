@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart, Ban, Check, AlertCircle } from 'lucide-react'
-import { cn, displayDistance, rpeToIntensityLevel } from '@/lib/utils'
-import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Sparkles, Heart, Ban, Check, AlertCircle } from 'lucide-react'
+import { displayDistance, rpeToIntensityLevel } from '@/lib/utils'
+import type { SessionDetailDto, CyclePhaseTipsDto, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
-import { CompleteSessionDialog } from './CompleteSessionDialog'
+// import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { RecalculationConfirmationModal } from './RecalculationConfirmationModal'
 import { api } from '@/lib/api-client'
 import { useToast } from '@/contexts/ToastContext'
@@ -52,6 +52,20 @@ export interface WorkoutSessionCardProps {
   sessionContent?: SessionContentProps
   recoverContent?: React.ReactNode
   onMenuClick?: () => void
+}
+
+// Helper function to get zone and RPE strings based on intensity level
+const getZoneAndRPE = (intensityLevel?: IntensityLevel): { zone: string; rpe: string } => {
+  switch (intensityLevel) {
+    case IntensityLevel.Low:
+      return { zone: 'Zone 1-2', rpe: 'RPE 2-4' }
+    case IntensityLevel.Moderate:
+      return { zone: 'Zone 3-4', rpe: 'RPE 5-7' }
+    case IntensityLevel.High:
+      return { zone: 'Zone 4-5', rpe: 'RPE 7-9' }
+    default:
+      return { zone: '', rpe: '' }
+  }
 }
 
 // Helper function to get phase display info based on cycle phase and menstruation day
@@ -123,6 +137,7 @@ const getPhaseDisplayInfo = (phase: CyclePhase, menstruationDay?: number): { ite
 
 export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
+  void isCompleteDialogOpen // Suppress unused warning while dialog is disabled
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(props.session)
   const [showRecalculationModal, setShowRecalculationModal] = useState(false)
@@ -152,7 +167,17 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const distanceUnit = props.distanceUnit || 'km'
   const distance = distanceRawKm != null ? displayDistance(distanceRawKm, distanceUnit) : undefined
   const durationMinutes = isSessionMode ? localSession!.durationMinutes : props.durationMinutes
-  const zone = props.zone // Zone info not in session DTO, use legacy prop
+
+  // Derive zone and RPE from intensity level when in session mode
+  const derivedZoneRpe = React.useMemo(() => {
+    if (isSessionMode && localSession?.intensityLevel !== undefined) {
+      return getZoneAndRPE(localSession.intensityLevel)
+    }
+    return { zone: '', rpe: '' }
+  }, [isSessionMode, localSession?.intensityLevel])
+
+  const zone = props.zone || derivedZoneRpe.zone
+  const rpe = derivedZoneRpe.rpe
 
   // Build cycle phases from session
   const cyclePhases = isSessionMode && localSession!.cyclePhase !== undefined
@@ -254,38 +279,38 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
     }
   }
 
-  const handleComplete = async (data: CompleteSessionRequest) => {
-    if (!isSessionMode || !localSession) return
+  // const handleComplete = async (data: CompleteSessionRequest) => {
+  //   if (!isSessionMode || !localSession) return
 
-    const response = await api.put<CompleteSessionRequest, SessionCompletionResponse>(
-      `/api/sessions/${localSession.id}/complete`,
-      data
-    )
+  //   const response = await api.put<CompleteSessionRequest, SessionCompletionResponse>(
+  //     `/api/sessions/${localSession.id}/complete`,
+  //     data
+  //   )
 
-    console.log('Session completed successfully:', response)
+  //   console.log('Session completed successfully:', response)
 
-    // Show confirmation modal if user needs to approve recalculation
-    if (response.pendingConfirmation) {
-      setShowRecalculationModal(true)
-    } else if (response.recalculationTriggered) {
-      // Only show automatic toast if recalculation was triggered WITHOUT confirmation
-      toast.info(
-        "Training Plan Adapting",
-        "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
-      )
-    }
+  //   // Show confirmation modal if user needs to approve recalculation
+  //   if (response.pendingConfirmation) {
+  //     setShowRecalculationModal(true)
+  //   } else if (response.recalculationTriggered) {
+  //     // Only show automatic toast if recalculation was triggered WITHOUT confirmation
+  //     toast.info(
+  //       "Training Plan Adapting",
+  //       "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
+  //     )
+  //   }
 
-    setLocalSession({
-      ...localSession,
-      isCompleted: true,
-      actualDistance: data.actualDistance,
-      actualDuration: data.actualDuration,
-      rpe: data.rpe,
-      userNotes: data.userNotes
-    })
+  //   setLocalSession({
+  //     ...localSession,
+  //     isCompleted: true,
+  //     actualDistance: data.actualDistance,
+  //     actualDuration: data.actualDuration,
+  //     rpe: data.rpe,
+  //     userNotes: data.userNotes
+  //   })
 
-    props.onSessionUpdated?.()
-  }
+  //   props.onSessionUpdated?.()
+  // }
 
   const handleRecalculationConfirmed = () => {
     // User confirmed - show toast and trigger parent refresh to start polling
@@ -307,26 +332,16 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
   // Format date for display with Today/Tomorrow prefix
   const sessionDate = isSessionMode && localSession ? new Date(localSession.scheduledDate) : new Date()
-  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const dayOfWeek = DAYS[sessionDate.getDay()]
-  const monthDay = `${MONTHS[sessionDate.getMonth()]} ${sessionDate.getDate()}`
+  const dayOfWeek = sessionDate.toLocaleDateString('en-US', { weekday: 'short' })
+  const monthShort = sessionDate.toLocaleDateString('en-US', { month: 'short' })
+  const dayNumber = sessionDate.getDate()
 
-  // Check if date is today or tomorrow
+  // Check if date is today (for accordion default state)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
   const sessionDateOnly = new Date(sessionDate)
   sessionDateOnly.setHours(0, 0, 0, 0)
-
-  let dateString = `${dayOfWeek} ${monthDay}`
   const isToday = sessionDateOnly.getTime() === today.getTime()
-  if (isToday) {
-    dateString = `Today, ${dayOfWeek} ${monthDay}`
-  } else if (sessionDateOnly.getTime() === tomorrow.getTime()) {
-    dateString = `Tomorrow, ${dayOfWeek} ${monthDay}`
-  }
 
   // Determine whether to show planned or actual values
   const showActualValues = localSession?.isCompleted && !isRestDay
@@ -394,70 +409,45 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
   return (
     <div className="w-full">
-      {/* Phase tracking section */}
-      {progressText || stageInfo || isSessionMode ? (
-        <div className="bg-[#fefdfb] border border-[#ebe8e2] rounded-t-lg px-2 pt-1 pb-3 flex items-center gap-3 flex-wrap mb-[-12px] w-fit">
-          {/* Date - first element */}
-          {isSessionMode && (
-            <div className="flex items-center gap-2 text-xs text-[#696863] font-normal">
-              <Calendar className="h-4 w-4" />
-              <p className="leading-[20px]">{dateString}</p>
-            </div>
-          )}
-
-          {/* Training stage badge with info popover */}
-          {stageInfo && (
-            <>
-              {isSessionMode && (
-                <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
-              )}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs text-[#696863] font-normal cursor-pointer hover:text-[#3d3826] transition-colors">
-                    <TrendingUp className="h-4 w-4" />
-                    <p className="leading-[20px]">{stageInfo.name} Stage</p>
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 bg-[#fcf9f3] border-[#ebe8e2]" align="start">
-                  <div className="space-y-2">
-                    <div>
-                      <h4 className="text-sm font-semibold text-[#3d3826]">{stageInfo.name} — {stageInfo.tagline}</h4>
-                      <p className="text-xs text-[#85837d] mt-1 leading-relaxed">{stageInfo.description}</p>
-                    </div>
-                    <div className="border-t border-[#ebe8e2] pt-2 space-y-1.5">
-                      <p className="text-xs text-[#696863]"><span className="font-medium">Focus:</span> {stageInfo.focus}</p>
-                      <p className="text-xs text-[#696863]"><span className="font-medium">What to expect:</span> {stageInfo.whatToExpect}</p>
-                      <p className="text-xs text-[#696863]"><span className="font-medium">Tip:</span> {stageInfo.tip}</p>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </>
-          )}
-        </div>
-      ) : null}
-
       {/* Main card */}
-      <Card
-        className={cn(
-          'bg-[#fcf9f3] border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7]',
-          (progressText || stageInfo || isSessionMode)
-            ? 'rounded-tl-none rounded-tr-2xl rounded-b-2xl'
-            : 'rounded-2xl'
-        )}
-      >
+      <Card className="bg-[#fcf9f3] border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7] rounded-lg">
         <CardContent className="p-4">
-          {/* Header with session name, metrics, and phase box side by side */}
-          <div className="flex flex-wrap gap-4 items-start mb-4">
-            {/* Session name and metrics */}
-            <div className="flex-1 min-w-[300px] flex flex-col gap-2">
-              <div className="flex justify-between items-start gap-4">
+          <div className="flex gap-4">
+            {/* Date Column - vertically centered */}
+            {isSessionMode && (
+              <div className="flex flex-col items-center justify-center min-w-[60px] pr-4 border-r border-[#ebe8e2]">
+                {/* Phase icons */}
+                {cyclePhases && cyclePhases.length > 0 && (
+                  <div className="flex items-center gap-1 mb-2">
+                    {cyclePhases.map((phase, index) => (
+                      <span key={index} className="text-foreground [&>svg]:w-5 [&>svg]:h-5">
+                        {phase.icon || <Calendar className="h-5 w-5" />}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <span className="text-xs text-muted-foreground font-normal whitespace-nowrap mb-1">
+                  {dayOfWeek} {monthShort}
+                </span>
+                <span className="text-2xl font-normal text-foreground font-petrona">
+                  {dayNumber}
+                </span>
+              </div>
+            )}
+
+            {/* Main content */}
+            <div className="flex-1">
+              {/* Header with session name, metrics, and phase box side by side */}
+              <div className="flex flex-wrap gap-4 items-start mb-4">
+                {/* Session name and metrics */}
+                <div className="flex-1 min-w-[300px] flex flex-col gap-2">
+              <div className="flex justify-between items-center gap-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-2xl font-normal text-[#3d3826] font-[family-name:'Petrona']">
+                  <h2 className="text-xl font-normal text-[#3d3826] font-[family-name:'Petrona']">
                     {sessionName}
                   </h2>
                   {props.session?.isRecentlyUpdated && (
-                    <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs flex items-center gap-1">
+                    <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs flex items-center gap-1 rounded-md">
                       <Sparkles className="h-3 w-3" />
                       Recently Updated
                     </Badge>
@@ -473,15 +463,40 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                     </Badge>
                   )}
                 </div>
-                {props.onMenuClick && (
-                  <button
-                    onClick={props.onMenuClick}
-                    className="text-[#3d3826] hover:bg-[#f3f0e7] rounded p-1 transition-colors"
-                    aria-label="More options"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {/* Training stage badge with info popover */}
+                  {stageInfo && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <p className="text-xs text-[#696863] font-normal cursor-pointer hover:text-[#3d3826] transition-colors leading-[20px] underline decoration-[#c5c2b8]">
+                          {stageInfo.name} Stage
+                        </p>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 bg-[#fcf9f3] border-[#ebe8e2]" align="end">
+                        <div className="space-y-2">
+                          <div>
+                            <h4 className="text-sm font-semibold text-[#3d3826]">{stageInfo.name} — {stageInfo.tagline}</h4>
+                            <p className="text-xs text-[#85837d] mt-1 leading-relaxed">{stageInfo.description}</p>
+                          </div>
+                          <div className="border-t border-[#ebe8e2] pt-2 space-y-1.5">
+                            <p className="text-xs text-[#696863]"><span className="font-medium">Focus:</span> {stageInfo.focus}</p>
+                            <p className="text-xs text-[#696863]"><span className="font-medium">What to expect:</span> {stageInfo.whatToExpect}</p>
+                            <p className="text-xs text-[#696863]"><span className="font-medium">Tip:</span> {stageInfo.tip}</p>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {props.onMenuClick && (
+                    <button
+                      onClick={props.onMenuClick}
+                      className="text-[#3d3826] hover:bg-[#f3f0e7] rounded-md p-1 transition-colors"
+                      aria-label="More options"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Metrics badges - only show for non-rest days */}
@@ -490,7 +505,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   {displayDistanceValue && (
                     <Badge
                       variant="outline"
-                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal rounded-md"
                     >
                       <Route className="h-3.5 w-3.5 mr-1.5" />
                       {displayDistanceValue} {distanceUnit === 'mi' ? 'mi' : 'km'}
@@ -499,19 +514,19 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   {displayDurationValue && (
                     <Badge
                       variant="outline"
-                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal rounded-md"
                     >
                       <Timer className="h-3.5 w-3.5 mr-1.5" />
                       {displayDurationValue} Min
                     </Badge>
                   )}
-                  {zone && (
+                  {(zone || rpe) && (
                     <Badge
                       variant="outline"
-                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
+                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal rounded-md"
                     >
                       <Activity className="h-3.5 w-3.5 mr-1.5" />
-                      {zone}
+                      {zone && rpe ? `${zone} / ${rpe}` : zone || rpe}
                     </Badge>
                   )}
                   {/* Intensity hearts display */}
@@ -540,233 +555,244 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               )}
             </div>
 
-            {/* Phase box - show cycle phase with guidance */}
-            {!isRestDay && (cyclePhases || phaseGuidance || progressText) && (
-              <div className="p-4 bg-[#fdfbf7] border border-[#ebe8e2] rounded-lg flex-shrink-0">
-              <div className={`flex items-center gap-2 ${phaseGuidance ? 'mb-2' : ''}`}>
-                {cyclePhases && cyclePhases.map((phase, index) => (
-                  <React.Fragment key={index}>
-                    {index > 0 && (
-                      <Separator orientation="vertical" className="h-4 bg-[#ebe8e2]" />
-                    )}
-                    <span className="text-foreground flex items-center h-4">
-                      {phase.icon || <Calendar className="h-4 w-4" />}
-                    </span>
-                    <span className="text-sm font-semibold text-foreground flex items-center h-4">
-                      {phase.phaseName}
-                    </span>
-                  </React.Fragment>
-                ))}
-                {progressText && (
-                  <>
-                    {cyclePhases && cyclePhases.length > 0 && (
-                      <Separator orientation="vertical" className="h-4 bg-[#ebe8e2]" />
-                    )}
-                    <span className="text-sm text-[#696863] flex items-center h-4">
-                      {progressText}
-                    </span>
-                  </>
-                )}
-              </div>
-              {phaseGuidance && (
-                <p className="text-sm text-[#85837d] leading-relaxed">
-                  {phaseGuidance}
-                </p>
-              )}
-            </div>
-          )}
           </div>
 
-          {/* Session Summary for completed sessions */}
-          {!isRestDay && localSession?.isCompleted && (
-            <Accordion type="single" collapsible defaultValue={isToday ? "session-summary" : undefined} className="w-full">
-              <AccordionItem value="session-summary" className="border-none">
-                <div className="bg-[#f3f0e7] rounded-lg">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                    <span className="text-lg font-normal text-foreground font-[family-name:'Petrona']">Session Summary</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 pt-0">
-                  {/* Actual metrics */}
-                  <div className="space-y-2">
-                    {localSession.actualDistance && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#85837d]">Distance</span>
-                        <span className="text-sm font-medium text-[#3d3826]">
-                          {displayDistance(localSession.actualDistance, distanceUnit)} {distanceUnit}
-                        </span>
+          {/* Combined accordion for Phase Details and Session Details/Summary */}
+          {!isRestDay && (
+            <Accordion
+              type="single"
+              collapsible
+              defaultValue={isToday ? (localSession?.isCompleted ? "session-summary" : "session-details") : undefined}
+              className="w-full mt-4 space-y-2"
+            >
+              {/* Phase Details */}
+              {(cyclePhases || phaseGuidance || progressText) && (
+                <AccordionItem value="phase-info" className="border-none">
+                  <div className="bg-[#f3f0e7] rounded-md hover:bg-[#EEEBDE] transition-colors">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline border-none hover:bg-transparent rounded-md">
+                      <span className="text-base font-normal text-foreground font-[family-name:'Petrona']">Phase Details</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 pt-0">
+                      {/* Phase icons and names */}
+                      <div className="flex items-center gap-2 mb-3">
+                        {cyclePhases && cyclePhases.map((phase, index) => (
+                          <React.Fragment key={index}>
+                            {index > 0 && (
+                              <Separator orientation="vertical" className="h-4 bg-[#ebe8e2]" />
+                            )}
+                            <span className="text-foreground flex items-center h-4">
+                              {phase.icon || <Calendar className="h-4 w-4" />}
+                            </span>
+                            <span className="text-sm font-normal text-foreground flex items-center h-4">
+                              {phase.phaseName}
+                            </span>
+                          </React.Fragment>
+                        ))}
+                        {progressText && (
+                          <>
+                            {cyclePhases && cyclePhases.length > 0 && (
+                              <Separator orientation="vertical" className="h-4 bg-[#ebe8e2]" />
+                            )}
+                            <span className="text-sm text-[#696863] flex items-center h-4">
+                              {progressText}
+                            </span>
+                          </>
+                        )}
                       </div>
-                    )}
-                    {localSession.actualDuration && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#85837d]">Duration</span>
-                        <span className="text-sm font-medium text-[#3d3826]">
-                          {localSession.actualDuration} min
-                        </span>
-                      </div>
-                    )}
-                    {localSession.rpe && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#85837d]">RPE</span>
-                        <span className="text-sm font-medium text-[#3d3826]">
-                          {localSession.rpe}/10
-                        </span>
-                      </div>
-                    )}
+                      {/* Phase guidance */}
+                      {phaseGuidance && (
+                        <p className="text-sm text-[#85837d] leading-relaxed">
+                          {phaseGuidance}
+                        </p>
+                      )}
+                    </AccordionContent>
                   </div>
-
-                  {/* User notes */}
-                  {localSession.userNotes && (
-                    <div className="pt-2 border-t border-[#ebe8e2] mt-4">
-                      <p className="text-xs font-medium text-[#3d3826] mb-1">Notes</p>
-                      <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
-                        {localSession.userNotes}
-                      </p>
-                    </div>
-                  )}
-                  </AccordionContent>
-                </div>
-              </AccordionItem>
-            </Accordion>
-          )}
-
-          {/* Tabs for Warmup/Session/Recover - Only show for non-rest days AND non-completed sessions */}
-          {!isRestDay && !localSession?.isCompleted && (
-            <Accordion type="single" collapsible defaultValue={isToday ? "session-details" : undefined} className="w-full">
-              <AccordionItem value="session-details" className="border-none">
-                <div className="bg-[#f3f0e7] rounded-lg">
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                    <span className="text-lg font-normal text-foreground font-[family-name:'Petrona']">Session Details</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4 pt-0">
-                    <Tabs defaultValue="session" className="w-full">
-                      <TabsList className="w-full bg-[#fcf9f3] p-[2px] h-auto rounded-[10px] mb-4">
-                {warmupContent && (
-                  <TabsTrigger
-                    value="warmup"
-                    className="flex-1 text-[#3d3826] text-sm font-medium rounded-[10px] py-1"
-                  >
-                    Warmup
-                  </TabsTrigger>
-                )}
-                <TabsTrigger
-                  value="session"
-                  className="flex-1 text-[#3d3826] text-sm font-medium rounded-[10px] py-1"
-                >
-                  Session
-                </TabsTrigger>
-                {recoverContent && (
-                  <TabsTrigger
-                    value="recover"
-                    className="flex-1 text-[#3d3826] text-sm font-medium rounded-[10px] py-1"
-                  >
-                    Recover
-                  </TabsTrigger>
-                )}
-              </TabsList>
-
-              {warmupContent && (
-                <TabsContent value="warmup" className="mt-0">
-                  <div className="bg-[#f3f0e7] rounded-lg p-4">
-                    {typeof warmupContent === 'object' &&
-                    'props' in warmupContent &&
-                    warmupContent.props.steps ? (
-                      <WarmupSteps steps={warmupContent.props.steps} />
-                    ) : (
-                      warmupContent
-                    )}
-                  </div>
-                </TabsContent>
+                </AccordionItem>
               )}
 
-              <TabsContent value="session" className="mt-0">
-                <div className="bg-[#f3f0e7] rounded-lg p-4">
-                  {/* Show workout tips at the top if available */}
-                  {allTips.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-medium text-[#3d3826] mb-3">
-                        Training Tips
-                      </h3>
-                      <ul className="space-y-2">
-                        {allTips.map((tip, index) => (
-                          <li
-                            key={index}
-                            className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
-                          >
-                            {tip}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+              {/* Session Summary for completed sessions */}
+              {localSession?.isCompleted && (
+                <AccordionItem value="session-summary" className="border-none">
+                  <div className="bg-[#f3f0e7] rounded-md hover:bg-[#EEEBDE] transition-colors">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-transparent rounded-md">
+                      <span className="text-lg font-normal text-foreground font-[family-name:'Petrona']">Session Summary</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 pt-0">
+                      {/* Actual metrics */}
+                      <div className="space-y-2">
+                        {localSession.actualDistance && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#85837d]">Distance</span>
+                            <span className="text-sm font-medium text-[#3d3826]">
+                              {displayDistance(localSession.actualDistance, distanceUnit)} {distanceUnit}
+                            </span>
+                          </div>
+                        )}
+                        {localSession.actualDuration && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#85837d]">Duration</span>
+                            <span className="text-sm font-medium text-[#3d3826]">
+                              {localSession.actualDuration} min
+                            </span>
+                          </div>
+                        )}
+                        {localSession.rpe && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#85837d]">RPE</span>
+                            <span className="text-sm font-medium text-[#3d3826]">
+                              {localSession.rpe}/10
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                  {/* Always show stepper format for session steps */}
-                  {sessionContent.steps.length > 0 && (
-                    <>
-                      {sessionContent.heading && (
-                        <h3 className="text-sm font-medium text-[#3d3826] mb-4">
-                          {sessionContent.heading}
-                        </h3>
+                      {/* User notes */}
+                      {localSession.userNotes && (
+                        <div className="pt-2 border-t border-[#ebe8e2] mt-4">
+                          <p className="text-xs font-medium text-[#3d3826] mb-1">Notes</p>
+                          <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+                            {localSession.userNotes}
+                          </p>
+                        </div>
                       )}
-                      <div className="space-y-8">
-                        {sessionContent.steps.map((step, stepIndex) => (
-                          <div key={step.number} className="relative">
-                            <div className="flex gap-4">
-                              {/* Step number indicator */}
-                              <div className="flex-shrink-0 relative">
-                                <div className="w-[38px] h-[38px] rounded-full bg-[#45423a] text-white flex items-center justify-center text-lg font-medium">
-                                  {step.number}
-                                </div>
-                                {/* Connecting line to next step */}
-                                {stepIndex < sessionContent.steps.length - 1 && (
-                                  <div className="absolute top-[45px] left-[18px] w-0.5 h-[calc(100%+16px)] bg-[rgba(71,72,87,0.2)]" />
-                                )}
-                              </div>
+                    </AccordionContent>
+                  </div>
+                </AccordionItem>
+              )}
 
-                              {/* Step content */}
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="text-base font-normal text-foreground">
-                                    {step.title}
-                                  </h4>
-                                  {step.duration && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal"
-                                    >
-                                      <Timer className="h-3.5 w-3.5 mr-1.5" />
-                                      {step.duration} Min
-                                    </Badge>
-                                  )}
+              {/* Session Details for non-completed sessions */}
+              {!localSession?.isCompleted && (
+                <AccordionItem value="session-details" className="border-none">
+                  <div className="bg-[#f3f0e7] rounded-md hover:bg-[#EEEBDE] transition-colors">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-transparent rounded-md">
+                      <span className="text-base font-normal text-foreground font-[family-name:'Petrona']">Session Details</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 pt-0">
+                      <Tabs defaultValue="session" className="w-full">
+                        <TabsList className="w-full bg-[#EEEBDE] p-1 h-auto rounded-md mb-4">
+                          {warmupContent && (
+                            <TabsTrigger
+                              value="warmup"
+                              className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-[#FDFBF7] data-[state=active]:shadow-sm"
+                            >
+                              Warmup
+                            </TabsTrigger>
+                          )}
+                          <TabsTrigger
+                            value="session"
+                            className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-[#FDFBF7] data-[state=active]:shadow-sm"
+                          >
+                            Session
+                          </TabsTrigger>
+                          {recoverContent && (
+                            <TabsTrigger
+                              value="recover"
+                              className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-[#FDFBF7] data-[state=active]:shadow-sm"
+                            >
+                              Recover
+                            </TabsTrigger>
+                          )}
+                        </TabsList>
+
+                        {warmupContent && (
+                          <TabsContent value="warmup" className="mt-0">
+                            <div className="rounded-md p-4">
+                              {typeof warmupContent === 'object' &&
+                              'props' in warmupContent &&
+                              warmupContent.props.steps ? (
+                                <WarmupSteps steps={warmupContent.props.steps} />
+                              ) : (
+                                warmupContent
+                              )}
+                            </div>
+                          </TabsContent>
+                        )}
+
+                        <TabsContent value="session" className="mt-0">
+                          <div className="rounded-md p-4">
+                            {/* Session Instructions */}
+                            {sessionContent.steps.length > 0 && (
+                              <div className={allTips.length > 0 ? 'mb-6' : ''}>
+                                <div className="space-y-8">
+                                  {sessionContent.steps.map((step, stepIndex) => (
+                                    <div key={step.number} className="relative">
+                                      <div className="flex gap-4">
+                                        {/* Step number indicator */}
+                                        <div className="flex-shrink-0 relative">
+                                          <div className="w-[38px] h-[38px] rounded-full bg-[#45423a] text-white flex items-center justify-center text-lg font-medium">
+                                            {step.number}
+                                          </div>
+                                          {/* Connecting line to next step */}
+                                          {stepIndex < sessionContent.steps.length - 1 && (
+                                            <div className="absolute top-[45px] left-[18px] w-0.5 h-[calc(100%+16px)] bg-[rgba(71,72,87,0.2)]" />
+                                          )}
+                                        </div>
+
+                                        {/* Step content */}
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-3 mb-2">
+                                            <h4 className="text-base font-normal text-foreground">
+                                              {step.title}
+                                            </h4>
+                                            {step.duration && (
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-white border-[#ebe8e2] text-[#696863] text-xs font-normal rounded-md"
+                                              >
+                                                <Timer className="h-3.5 w-3.5 mr-1.5" />
+                                                {step.duration} Min
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <ul className="space-y-1">
+                                            {step.instructions.map((instruction, index) => (
+                                              <li
+                                                key={index}
+                                                className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
+                                              >
+                                                {instruction}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
-                                <ul className="space-y-1">
-                                  {step.instructions.map((instruction, index) => (
+                              </div>
+                            )}
+
+                            {/* Training Tips */}
+                            {allTips.length > 0 && (
+                              <div>
+                                <h3 className="text-sm font-medium text-[#3d3826] mb-3">
+                                  Training Tips
+                                </h3>
+                                <ul className="space-y-2">
+                                  {allTips.map((tip, index) => (
                                     <li
                                       key={index}
                                       className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
                                     >
-                                      {instruction}
+                                      {tip}
                                     </li>
                                   ))}
                                 </ul>
                               </div>
-                            </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </TabsContent>
+                        </TabsContent>
 
-              {recoverContent && (
-                <TabsContent value="recover" className="mt-0">
-                  <div className="bg-[#f3f0e7] rounded-lg p-4">{recoverContent}</div>
-                </TabsContent>
+                        {recoverContent && (
+                          <TabsContent value="recover" className="mt-0">
+                            <div className="rounded-md p-4">{recoverContent}</div>
+                          </TabsContent>
+                        )}
+                      </Tabs>
+                    </AccordionContent>
+                  </div>
+                </AccordionItem>
               )}
-                    </Tabs>
-                  </AccordionContent>
-                </div>
-              </AccordionItem>
             </Accordion>
           )}
 
@@ -828,6 +854,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
               )}
             </div>
           )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

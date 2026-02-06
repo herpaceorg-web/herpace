@@ -14,6 +14,7 @@ export interface CalendarDayProps {
   zone?: string;
   rpe?: string;
   isRest?: boolean;
+  isSelected?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -30,6 +31,7 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
       zone,
       rpe,
       isRest = false,
+      isSelected = false,
       className,
       onClick,
     },
@@ -83,12 +85,12 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
           hearts.push(
             <Heart
               key={i}
-              className="w-5 h-5 fill-destructive text-destructive"
+              className="h-4 w-4 fill-destructive text-destructive"
             />
           );
         } else {
           hearts.push(
-            <Heart key={i} className="w-5 h-5 text-destructive/20" />
+            <Heart key={i} className="h-4 w-4 text-destructive" />
           );
         }
       }
@@ -96,19 +98,35 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
     };
 
     return (
-      <div
-        ref={ref}
-        onClick={onClick}
-        className={cn(
-          'bg-muted border border-border rounded-lg p-4 flex flex-col gap-4',
-          'min-h-[160px] w-full',
-          onClick && 'cursor-pointer hover:bg-muted/80 transition-colors',
-          className
-        )}
-      >
+      <>
+        <style>{`
+          @keyframes gentle-float {
+            0%, 100% {
+              transform: translateY(-1.5px) scale(1.0025);
+            }
+            50% {
+              transform: translateY(-4px) scale(1.01);
+            }
+          }
+        `}</style>
+        <div
+          ref={ref}
+          onClick={onClick}
+          className={cn(
+            'bg-[#fcf9f3] border border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7] rounded-lg p-3 flex flex-col',
+            'relative overflow-visible',
+            hasSession && !isRest ? 'gap-3' : '',
+            'h-full w-full',
+            'transition-all duration-200 ease-out',
+            'will-change-transform',
+            onClick && !isSelected && 'cursor-pointer hover:bg-muted hover:-translate-y-[4px] hover:scale-[1.01]',
+            isSelected && 'bg-muted cursor-pointer [animation:gentle-float_2s_ease-in-out_infinite]',
+            className
+          )}
+        >
         {/* Day number with cycle phase icon */}
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-foreground font-petrona">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-normal text-foreground font-petrona">
             {dayNumber}
           </span>
           {getCyclePhaseIcon()}
@@ -118,34 +136,34 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
         {hasSession && !isRest ? (
           <div className="flex flex-col gap-2 flex-1">
             {/* Session name */}
-            <h3 className="text-sm font-semibold text-foreground font-petrona leading-7">
+            <h3 className="text-base font-normal text-foreground font-petrona leading-7">
               {sessionName}
             </h3>
 
             {/* Info badges */}
             <div className="flex flex-wrap gap-2 items-center">
               {distance && (
-                <div className="bg-card border border-border rounded-md px-1.5 py-0.5 flex items-center gap-2">
-                  <Route className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
+                <div className="bg-[#FDFBF7] border border-[#ebe8e2] rounded-md px-1.5 py-0.5 flex items-center gap-1.5">
+                  <Route className="h-3.5 w-3.5 text-[#696863]" />
+                  <span className="text-xs text-[#696863] font-normal">
                     {distance} Mi
                   </span>
                 </div>
               )}
 
               {durationMinutes && (
-                <div className="bg-card border border-border rounded-md px-1.5 py-0.5 flex items-center gap-2">
-                  <Timer className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
+                <div className="bg-[#FDFBF7] border border-[#ebe8e2] rounded-md px-1.5 py-0.5 flex items-center gap-1.5">
+                  <Timer className="h-3.5 w-3.5 text-[#696863]" />
+                  <span className="text-xs text-[#696863] font-normal">
                     {durationMinutes} Min
                   </span>
                 </div>
               )}
 
               {(zone || rpe) && (
-                <div className="bg-card border border-border rounded-md px-1.5 py-0.5 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
+                <div className="bg-[#FDFBF7] border border-[#ebe8e2] rounded-md px-1.5 py-0.5 flex items-center gap-1.5">
+                  <Activity className="h-3.5 w-3.5 text-[#696863]" />
+                  <span className="text-xs text-[#696863] font-normal">
                     {zone && rpe ? `${zone} / ${rpe}` : zone || rpe}
                   </span>
                 </div>
@@ -161,11 +179,12 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
             )}
           </div>
         ) : isRest ? (
-          <div className="flex-1 flex items-center justify-center">
-            <span className="text-sm text-muted-foreground">Rest Day</span>
+          <div className="flex-1 flex items-center justify-center min-h-0">
+            <span className="text-xs text-muted-foreground text-center">Rest Day</span>
           </div>
         ) : null}
       </div>
+      </>
     );
   }
 );

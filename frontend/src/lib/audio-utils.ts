@@ -156,14 +156,12 @@ export async function createAudioProcessor(
  */
 export class WorkletPlaybackManager {
   private playbackNode: AudioWorkletNode | null = null
-  private context: AudioContext | null = null
   private initialized = false
 
   async initialize(): Promise<void> {
     if (this.initialized) return
 
     const ctx = getPlaybackContext()
-    this.context = ctx
 
     // Resume if suspended (browser autoplay policy)
     if (ctx.state === 'suspended') {
@@ -203,7 +201,6 @@ export class WorkletPlaybackManager {
       this.playbackNode.disconnect()
       this.playbackNode = null
     }
-    this.context = null
     this.initialized = false
   }
 }
@@ -249,42 +246,57 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
  * Check if the browser supports required audio APIs
  */
 export function checkAudioSupport(): { supported: boolean; error?: string } {
-  // Check HTTPS requirement (getUserMedia requires secure context)
-  if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+  try {
+    // Guard for non-browser environments (e.g., Storybook, SSR)
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return {
+        supported: false,
+        error: 'Voice features are not available in this environment.'
+      }
+    }
+
+    // Check HTTPS requirement (getUserMedia requires secure context)
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return {
+        supported: false,
+        error: 'Voice features require HTTPS for security. Please use https:// instead of http://'
+      }
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return {
+        supported: false,
+        error: 'Browser does not support microphone access. Try Chrome, Firefox, or Safari.'
+      }
+    }
+
+    if (!window.AudioContext && !(window as unknown as { webkitAudioContext: unknown }).webkitAudioContext) {
+      return {
+        supported: false,
+        error: 'Browser does not support Web Audio API. Please use a modern browser.'
+      }
+    }
+
+    // AudioWorklet is required for capture and playback
+    if (!window.AudioContext || !AudioContext.prototype.audioWorklet) {
+      return {
+        supported: false,
+        error: 'Browser does not support AudioWorklet. Please update to Chrome 66+, Firefox 76+, or Safari 14.1+.'
+      }
+    }
+
+    if (!window.WebSocket) {
+      return {
+        supported: false,
+        error: 'Browser does not support WebSocket connections.'
+      }
+    }
+
+    return { supported: true }
+  } catch {
     return {
       supported: false,
-      error: 'Voice features require HTTPS for security. Please use https:// instead of http://'
+      error: 'Voice features are not available in this environment.'
     }
   }
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    return {
-      supported: false,
-      error: 'Browser does not support microphone access. Try Chrome, Firefox, or Safari.'
-    }
-  }
-
-  if (!window.AudioContext && !(window as unknown as { webkitAudioContext: unknown }).webkitAudioContext) {
-    return {
-      supported: false,
-      error: 'Browser does not support Web Audio API. Please use a modern browser.'
-    }
-  }
-
-  // AudioWorklet is required for capture and playback
-  if (!window.AudioContext || !AudioContext.prototype.audioWorklet) {
-    return {
-      supported: false,
-      error: 'Browser does not support AudioWorklet. Please update to Chrome 66+, Firefox 76+, or Safari 14.1+.'
-    }
-  }
-
-  if (!window.WebSocket) {
-    return {
-      supported: false,
-      error: 'Browser does not support WebSocket connections.'
-    }
-  }
-
-  return { supported: true }
 }

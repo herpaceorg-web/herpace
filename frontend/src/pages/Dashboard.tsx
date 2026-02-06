@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto, PlanDetailResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
+import { WeekView } from '@/components/calendar/WeekView'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Sparkles, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { getWeekStart } from '@/utils/weekUtils'
+import { generateCyclePhasesForRange } from '@/utils/cyclePhases'
+import { CyclePhase } from '@/types/api'
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -31,6 +36,10 @@ export function Dashboard() {
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
   const prevRecalculationState = useRef<boolean>(false)
+
+  // NEW: WeekView preview state
+  const [showWeekViewPreview, setShowWeekViewPreview] = useState(false)
+  const [plan, setPlan] = useState<PlanDetailResponse | null>(null)
 
   useEffect(() => {
     loadDashboardData()
@@ -83,14 +92,15 @@ export function Dashboard() {
       const now = new Date()
       const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-      // Load plan summary, upcoming sessions, profile, and cycle position in parallel
+      // Load plan summary, upcoming sessions, profile, cycle position, and full plan in parallel
       // Cycle position returns 404 for DoNotTrack users — catch and treat as null
       // Profile returns 404 if user hasn't completed onboarding — catch and treat as null
-      const [summary, sessionsResponse, profile, cyclePos] = await Promise.all([
+      const [summary, sessionsResponse, profile, cyclePos, planData] = await Promise.all([
         api.get<PlanSummaryDto>(`/api/sessions/plan-summary?clientDate=${clientDate}`),
         api.get<UpcomingSessionsResponse>(`/api/sessions/upcoming?count=7&clientDate=${clientDate}`),
         api.get<ProfileResponse>('/api/profiles/me').catch(() => null),
-        api.get<CyclePositionDto>(`/api/cycle/position?clientDate=${clientDate}`).catch(() => null)
+        api.get<CyclePositionDto>(`/api/cycle/position?clientDate=${clientDate}`).catch(() => null),
+        api.get<PlanDetailResponse>('/api/plans/active').catch(() => null) // For WeekView preview
       ])
 
       // Sanity-check: if the backend returned a todaysSession whose date doesn't
@@ -127,6 +137,11 @@ export function Dashboard() {
       setUpcomingSessions(normalizedSessions)
       setDistanceUnit(profile?.distanceUnit === 1 ? 'mi' : 'km')
       setCyclePosition(cyclePos)
+
+      // NEW: Set up WeekView data if plan is available
+      if (planData) {
+        setPlan(planData)
+      }
 
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -221,6 +236,39 @@ export function Dashboard() {
       </div>
     )
   }, [upcomingSessions, distanceUnit, planSummary?.pendingConfirmation, loadDashboardData])
+
+  // NEW: WeekView calculations
+  const weekStart = useMemo(() => getWeekStart(new Date()), [])
+
+  const weekSessions = useMemo(() => {
+    if (!plan) return []
+    return plan.sessions.filter(session => {
+      const sessionDate = new Date(session.scheduledDate)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 6)
+      return sessionDate >= weekStart && sessionDate <= weekEnd
+    })
+  }, [plan, weekStart])
+
+  const displayedCyclePhases = useMemo(() => {
+    if (!cyclePosition) return new Map<string, CyclePhase>()
+
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6)
+
+    return generateCyclePhasesForRange(
+      weekStart,
+      weekEnd,
+      new Date(cyclePosition.lastPeriodStart),
+      cyclePosition.cycleLength
+    )
+  }, [cyclePosition, weekStart])
+
+  // Placeholder handler for WeekView day clicks
+  const handleDayClick = useCallback(() => {
+    // In Phase 2, clicking a day doesn't do anything special
+    // This will be enhanced in Phase 3
+  }, [])
 
   if (isLoading) {
     return (
@@ -349,7 +397,45 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Upcoming sessions */}
+      {/* NEW: Week View Preview (Beta) */}
+      {plan && (
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShowWeekViewPreview(!showWeekViewPreview)}
+            >
+              {showWeekViewPreview ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showWeekViewPreview ? 'Hide' : 'Show'} Week View
+            </Button>
+            <Badge variant="secondary" className="gap-1">
+              <FlaskConical className="h-3 w-3" />
+              Preview
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              Try our new calendar view
+            </span>
+          </div>
+          {showWeekViewPreview && (
+            <div className="border border-dashed border-border rounded-lg p-4 bg-muted/30">
+              <WeekView
+                sessions={weekSessions}
+                weekStart={weekStart}
+                cyclePhases={displayedCyclePhases}
+                distanceUnit={distanceUnit}
+                planStartDate={new Date(plan.startDate)}
+                planEndDate={new Date(plan.endDate)}
+                onDayClick={handleDayClick}
+                isExpanded={false}
+                onToggleExpand={() => {}}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upcoming sessions - UNCHANGED from original */}
       <div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
           <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona']">Upcoming Sessions</h2>
