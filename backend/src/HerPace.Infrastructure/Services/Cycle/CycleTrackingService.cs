@@ -27,7 +27,7 @@ public class CycleTrackingService : ICycleTrackingService
         _logger = logger;
     }
 
-    public async Task<CyclePositionDto?> GetCurrentCyclePositionAsync(Guid runnerId)
+    public async Task<CyclePositionDto?> GetCurrentCyclePositionAsync(Guid runnerId, DateTime? clientDate = null)
     {
         var runner = await _context.Runners
             .FirstOrDefaultAsync(r => r.Id == runnerId);
@@ -47,7 +47,7 @@ public class CycleTrackingService : ICycleTrackingService
 
         var lastPeriodStart = runner.LastPeriodStart.Value;
         var cycleLength = runner.CycleLength.Value;
-        var today = DateTime.UtcNow;
+        var today = clientDate ?? DateTime.UtcNow;
 
         // Calculate current position
         var dayInCycle = _cyclePhaseCalculator.GetDayInCycle(lastPeriodStart, today);
@@ -237,7 +237,7 @@ public class CycleTrackingService : ICycleTrackingService
         await _context.SaveChangesAsync();
 
         // Get updated cycle position (only if we have start date)
-        var updatedPosition = periodStartDate.HasValue ? await GetCurrentCyclePositionAsync(runnerId) : null;
+        var updatedPosition = periodStartDate.HasValue ? await GetCurrentCyclePositionAsync(runnerId, periodStartDate) : null;
 
         var message = periodStartDate.HasValue && periodEndDate.HasValue
             ? (triggeredRegeneration
