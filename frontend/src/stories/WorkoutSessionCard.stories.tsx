@@ -1145,25 +1145,6 @@ export const CyclePhaseExamples: Story = {
     layout: 'padded',
   },
   render: () => {
-    const baseSession: SessionDetailDto = {
-      id: '1',
-      sessionName: '30 Minute Easy Run',
-      workoutType: WorkoutType.Easy,
-      scheduledDate: new Date().toISOString(),
-      distance: 5,
-      durationMinutes: 30,
-      intensityLevel: IntensityLevel.Low,
-      isCompleted: false,
-      isSkipped: false,
-      sessionNumberInPhase: 5,
-      totalSessionsInPhase: 15,
-      warmUp: '5 minutes easy walking\nGentle dynamic stretches\nStart running at very easy pace',
-      workoutTips: [
-        'Maintain a conversational pace throughout the run',
-        'Focus on consistent breathing and good running form',
-      ]
-    }
-
     return (
       <div className="max-w-4xl mx-auto space-y-12">
         {/* Just Follicular Phase */}
