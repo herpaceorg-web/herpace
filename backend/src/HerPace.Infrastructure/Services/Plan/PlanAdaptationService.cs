@@ -132,19 +132,17 @@ public class PlanAdaptationService : IPlanAdaptationService
             }
         }
 
-        // Enqueue recalculation job
-        var jobId = BackgroundJob.Enqueue<IPlanAdaptationService>(
-            service => service.RecalculatePlanAsync(trainingPlanId));
-
-        plan.LastRecalculationJobId = jobId;
-        plan.LastRecalculationRequestedAt = DateTime.UtcNow;
+        // Set pending confirmation state instead of immediately enqueuing job
+        plan.PendingRecalculationConfirmation = true;
+        plan.RecalculationConfirmationRequestedAt = DateTime.UtcNow;
+        plan.RecalculationConfirmationRespondedAt = null;
+        plan.RecalculationConfirmationAccepted = null;
         plan.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
         _logger.LogInformation(
-            "Recalculation job {JobId} enqueued for plan {PlanId}",
-            jobId,
+            "Recalculation confirmation requested for plan {PlanId}. User must confirm to proceed.",
             trainingPlanId);
 
         return true;
@@ -398,5 +396,91 @@ public class PlanAdaptationService : IPlanAdaptationService
 
             throw; // Re-throw for Hangfire retry mechanism
         }
+    }
+
+    public async Task<bool> ConfirmRecalculationAsync(Guid trainingPlanId)
+    {
+        _logger.LogInformation("User confirming recalculation for plan {PlanId}", trainingPlanId);
+
+        var plan = await _context.TrainingPlans
+            .FirstOrDefaultAsync(tp => tp.Id == trainingPlanId);
+
+        if (plan == null || plan.Status != PlanStatus.Active || !plan.PendingRecalculationConfirmation)
+        {
+            _logger.LogWarning("Plan {PlanId} not found, not active, or no pending confirmation", trainingPlanId);
+            return false;
+        }
+
+        // Check if recalculation already in progress
+        if (!string.IsNullOrEmpty(plan.LastRecalculationJobId))
+        {
+            try
+            {
+                var jobState = JobStorage.Current
+                    .GetConnection()
+                    .GetStateData(plan.LastRecalculationJobId);
+
+                if (jobState?.Name == "Processing" || jobState?.Name == "Enqueued")
+                {
+                    _logger.LogInformation(
+                        "Recalculation already in progress for plan {PlanId} (Job {JobId})",
+                        trainingPlanId,
+                        plan.LastRecalculationJobId);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking job state for {JobId}", plan.LastRecalculationJobId);
+            }
+        }
+
+        // Enqueue recalculation job
+        var jobId = BackgroundJob.Enqueue<IPlanAdaptationService>(
+            service => service.RecalculatePlanAsync(trainingPlanId));
+
+        plan.LastRecalculationJobId = jobId;
+        plan.LastRecalculationRequestedAt = DateTime.UtcNow;
+        plan.PendingRecalculationConfirmation = false;
+        plan.RecalculationConfirmationRespondedAt = DateTime.UtcNow;
+        plan.RecalculationConfirmationAccepted = true;
+        plan.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Recalculation job {JobId} enqueued for plan {PlanId} after user confirmation",
+            jobId,
+            trainingPlanId);
+
+        return true;
+    }
+
+    public async Task<bool> DeclineRecalculationAsync(Guid trainingPlanId)
+    {
+        _logger.LogInformation("User declining recalculation for plan {PlanId}", trainingPlanId);
+
+        var plan = await _context.TrainingPlans
+            .FirstOrDefaultAsync(tp => tp.Id == trainingPlanId);
+
+        if (plan == null)
+        {
+            _logger.LogWarning("Plan {PlanId} not found", trainingPlanId);
+            return false;
+        }
+
+        // Clear pending confirmation state
+        plan.PendingRecalculationConfirmation = false;
+        plan.RecalculationConfirmationRespondedAt = DateTime.UtcNow;
+        plan.RecalculationConfirmationAccepted = false;
+        plan.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Recalculation declined by user for plan {PlanId}",
+            trainingPlanId);
+
+        return true;
     }
 }

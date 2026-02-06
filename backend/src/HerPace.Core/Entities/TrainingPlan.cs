@@ -39,6 +39,12 @@ public class TrainingPlan
     public string? LastRecalculationSummary { get; set; } // AI-generated summary shown to user after recalculation
     public DateTime? RecalculationSummaryViewedAt { get; set; } // When user dismissed the recalculation summary
 
+    // Recalculation Confirmation Tracking
+    public bool PendingRecalculationConfirmation { get; set; } = false; // User needs to confirm recalculation
+    public DateTime? RecalculationConfirmationRequestedAt { get; set; } // When confirmation was requested
+    public DateTime? RecalculationConfirmationRespondedAt { get; set; } // When user responded (yes or no)
+    public bool? RecalculationConfirmationAccepted { get; set; } // User's response (true = yes, false = no, null = not answered)
+
     // Plan Timeline
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

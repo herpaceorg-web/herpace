@@ -79,7 +79,9 @@ public class SessionCompletionResponse
 {
     public Guid SessionId { get; set; }
     public bool Success { get; set; }
-    public bool RecalculationTriggered { get; set; } // Did this action trigger plan recalculation?
+    public bool RecalculationTriggered { get; set; } // Legacy - kept for compatibility
+    public bool RecalculationRequested { get; set; } // NEW - threshold met, recalculation needed
+    public bool PendingConfirmation { get; set; } // NEW - user needs to respond to confirmation modal
     public string? Message { get; set; }
 }
 
@@ -94,6 +96,7 @@ public class PlanSummaryDto
     public DateTime RaceDate { get; set; }
     public int DaysUntilRace { get; set; }
     public bool HasPendingRecalculation { get; set; } // Is a recalculation job currently running?
+    public bool PendingConfirmation { get; set; } // NEW - user needs to confirm recalculation
     public string? RecalculationSummary { get; set; } // AI-generated summary (null if viewed or no recalculation)
     public LatestAdaptationDto? LatestAdaptation { get; set; } // Latest adaptation details with before/after changes
     public SessionDetailDto? TodaysSession { get; set; } // Today's session (null if no session today)
@@ -106,4 +109,14 @@ public class PlanSummaryDto
 public class DismissSummaryRequest
 {
     // Empty - just triggers timestamp update
+}
+
+/// <summary>
+/// Response after confirming or declining plan recalculation.
+/// </summary>
+public class RecalculationConfirmationResponse
+{
+    public bool Success { get; set; }
+    public bool RecalculationEnqueued { get; set; } // Was job enqueued after confirmation?
+    public string? Message { get; set; }
 }

@@ -13,6 +13,7 @@ import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
 import { CompleteSessionDialog } from './CompleteSessionDialog'
+import { RecalculationConfirmationModal } from './RecalculationConfirmationModal'
 import { api } from '@/lib/api-client'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -123,6 +124,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(props.session)
+  const [showRecalculationModal, setShowRecalculationModal] = useState(false)
   const toast = useToast()
 
   // Determine if we're using session DTO or legacy props
@@ -230,8 +232,11 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
       console.log('Session skipped successfully:', response)
 
-      // Show toast if plan adaptation was triggered
-      if (response.recalculationTriggered) {
+      // Show confirmation modal if user needs to approve recalculation
+      if (response.pendingConfirmation) {
+        setShowRecalculationModal(true)
+      } else if (response.recalculationTriggered) {
+        // Only show automatic toast if recalculation was triggered WITHOUT confirmation
         toast.info(
           "Training Plan Adapting",
           "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
@@ -258,8 +263,11 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
     console.log('Session completed successfully:', response)
 
-    // Show toast if plan adaptation was triggered
-    if (response.recalculationTriggered) {
+    // Show confirmation modal if user needs to approve recalculation
+    if (response.pendingConfirmation) {
+      setShowRecalculationModal(true)
+    } else if (response.recalculationTriggered) {
+      // Only show automatic toast if recalculation was triggered WITHOUT confirmation
       toast.info(
         "Training Plan Adapting",
         "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
@@ -277,6 +285,25 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
     props.onSessionUpdated?.()
   }
+
+  const handleRecalculationConfirmed = () => {
+    // User confirmed - show toast and trigger parent refresh to start polling
+    toast.info(
+      "Training Plan Adapting",
+      "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
+    )
+    props.onSessionUpdated?.() // Refresh dashboard to start polling
+  }
+
+  const handleRecalculationDeclined = () => {
+    // User declined - show confirmation toast
+    toast.success(
+      "Plan Unchanged",
+      "Got it! We'll keep your current plan as-is."
+    )
+    props.onSessionUpdated?.() // Refresh to clear pending state
+  }
+
   // Format date for display with Today/Tomorrow prefix
   const sessionDate = isSessionMode && localSession ? new Date(localSession.scheduledDate) : new Date()
   const dayOfWeek = sessionDate.toLocaleDateString('en-US', { weekday: 'short' })
@@ -848,6 +875,16 @@ function WarmupSteps({ steps }: { steps: SessionStep[] }) {
           </div>
         ))}
       </div>
+
+      {/* Recalculation Confirmation Modal */}
+      {isSessionMode && (
+        <RecalculationConfirmationModal
+          open={showRecalculationModal}
+          onOpenChange={setShowRecalculationModal}
+          onConfirmed={handleRecalculationConfirmed}
+          onDeclined={handleRecalculationDeclined}
+        />
+      )}
     </>
   )
 }
