@@ -64,8 +64,10 @@ export function CompleteSessionDialog({
         voiceTranscript: transcript
       })
       setShowConfirmation(true)
+      // Stop voice session when showing confirmation
+      stopSession()
     }
-  }, [transcript])
+  }, [transcript, stopSession])
 
   const handleError = useCallback((error: Error) => {
     console.error('Voice session error:', error)
@@ -98,9 +100,16 @@ export function CompleteSessionDialog({
       voiceState: state,
       error,
       sessionType: session.workoutType,
-      sessionName: session.sessionName
+      sessionName: session.sessionName,
+      showConfirmation,
+      hasAttemptedConnection: hasAttemptedConnection.current
     })
-  }, [open, inputMode, isSupported, isRestDay, state, error, session])
+  }, [open, inputMode, isSupported, isRestDay, state, error, session, showConfirmation])
+
+  // Debug: Log when reset effect runs
+  useEffect(() => {
+    console.log('🔄 Reset effect triggered - open:', open, 'state:', state)
+  }, [open, state])
 
   // Start session when voice mode is selected
   useEffect(() => {
@@ -113,18 +122,20 @@ export function CompleteSessionDialog({
   // Reset when modal opens/closes
   useEffect(() => {
     if (open) {
+      // Reset UI state when modal opens
       setInputMode('initial')
       setTranscript('')
       setCompletionData({})
       setShowConfirmation(false)
       hasAttemptedConnection.current = false
     } else {
-      if (state !== 'idle') {
-        stopSession()
-      }
+      // Cleanup when modal closes - stop voice session if active
+      stopSession()
       hasAttemptedConnection.current = false
     }
-  }, [open, state, stopSession])
+    // Only depend on 'open' - don't react to state changes!
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
