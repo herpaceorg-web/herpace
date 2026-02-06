@@ -27,7 +27,7 @@ export function CyclePhaseTips({ tips }: CyclePhaseTipsProps) {
             <div className="space-y-2">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">Nutrition Guidance</h4>
               <ul className="space-y-2">
-                {tips.nutritionTips.map((tip, index) => (
+                {(tips.nutritionTips || []).map((tip, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-purple-600 dark:text-purple-400 mt-1">•</span>
                     <span className="text-sm">{tip}</span>
@@ -41,7 +41,7 @@ export function CyclePhaseTips({ tips }: CyclePhaseTipsProps) {
             <div className="space-y-2">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">Rest & Recovery</h4>
               <ul className="space-y-2">
-                {tips.restTips.map((tip, index) => (
+                {(tips.restTips || []).map((tip, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-purple-600 dark:text-purple-400 mt-1">•</span>
                     <span className="text-sm">{tip}</span>
@@ -55,7 +55,7 @@ export function CyclePhaseTips({ tips }: CyclePhaseTipsProps) {
             <div className="space-y-2">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">Injury Prevention</h4>
               <ul className="space-y-2">
-                {tips.injuryPreventionTips.map((tip, index) => (
+                {(tips.injuryPreventionTips || []).map((tip, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-purple-600 dark:text-purple-400 mt-1">•</span>
                     <span className="text-sm">{tip}</span>
@@ -69,7 +69,7 @@ export function CyclePhaseTips({ tips }: CyclePhaseTipsProps) {
             <div className="space-y-2">
               <h4 className="font-semibold text-sm text-muted-foreground mb-3">Mood & Energy Insights</h4>
               <ul className="space-y-2">
-                {tips.moodInsights.map((tip, index) => (
+                {(tips.moodInsights || []).map((tip, index) => (
                   <li key={index} className="flex items-start gap-2">
                     <span className="text-purple-600 dark:text-purple-400 mt-1">•</span>
                     <span className="text-sm">{tip}</span>

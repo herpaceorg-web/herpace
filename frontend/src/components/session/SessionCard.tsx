@@ -60,10 +60,10 @@ export function SessionCard({ session, cyclePhaseTips, onSessionUpdated, distanc
     if (!cyclePhaseTips) return null
 
     const allTips = [
-      ...cyclePhaseTips.nutritionTips.map(tip => ({ category: 'Nutrition', tip })),
-      ...cyclePhaseTips.restTips.map(tip => ({ category: 'Rest', tip })),
-      ...cyclePhaseTips.injuryPreventionTips.map(tip => ({ category: 'Injury Prevention', tip })),
-      ...cyclePhaseTips.moodInsights.map(tip => ({ category: 'Mood', tip })),
+      ...(cyclePhaseTips.nutritionTips || []).map(tip => ({ category: 'Nutrition', tip })),
+      ...(cyclePhaseTips.restTips || []).map(tip => ({ category: 'Rest', tip })),
+      ...(cyclePhaseTips.injuryPreventionTips || []).map(tip => ({ category: 'Injury Prevention', tip })),
+      ...(cyclePhaseTips.moodInsights || []).map(tip => ({ category: 'Mood', tip })),
     ]
 
     if (allTips.length === 0) return null

@@ -80,11 +80,11 @@ export function SessionChangeCard({ change }: SessionChangeCardProps) {
             <span className="text-gray-600 dark:text-gray-400">Type:</span>
             <div className="flex items-center gap-2">
               <span className="text-red-600 dark:text-red-400 line-through">
-                {workoutTypeLabels[change.oldWorkoutType]}
+                {workoutTypeLabels[change.oldWorkoutType] ?? 'Unknown'}
               </span>
               <span className="text-gray-400">→</span>
               <span className="text-green-600 dark:text-green-400 font-medium">
-                {workoutTypeLabels[change.newWorkoutType]}
+                {workoutTypeLabels[change.newWorkoutType] ?? 'Unknown'}
               </span>
             </div>
           </div>
@@ -96,11 +96,11 @@ export function SessionChangeCard({ change }: SessionChangeCardProps) {
             <span className="text-gray-600 dark:text-gray-400">Intensity:</span>
             <div className="flex items-center gap-2">
               <span className="text-red-600 dark:text-red-400 line-through">
-                {intensityLabels[change.oldIntensityLevel]}
+                {intensityLabels[change.oldIntensityLevel] ?? 'Unknown'}
               </span>
               <span className="text-gray-400">→</span>
               <span className="text-green-600 dark:text-green-400 font-medium">
-                {intensityLabels[change.newIntensityLevel]}
+                {intensityLabels[change.newIntensityLevel] ?? 'Unknown'}
               </span>
             </div>
           </div>
