@@ -285,10 +285,14 @@ export function Dashboard() {
       {/* Hormone Cycle Chart */}
       <div>
         <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Your Hormone Cycle</h2>
-        <HormoneCycleChart
+        {/* Temporarily disabled to debug */}
+        {/* <HormoneCycleChart
           cyclePosition={cyclePosition}
           onPeriodLogged={handlePeriodLogged}
-        />
+        /> */}
+        <div className="p-6 text-center text-muted-foreground border border-dashed rounded-lg">
+          Chart temporarily disabled
+        </div>
       </div>
 
       {/* Today's workout or pre-training message */}
