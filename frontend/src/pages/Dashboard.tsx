@@ -182,18 +182,12 @@ export function Dashboard() {
       )}
 
       {/* Hormone Cycle Chart */}
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Hormone Cycle</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <HormoneCycleChart
-              cyclePosition={cyclePosition}
-              onPeriodLogged={(updated) => setCyclePosition(updated)}
-            />
-          </CardContent>
-        </Card>
+      <div className="w-full lg:w-2/3 mx-auto">
+        <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Your Hormone Cycle</h2>
+        <HormoneCycleChart
+          cyclePosition={cyclePosition}
+          onPeriodLogged={(updated) => setCyclePosition(updated)}
+        />
       </div>
 
       {/* Today's workout or pre-training message */}

@@ -193,13 +193,6 @@ export const WithCustomBackground: Story = {
     },
     onPeriodLogged: mockOnPeriodLogged,
   },
-  decorators: [
-    (Story) => (
-      <div className="bg-gray-100 p-8">
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export const Responsive: Story = {
