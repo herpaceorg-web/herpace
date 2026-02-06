@@ -822,6 +822,16 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           startInLogMode={isRestDay}
         />
       )}
+
+      {/* Recalculation Confirmation Modal */}
+      {isSessionMode && (
+        <RecalculationConfirmationModal
+          open={showRecalculationModal}
+          onOpenChange={setShowRecalculationModal}
+          onConfirmed={handleRecalculationConfirmed}
+          onDeclined={handleRecalculationDeclined}
+        />
+      )}
     </div>
   )
 }
@@ -875,16 +885,6 @@ function WarmupSteps({ steps }: { steps: SessionStep[] }) {
           </div>
         ))}
       </div>
-
-      {/* Recalculation Confirmation Modal */}
-      {isSessionMode && (
-        <RecalculationConfirmationModal
-          open={showRecalculationModal}
-          onOpenChange={setShowRecalculationModal}
-          onConfirmed={handleRecalculationConfirmed}
-          onDeclined={handleRecalculationDeclined}
-        />
-      )}
     </>
   )
 }
