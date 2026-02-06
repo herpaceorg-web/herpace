@@ -9,11 +9,6 @@ const CYCLE_PHASE_ITEMS = [
     label: 'Follicular Phase',
   },
   {
-    phase: CyclePhase.Ovulatory,
-    icon: Sun,
-    label: 'Ovulation',
-  },
-  {
     phase: CyclePhase.Luteal,
     icon: Leaf,
     label: 'Luteal Phase',
@@ -22,6 +17,11 @@ const CYCLE_PHASE_ITEMS = [
     phase: CyclePhase.Menstrual,
     icon: Snowflake,
     label: 'Menstruation',
+  },
+  {
+    phase: CyclePhase.Ovulatory,
+    icon: Sun,
+    label: 'Ovulation',
   },
 ]
 

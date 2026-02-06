@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart } from 'lucide-react'
+import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, TrendingUp, Sparkles, Heart, Lightbulb } from 'lucide-react'
 import { cn, displayDistance } from '@/lib/utils'
 import type { SessionDetailDto, CyclePhaseTipsDto, CompleteSessionRequest, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
@@ -51,19 +51,71 @@ export interface WorkoutSessionCardProps {
   onMenuClick?: () => void
 }
 
-// Cycle phase icon mapping
-const cyclePhaseIcons: Record<CyclePhase, React.ReactNode> = {
-  [CyclePhase.Menstrual]: <Snowflake className="h-4 w-4" />,
-  [CyclePhase.Follicular]: <Sprout className="h-4 w-4" />,
-  [CyclePhase.Ovulatory]: <Sun className="h-4 w-4" />,
-  [CyclePhase.Luteal]: <Leaf className="h-4 w-4" />,
-}
-
-const cyclePhaseLabels: Record<CyclePhase, string> = {
-  [CyclePhase.Menstrual]: 'Menstrual',
-  [CyclePhase.Follicular]: 'Follicular',
-  [CyclePhase.Ovulatory]: 'Ovulatory',
-  [CyclePhase.Luteal]: 'Luteal',
+// Helper function to get phase display info based on cycle phase and menstruation day
+const getPhaseDisplayInfo = (phase: CyclePhase, menstruationDay?: number): { items: Array<{ icon: React.ReactNode; label: string }> } => {
+  switch (phase) {
+    case CyclePhase.Menstrual:
+      // Menstruation happens during follicular phase - show both with day numbers
+      // The menstruation day is also the follicular phase day
+      // TODO: When backend provides menstruationConfirmed status, conditionally show "Menstruation Day" vs "Predicted Menstruation Day"
+      return {
+        items: [
+          {
+            icon: <Sprout className="h-4 w-4" />,
+            label: menstruationDay ? `Follicular Phase Day ${menstruationDay}` : 'Follicular Phase'
+          },
+          {
+            icon: <Snowflake className="h-4 w-4" />,
+            label: menstruationDay ? `Predicted Menstruation Day ${menstruationDay}` : 'Predicted Menstruation'
+          }
+        ]
+      }
+    case CyclePhase.Follicular:
+      // Just follicular phase, no special event
+      // TODO: Add follicular phase day number when backend provides it
+      return {
+        items: [
+          {
+            icon: <Sprout className="h-4 w-4" />,
+            label: 'Follicular Phase'
+          }
+        ]
+      }
+    case CyclePhase.Ovulatory:
+      // Ovulation happens at the end of follicular phase - show both
+      return {
+        items: [
+          {
+            icon: <Sprout className="h-4 w-4" />,
+            label: 'Follicular Phase'
+          },
+          {
+            icon: <Sun className="h-4 w-4" />,
+            label: 'Predicted Ovulation Day'
+          }
+        ]
+      }
+    case CyclePhase.Luteal:
+      // Luteal phase
+      // TODO: Add luteal phase day number when backend provides it
+      return {
+        items: [
+          {
+            icon: <Leaf className="h-4 w-4" />,
+            label: 'Luteal Phase'
+          }
+        ]
+      }
+    default:
+      return {
+        items: [
+          {
+            icon: <Calendar className="h-4 w-4" />,
+            label: 'Unknown Phase'
+          }
+        ]
+      }
+  }
 }
 
 export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
@@ -100,16 +152,19 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
   // Build cycle phases from session
   const cyclePhases = isSessionMode && localSession!.cyclePhase !== undefined
-    ? [{
-        phaseName: `${cyclePhaseLabels[localSession!.cyclePhase]} Phase`,
-        icon: cyclePhaseIcons[localSession!.cyclePhase]
-      }]
+    ? (() => {
+        const phaseInfo = getPhaseDisplayInfo(localSession!.cyclePhase, localSession!.menstruationDay)
+        return phaseInfo.items.map(item => ({
+          phaseName: item.label,
+          icon: item.icon
+        }))
+      })()
     : props.cyclePhases
 
   // Parse session description into workout content
   const sessionContent: SessionContentProps = isSessionMode
     ? {
-        heading: 'Workout Details',
+        heading: 'Session Instructions',
         steps: localSession!.sessionDescription
           ? [{
               number: 1,
@@ -221,22 +276,31 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
     props.onSessionUpdated?.()
   }
-  // Format date for display
+  // Format date for display with Today/Tomorrow prefix
   const sessionDate = isSessionMode && localSession ? new Date(localSession.scheduledDate) : new Date()
   const dayOfWeek = sessionDate.toLocaleDateString('en-US', { weekday: 'short' })
   const monthDay = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const dateString = `${dayOfWeek} ${monthDay}`
+
+  // Check if date is today or tomorrow
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const sessionDateOnly = new Date(sessionDate)
+  sessionDateOnly.setHours(0, 0, 0, 0)
+
+  let dateString = `${dayOfWeek} ${monthDay}`
+  if (sessionDateOnly.getTime() === today.getTime()) {
+    dateString = `Today, ${dayOfWeek} ${monthDay}`
+  } else if (sessionDateOnly.getTime() === tomorrow.getTime()) {
+    dateString = `Tomorrow, ${dayOfWeek} ${monthDay}`
+  }
 
 
   // Build session progress text
   const progressText = isSessionMode && localSession?.sessionNumberInPhase && localSession?.totalSessionsInPhase
     ? `Session ${localSession.sessionNumberInPhase}/${localSession.totalSessionsInPhase} This Phase`
     : sessionProgress
-
-  // Build menstruation day text
-  const menstruationText = isSessionMode && localSession?.menstruationDay
-    ? `Menstruation Day ${localSession.menstruationDay}`
-    : null
 
   // Get phase guidance from session (brief cycle-specific tip from Gemini)
   const phaseGuidance = isSessionMode ? localSession?.phaseGuidance : null
@@ -281,49 +345,20 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   return (
     <div className="w-full">
       {/* Phase tracking section */}
-      {(cyclePhases && cyclePhases.length > 0) || menstruationText || progressText || stageInfo ? (
-        <div className="bg-[#fefdfb] border border-[#ebe8e2] rounded-t-lg px-2 pb-3 flex items-center gap-3 flex-wrap mb-[-12px] w-fit">
-          {cyclePhases?.map((phase, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && (
-                <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
-              )}
-              <div className="flex items-center gap-2 text-sm text-[#696863] font-medium">
-                <div className="flex items-center justify-center h-4 w-4">
-                  {phase.icon || <Calendar className="h-4 w-4" />}
-                </div>
-                <p className="leading-[20px]">{phase.phaseName}</p>
-              </div>
-            </React.Fragment>
-          ))}
-          {menstruationText && (
-            <>
-              {cyclePhases && cyclePhases.length > 0 && (
-                <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
-              )}
-              <div className="flex items-center gap-2 text-sm text-[#ed7c7c] font-medium">
-                <Snowflake className="h-4 w-4" />
-                <p className="leading-[20px]">{menstruationText}</p>
-              </div>
-            </>
-          )}
-          {progressText && !isRestDay && (
-            <>
-              {((cyclePhases && cyclePhases.length > 0) || menstruationText) && (
-                <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
-              )}
-              <div className="flex items-center justify-center px-2 py-0.5">
-                <p className="text-[#696863] text-xs font-normal leading-[16px]">
-                  {progressText}
-                </p>
-              </div>
-            </>
+      {progressText || stageInfo || isSessionMode ? (
+        <div className="bg-[#fefdfb] border border-[#ebe8e2] rounded-t-lg px-2 pt-1 pb-3 flex items-center gap-3 flex-wrap mb-[-12px] w-fit">
+          {/* Date - first element */}
+          {isSessionMode && (
+            <div className="flex items-center gap-2 text-xs text-[#696863] font-normal">
+              <Calendar className="h-4 w-4" />
+              <p className="leading-[20px]">{dateString}</p>
+            </div>
           )}
 
           {/* Training stage badge with info popover */}
           {stageInfo && (
             <>
-              {((cyclePhases && cyclePhases.length > 0) || menstruationText || progressText) && (
+              {isSessionMode && (
                 <Separator orientation="vertical" className="h-7 bg-[#ebe8e2]" />
               )}
               <Popover>
@@ -356,7 +391,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
       <Card
         className={cn(
           'bg-[#fcf9f3] border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7]',
-          cyclePhases && cyclePhases.length > 0
+          (progressText || stageInfo || isSessionMode)
             ? 'rounded-tl-none rounded-tr-2xl rounded-b-2xl'
             : 'rounded-2xl'
         )}
@@ -366,15 +401,9 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           <div className="flex gap-4 items-start mb-4">
             {/* Session name and metrics */}
             <div className="flex-1 flex flex-col gap-2">
-              {/* Date */}
-              {isSessionMode && (
-                <div className="text-sm text-[#696863]">
-                  {dateString}
-                </div>
-              )}
               <div className="flex justify-between items-start gap-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-2xl font-semibold text-[#3d3826] font-[family-name:'Petrona']">
+                  <h2 className="text-2xl font-normal text-[#3d3826] font-[family-name:'Petrona']">
                     {sessionName}
                   </h2>
                   {props.session?.isRecentlyUpdated && (
@@ -428,7 +457,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   {/* Intensity hearts display */}
                   {(isSessionMode ? localSession?.intensityLevel : props.intensityLevel) !== undefined && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-[#696863]">Intensity</span>
+                      <span className="text-xs font-normal text-[#696863]">Intensity</span>
                       <div className="flex gap-1 items-center">
                         {[...Array(3)].map((_, i) => {
                           const level = isSessionMode ? localSession!.intensityLevel : props.intensityLevel!
@@ -439,7 +468,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                               key={i}
                               className="h-4 w-4"
                               fill={i < heartCount ? heartColor : 'none'}
-                              stroke={i < heartCount ? heartColor : 'rgb(209, 213, 219)'}
+                              stroke={heartColor}
                               strokeWidth={2}
                             />
                           )
@@ -452,6 +481,42 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
             </div>
           </div>
 
+          {/* Phase box - show cycle phase with guidance */}
+          {!isRestDay && (cyclePhases || phaseGuidance || progressText) && (
+            <div className="mb-4 p-4 bg-[#fdfbf7] border border-[#ebe8e2] rounded-lg">
+              <div className={`flex items-center gap-2 ${phaseGuidance ? 'mb-2' : ''}`}>
+                {cyclePhases && cyclePhases.map((phase, index) => (
+                  <React.Fragment key={index}>
+                    {index > 0 && (
+                      <Separator orientation="vertical" className="h-4 bg-[#ebe8e2]" />
+                    )}
+                    <span className="text-foreground flex items-center h-4">
+                      {phase.icon || <Calendar className="h-4 w-4" />}
+                    </span>
+                    <span className="text-sm font-semibold text-foreground flex items-center h-4">
+                      {phase.phaseName}
+                    </span>
+                  </React.Fragment>
+                ))}
+                {progressText && (
+                  <>
+                    {cyclePhases && cyclePhases.length > 0 && (
+                      <Separator orientation="vertical" className="h-4 bg-[#ebe8e2]" />
+                    )}
+                    <span className="text-sm text-[#696863] flex items-center h-4">
+                      {progressText}
+                    </span>
+                  </>
+                )}
+              </div>
+              {phaseGuidance && (
+                <p className="text-sm text-[#85837d] leading-relaxed">
+                  {phaseGuidance}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Tabs for Warmup/Session/Recover - Only show for non-rest days */}
           {!isRestDay && (
             <Tabs defaultValue="session" className="w-full">
@@ -459,21 +524,21 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                 {warmupContent && (
                   <TabsTrigger
                     value="warmup"
-                    className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
+                    className="flex-1 text-[#3d3826] text-sm font-medium rounded-[10px] py-1"
                   >
                     Warmup
                   </TabsTrigger>
                 )}
                 <TabsTrigger
                   value="session"
-                  className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
+                  className="flex-1 text-[#3d3826] text-sm font-medium rounded-[10px] py-1"
                 >
                   Session
                 </TabsTrigger>
                 {recoverContent && (
                   <TabsTrigger
                     value="recover"
-                    className="flex-1 text-[#3d3826] text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-[10px] py-1"
+                    className="flex-1 text-[#3d3826] text-sm font-medium rounded-[10px] py-1"
                   >
                     Recover
                   </TabsTrigger>
@@ -496,22 +561,13 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
 
               <TabsContent value="session" className="mt-0">
                 <div className="bg-[#f3f0e7] rounded-lg p-4">
-                  {/* Show phase guidance insight if available */}
-                  {phaseGuidance && (
-                    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
-                      <p className="text-sm font-medium text-purple-700">
-                        💡 {phaseGuidance}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Show workout tips if available */}
-                  {allTips.length > 0 ? (
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium text-[#3d3826]">
-                        Workout Tips
+                  {/* Show workout tips at the top if available */}
+                  {allTips.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-medium text-[#3d3826] mb-3">
+                        Training Tips
                       </h3>
-                      <ul className="space-y-3">
+                      <ul className="space-y-2">
                         {allTips.map((tip, index) => (
                           <li
                             key={index}
@@ -521,28 +577,11 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                           </li>
                         ))}
                       </ul>
-
-                      {/* Show session description if available */}
-                      {sessionContent.steps.length > 0 && sessionContent.steps[0].instructions.length > 0 && (
-                        <div className="mt-6 pt-4 border-t border-[#ebe8e2]">
-                          <h3 className="text-sm font-medium text-[#3d3826] mb-3">
-                            Session Details
-                          </h3>
-                          <ul className="space-y-2">
-                            {sessionContent.steps[0].instructions.map((instruction, index) => (
-                              <li
-                                key={index}
-                                className="text-sm text-[#85837d] leading-relaxed list-disc ml-5"
-                              >
-                                {instruction}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
-                  ) : (
-                    // Fallback to original step display if no tips
+                  )}
+
+                  {/* Always show stepper format for session steps */}
+                  {sessionContent.steps.length > 0 && (
                     <>
                       {sessionContent.heading && (
                         <h3 className="text-sm font-medium text-[#3d3826] mb-4">
@@ -567,7 +606,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                               {/* Step content */}
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="text-base font-normal text-[#141414]">
+                                  <h4 className="text-base font-normal text-foreground">
                                     {step.title}
                                   </h4>
                                   {step.duration && (
@@ -648,19 +687,19 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => setIsCompleteDialogOpen(true)}
-                      className="flex-1"
-                    >
-                      Complete Session
-                    </Button>
-                    <Button
-                      size="sm"
                       variant="outline"
                       onClick={handleSkip}
                       disabled={isSkipping}
                       className="flex-1"
                     >
                       {isSkipping ? 'Skipping...' : 'Skip Session'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsCompleteDialogOpen(true)}
+                      className="flex-1"
+                    >
+                      Complete Session
                     </Button>
                   </div>
                 )
@@ -708,7 +747,7 @@ function WarmupSteps({ steps }: { steps: SessionStep[] }) {
               {/* Step content */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h4 className="text-base font-normal text-[#141414]">{step.title}</h4>
+                  <h4 className="text-base font-normal text-foreground">{step.title}</h4>
                   {step.duration && (
                     <Badge
                       variant="outline"

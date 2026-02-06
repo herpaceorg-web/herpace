@@ -107,6 +107,14 @@ export const Default: Story = {
       },
     ],
     sessionProgress: 'Session 5/15 This Phase',
+    warmupContent: (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          5 minutes easy walking{'\n'}Dynamic stretches: leg swings, walking lunges, high knees{'\n'}Start run at very easy pace for first 5 minutes
+        </p>
+      </div>
+    ),
     sessionContent: {
       heading: 'Easy Run Instructions',
       steps: [
@@ -133,20 +141,19 @@ export const WithoutPhaseTracking: Story = {
     distanceUnit: 'km',
     durationMinutes: 45,
     zone: 'Zone 3-4 / RPE 5-7',
+    warmupContent: (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          10 minutes easy jogging to gradually increase heart rate{'\n'}Include 3-4 dynamic stretches (leg swings, high knees){'\n'}Prepare mentally for the tempo effort
+        </p>
+      </div>
+    ),
     sessionContent: {
       heading: 'Tempo Run Instructions',
       steps: [
         {
           number: 1,
-          title: 'Warm Up',
-          duration: 10,
-          instructions: [
-            'Start with easy jogging to gradually increase heart rate',
-            'Include 3-4 dynamic stretches (leg swings, high knees)',
-          ],
-        },
-        {
-          number: 2,
           title: 'Tempo Effort',
           duration: 25,
           instructions: [
@@ -155,17 +162,16 @@ export const WithoutPhaseTracking: Story = {
             'Focus on breathing rhythm and relaxed shoulders',
           ],
         },
-        {
-          number: 3,
-          title: 'Cool Down',
-          duration: 10,
-          instructions: [
-            'Gradually slow to easy jogging pace',
-            'Focus on bringing heart rate down gradually',
-          ],
-        },
       ],
     },
+    recoverContent: (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Recovery</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          10 minutes easy jogging cool down{'\n'}Gradually slow to easy pace{'\n'}Focus on bringing heart rate down gradually{'\n'}Static stretching after finishing
+        </p>
+      </div>
+    ),
   },
 }
 
@@ -183,6 +189,14 @@ export const IntervalWorkout: Story = {
       },
     ],
     sessionProgress: 'Session 3/10 This Phase',
+    warmupContent: (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          10-15 minutes easy jogging{'\n'}Dynamic stretches: leg swings, high knees, butt kicks{'\n'}2-3 strides at 80% effort to prepare for speed work{'\n'}Mental preparation for high-intensity intervals
+        </p>
+      </div>
+    ),
     sessionContent: {
       heading: 'Interval Workout Structure',
       steps: [
@@ -283,6 +297,14 @@ export const AllTabsPopulated: Story = {
 export const MinimalData: Story = {
   args: {
     sessionName: 'Recovery Run',
+    warmupContent: (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          5 minutes easy walking{'\n'}Gentle dynamic stretches{'\n'}Start running at very easy pace
+        </p>
+      </div>
+    ),
     sessionContent: {
       steps: [
         {
@@ -314,6 +336,14 @@ export const MultipleCyclePhases: Story = {
       },
     ],
     sessionProgress: 'Session 2/8 This Phase',
+    warmupContent: (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          5-10 minutes very easy movement{'\n'}Gentle stretching and mobility work{'\n'}Listen to your body and start slowly
+        </p>
+      </div>
+    ),
     sessionContent: {
       heading: 'Low-Impact Cross Training',
       steps: [
@@ -349,11 +379,13 @@ export const SessionList: Story = {
         distance: 5,
         durationMinutes: 30,
         intensityLevel: IntensityLevel.Low,
-        cyclePhase: CyclePhase.Follicular,
+        cyclePhase: CyclePhase.Follicular, // Just follicular phase
         isCompleted: false,
         isSkipped: false,
         sessionNumberInPhase: 5,
         totalSessionsInPhase: 15,
+        warmUp: '5 minutes easy walking\nDynamic stretches: leg swings, walking lunges, high knees\nStart run at very easy pace for first 5 minutes',
+        sessionDescription: 'Keep your heart rate in Zone 2-3 (comfortable aerobic pace)\nYou should be able to hold a conversation without gasping for breath',
         workoutTips: [
           'Maintain a conversational pace throughout the run',
           'Focus on consistent breathing and good running form',
@@ -367,11 +399,13 @@ export const SessionList: Story = {
         distance: 6,
         durationMinutes: 40,
         intensityLevel: IntensityLevel.High,
-        cyclePhase: CyclePhase.Ovulatory,
+        cyclePhase: CyclePhase.Ovulatory, // Follicular phase - Predicted Ovulation Day
         isCompleted: false,
         isSkipped: false,
         sessionNumberInPhase: 3,
         totalSessionsInPhase: 10,
+        warmUp: '10-15 minutes easy jogging\nDynamic stretches: leg swings, high knees, butt kicks\n2-3 strides at 80% effort to prepare for speed work\nMental preparation for high-intensity intervals',
+        sessionDescription: 'Focus on maintaining consistent splits across all intervals\nKeep form tight - avoid over-striding when fatigued\nListen to your body - it\'s okay to adjust pace if needed',
         workoutTips: [
           'Run each 400m at 5K race pace or slightly faster',
           'Recovery: 90 seconds easy jog between repeats',
@@ -385,11 +419,13 @@ export const SessionList: Story = {
         distance: 15,
         durationMinutes: 90,
         intensityLevel: IntensityLevel.Moderate,
-        cyclePhase: CyclePhase.Luteal,
+        cyclePhase: CyclePhase.Luteal, // Luteal phase
         isCompleted: false,
         isSkipped: false,
         sessionNumberInPhase: 12,
         totalSessionsInPhase: 15,
+        warmUp: '10 minutes easy jogging\nDynamic stretches focusing on hips and legs\nGradually increase pace over first mile',
+        sessionDescription: 'Keep effort steady and relaxed for the first 70 minutes\nMonitor energy levels throughout\nPush through mental fatigue in the tempo finish - you\'ve got this!',
         workoutTips: [
           'Run majority at comfortable, conversational pace',
           'Stay hydrated - plan water stops or carry fluids',
@@ -404,12 +440,14 @@ export const SessionList: Story = {
         distance: 4.8, // ~3 miles
         durationMinutes: 25,
         intensityLevel: IntensityLevel.Low,
-        cyclePhase: CyclePhase.Menstrual,
+        cyclePhase: CyclePhase.Menstrual, // Follicular phase - Menstruation Day 2
         isCompleted: false,
         isSkipped: false,
         sessionNumberInPhase: 1,
         totalSessionsInPhase: 8,
-        menstruationDay: 2,
+        menstruationDay: 2, // This will display as "Follicular Phase - Menstruation Day 2"
+        warmUp: '5 minutes easy walking\nGentle dynamic stretches\nStart running at very easy pace',
+        sessionDescription: 'Very easy effort, slower than normal easy runs\nFocus on movement quality over speed or distance\nListen to your body and adjust as needed',
         workoutTips: [
           'Slower than normal easy runs',
           'Focus on movement quality over speed',
@@ -449,7 +487,7 @@ export const SessionList: Story = {
 
     return (
       <div className="w-full lg:w-2/3 mx-auto space-y-12">
-        <h2 className="text-2xl font-semibold mb-12">Upcoming Sessions</h2>
+        <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-12">Upcoming Sessions</h2>
         <div className="space-y-12">
           {sessions.map((session) => (
             <div key={session.id} className="relative">
@@ -479,41 +517,71 @@ export const IntensityAccentBarOptions: Story = {
   parameters: {
     layout: 'padded',
   },
-  render: () => (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Option 1: Left Border Accent</h2>
-        <p className="text-sm text-muted-foreground mb-6">Colored left border (4px wide) based on intensity</p>
-        <div className="space-y-8">
-          <div className="border-l-4 border-green-500">
-            <WorkoutSessionCard
-              sessionName="30 Minute Easy Run"
-              distance={5}
-              distanceUnit="km"
-              durationMinutes={30}
-              zone="Zone 2-5 / RPE 2-6"
-              intensityLevel={IntensityLevel.Low}
-              cyclePhases={[
-                {
-                  phaseName: 'Follicular Phase Day 1',
-                  icon: <Sprout className="h-4 w-4" />,
-                },
-              ]}
-              sessionProgress="Session 5/15 This Phase"
-              sessionContent={{
-                heading: 'Easy Run Instructions',
-                steps: [
+  render: () => {
+    // Warmup content for different workout types
+    const easyWarmup = (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          5 minutes easy walking{'\n'}Dynamic stretches: leg swings, walking lunges, high knees{'\n'}Start run at very easy pace for first 5 minutes
+        </p>
+      </div>
+    )
+
+    const moderateWarmup = (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          10 minutes easy jogging{'\n'}Dynamic stretches focusing on hips and legs{'\n'}Gradually increase pace over first mile
+        </p>
+      </div>
+    )
+
+    const highWarmup = (
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+        <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+          10-15 minutes easy jogging{'\n'}Dynamic stretches: leg swings, high knees, butt kicks{'\n'}2-3 strides at 80% effort to prepare for speed work
+        </p>
+      </div>
+    )
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-12">
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Option 1: Left Border Accent</h2>
+          <p className="text-sm text-muted-foreground mb-6">Colored left border (4px wide) based on intensity</p>
+          <div className="space-y-8">
+            <div className="border-l-4 border-green-500">
+              <WorkoutSessionCard
+                sessionName="30 Minute Easy Run"
+                distance={5}
+                distanceUnit="km"
+                durationMinutes={30}
+                zone="Zone 2-5 / RPE 2-6"
+                intensityLevel={IntensityLevel.Low}
+                cyclePhases={[
                   {
-                    number: 1,
-                    title: 'Easy Pace Run',
-                    duration: 30,
-                    instructions: ['Maintain a conversational pace'],
+                    phaseName: 'Follicular Phase Day 1',
+                    icon: <Sprout className="h-4 w-4" />,
                   },
-                ],
-              }}
-              onMenuClick={() => console.log('Menu clicked')}
-            />
-          </div>
+                ]}
+                sessionProgress="Session 5/15 This Phase"
+                warmupContent={easyWarmup}
+                sessionContent={{
+                  heading: 'Easy Run Instructions',
+                  steps: [
+                    {
+                      number: 1,
+                      title: 'Easy Pace Run',
+                      duration: 30,
+                      instructions: ['Maintain a conversational pace'],
+                    },
+                  ],
+                }}
+                onMenuClick={() => console.log('Menu clicked')}
+              />
+            </div>
           <div className="border-l-4 border-yellow-500">
             <WorkoutSessionCard
               sessionName="Long Run with Tempo Finish"
@@ -529,6 +597,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 12/15 This Phase"
+              warmupContent={moderateWarmup}
               sessionContent={{
                 heading: 'Main Workout',
                 steps: [
@@ -558,6 +627,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 3/10 This Phase"
+              warmupContent={highWarmup}
               sessionContent={{
                 heading: 'Interval Workout Structure',
                 steps: [
@@ -594,6 +664,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 5/15 This Phase"
+              warmupContent={easyWarmup}
               sessionContent={{
                 heading: 'Easy Run Instructions',
                 steps: [
@@ -623,6 +694,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 12/15 This Phase"
+              warmupContent={moderateWarmup}
               sessionContent={{
                 heading: 'Main Workout',
                 steps: [
@@ -652,6 +724,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 3/10 This Phase"
+              warmupContent={highWarmup}
               sessionContent={{
                 heading: 'Interval Workout Structure',
                 steps: [
@@ -689,6 +762,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 5/15 This Phase"
+              warmupContent={easyWarmup}
               sessionContent={{
                 heading: 'Easy Run Instructions',
                 steps: [
@@ -732,6 +806,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 12/15 This Phase"
+              warmupContent={moderateWarmup}
               sessionContent={{
                 heading: 'Main Workout',
                 steps: [
@@ -775,6 +850,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 3/10 This Phase"
+              warmupContent={highWarmup}
               sessionContent={{
                 heading: 'Interval Workout Structure',
                 steps: [
@@ -823,6 +899,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 5/15 This Phase"
+              warmupContent={easyWarmup}
               sessionContent={{
                 heading: 'Easy Run Instructions',
                 steps: [
@@ -852,6 +929,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 12/15 This Phase"
+              warmupContent={moderateWarmup}
               sessionContent={{
                 heading: 'Main Workout',
                 steps: [
@@ -881,6 +959,7 @@ export const IntensityAccentBarOptions: Story = {
                 },
               ]}
               sessionProgress="Session 3/10 This Phase"
+              warmupContent={highWarmup}
               sessionContent={{
                 heading: 'Interval Workout Structure',
                 steps: [
@@ -898,7 +977,8 @@ export const IntensityAccentBarOptions: Story = {
         </div>
       </div>
     </div>
-  ),
+    )
+  },
 }
 
 // Session CTAs - Action buttons and status displays
@@ -921,6 +1001,8 @@ export const SessionCTAs: Story = {
       isSkipped: false,
       sessionNumberInPhase: 5,
       totalSessionsInPhase: 15,
+      warmUp: '5 minutes easy walking\nDynamic stretches: leg swings, walking lunges, high knees\nStart run at very easy pace for first 5 minutes',
+      sessionDescription: 'Focus on consistent breathing and good running form\nYou should be able to hold a conversation without gasping for breath\nIf you start to feel winded, slow down',
       workoutTips: [
         'Focus on maintaining an easy, conversational pace',
         'Keep your heart rate in Zone 2 for optimal aerobic development',
@@ -935,6 +1017,8 @@ export const SessionCTAs: Story = {
       intensityLevel: IntensityLevel.Moderate,
       distance: 15,
       durationMinutes: 90,
+      warmUp: '10 minutes easy jogging\nDynamic stretches focusing on hips and legs\nGradually increase pace over first mile',
+      sessionDescription: 'Run majority at comfortable, conversational pace\nStay hydrated - plan water stops or carry fluids\nFinal 20 minutes at tempo pace (comfortably hard)',
       isCompleted: true,
       actualDistance: 15.2,
       actualDuration: 88,
@@ -948,6 +1032,8 @@ export const SessionCTAs: Story = {
       intensityLevel: IntensityLevel.High,
       distance: 6,
       durationMinutes: 40,
+      warmUp: '10-15 minutes easy jogging\nDynamic stretches: leg swings, high knees, butt kicks\n2-3 strides at 80% effort to prepare for speed work',
+      sessionDescription: 'Run each 400m at 5K race pace or slightly faster\nRecovery: 90 seconds easy jog between repeats\nFocus on maintaining consistent splits',
       isSkipped: true
     }
 
@@ -1007,3 +1093,249 @@ export const SessionCTAs: Story = {
     )
   },
 }
+
+// Phase Guidance Design Variations
+export const PhaseGuidanceDesigns: Story = {
+  parameters: {
+    layout: 'padded',
+  },
+  render: () => {
+    const baseSession: SessionDetailDto = {
+      id: '1',
+      sessionName: '30 Minute Easy Run',
+      workoutType: WorkoutType.Easy,
+      scheduledDate: new Date().toISOString(),
+      distance: 5,
+      durationMinutes: 30,
+      intensityLevel: IntensityLevel.Low,
+      cyclePhase: CyclePhase.Menstrual,
+      isCompleted: false,
+      isSkipped: false,
+      sessionNumberInPhase: 5,
+      totalSessionsInPhase: 15,
+      menstruationDay: 2,
+      warmUp: '5 minutes easy walking\nGentle dynamic stretches\nStart running at very easy pace',
+      sessionDescription: 'Very easy effort - slower than normal easy runs\nFocus on movement quality over speed\nListen to your body and adjust as needed',
+      phaseGuidance: 'Your body is in a recovery phase. Focus on gentle movement and listen to your energy levels.',
+      workoutTips: [
+        'Maintain a conversational pace throughout the run',
+        'Focus on consistent breathing and good running form',
+      ]
+    }
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-12">
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Current Design</h2>
+          <p className="text-sm text-muted-foreground mb-6">Purple/pink gradient with emoji</p>
+          <WorkoutSessionCard
+            session={baseSession}
+            onSessionUpdated={() => console.log('Session updated')}
+            distanceUnit="km"
+          />
+        </div>
+      </div>
+    )
+  },
+} as unknown as Story
+
+// Menstrual Cycle Phase Clarification Examples
+export const CyclePhaseExamples: Story = {
+  parameters: {
+    layout: 'padded',
+  },
+  render: () => {
+    const baseSession: SessionDetailDto = {
+      id: '1',
+      sessionName: '30 Minute Easy Run',
+      workoutType: WorkoutType.Easy,
+      scheduledDate: new Date().toISOString(),
+      distance: 5,
+      durationMinutes: 30,
+      intensityLevel: IntensityLevel.Low,
+      isCompleted: false,
+      isSkipped: false,
+      sessionNumberInPhase: 5,
+      totalSessionsInPhase: 15,
+      warmUp: '5 minutes easy walking\nGentle dynamic stretches\nStart running at very easy pace',
+      workoutTips: [
+        'Maintain a conversational pace throughout the run',
+        'Focus on consistent breathing and good running form',
+      ]
+    }
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-12">
+        {/* Just Follicular Phase */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">1. Follicular Phase (no special event)</h2>
+          <p className="text-sm text-muted-foreground mb-6">User is in follicular phase, not menstruating or ovulating</p>
+          <WorkoutSessionCard
+            sessionName="30 Minute Easy Run"
+            distance={5}
+            distanceUnit="km"
+            durationMinutes={30}
+            zone="Zone 2-3 / RPE 2-4"
+            intensityLevel={IntensityLevel.Low}
+            cyclePhases={[
+              {
+                phaseName: 'Follicular Phase',
+                icon: <Sprout className="h-4 w-4" />,
+              },
+            ]}
+            sessionProgress="Session 5/15 This Phase"
+            warmupContent={(
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+                  5 minutes easy walking{'\n'}Dynamic stretches{'\n'}Start run at very easy pace
+                </p>
+              </div>
+            )}
+            sessionContent={{
+              heading: 'Easy Run Instructions',
+              steps: [
+                {
+                  number: 1,
+                  title: 'Easy Pace Run',
+                  duration: 30,
+                  instructions: ['Maintain a conversational pace'],
+                },
+              ],
+            }}
+          />
+        </div>
+
+        {/* Follicular Phase with Menstruation */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">2. Follicular Phase - Menstruation Day 1</h2>
+          <p className="text-sm text-muted-foreground mb-6">User is in follicular phase AND menstruating</p>
+          <WorkoutSessionCard
+            sessionName="30 Minute Easy Run"
+            distance={5}
+            distanceUnit="km"
+            durationMinutes={30}
+            zone="Zone 2-3 / RPE 2-4"
+            intensityLevel={IntensityLevel.Low}
+            cyclePhases={[
+              {
+                phaseName: 'Follicular Phase - Menstruation Day 1',
+                icon: (
+                  <div className="flex items-center gap-1.5">
+                    <Sprout className="h-4 w-4" />
+                    <Snowflake className="h-4 w-4" />
+                  </div>
+                ),
+              },
+            ]}
+            sessionProgress="Session 1/15 This Phase"
+            warmupContent={(
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+                  5 minutes easy walking{'\n'}Gentle stretches{'\n'}Listen to your body
+                </p>
+              </div>
+            )}
+            sessionContent={{
+              heading: 'Easy Run Instructions',
+              steps: [
+                {
+                  number: 1,
+                  title: 'Easy Pace Run',
+                  duration: 30,
+                  instructions: ['Very easy effort', 'Focus on how you feel'],
+                },
+              ],
+            }}
+          />
+        </div>
+
+        {/* Follicular Phase with Ovulation */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">3. Follicular Phase - Predicted Ovulation Day</h2>
+          <p className="text-sm text-muted-foreground mb-6">User is in follicular phase near ovulation</p>
+          <WorkoutSessionCard
+            sessionName="Speed Intervals - 400m Repeats"
+            distance={6}
+            distanceUnit="km"
+            durationMinutes={40}
+            zone="Zone 4-5 / RPE 7-9"
+            intensityLevel={IntensityLevel.High}
+            cyclePhases={[
+              {
+                phaseName: 'Follicular Phase - Predicted Ovulation Day',
+                icon: (
+                  <div className="flex items-center gap-1.5">
+                    <Sprout className="h-4 w-4" />
+                    <Sun className="h-4 w-4" />
+                  </div>
+                ),
+              },
+            ]}
+            sessionProgress="Session 12/15 This Phase"
+            warmupContent={(
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+                  10-15 minutes easy jogging{'\n'}Dynamic stretches{'\n'}2-3 strides at 80% effort
+                </p>
+              </div>
+            )}
+            sessionContent={{
+              heading: 'Interval Workout',
+              steps: [
+                {
+                  number: 1,
+                  title: '8x 400m Repeats',
+                  duration: 25,
+                  instructions: ['Run each 400m at 5K race pace', 'Recovery: 90 seconds easy jog'],
+                },
+              ],
+            }}
+          />
+        </div>
+
+        {/* Just Luteal Phase */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">4. Luteal Phase</h2>
+          <p className="text-sm text-muted-foreground mb-6">User is in luteal phase</p>
+          <WorkoutSessionCard
+            sessionName="Long Run with Tempo Finish"
+            distance={15}
+            distanceUnit="km"
+            durationMinutes={90}
+            zone="Zone 2-4 / RPE 3-7"
+            intensityLevel={IntensityLevel.Moderate}
+            cyclePhases={[
+              {
+                phaseName: 'Luteal Phase',
+                icon: <Leaf className="h-4 w-4" />,
+              },
+            ]}
+            sessionProgress="Session 8/15 This Phase"
+            warmupContent={(
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-[#3d3826]">Warmup</h3>
+                <p className="text-sm text-[#85837d] leading-relaxed whitespace-pre-line">
+                  10 minutes easy jogging{'\n'}Dynamic stretches{'\n'}Gradually increase pace
+                </p>
+              </div>
+            )}
+            sessionContent={{
+              heading: 'Main Workout',
+              steps: [
+                {
+                  number: 1,
+                  title: 'Easy Pace Base',
+                  duration: 70,
+                  instructions: ['Run at comfortable, conversational pace', 'Stay hydrated'],
+                },
+              ],
+            }}
+          />
+        </div>
+      </div>
+    )
+  },
+} as unknown as Story
