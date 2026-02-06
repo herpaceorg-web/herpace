@@ -26,10 +26,10 @@ export function MainLayout({ children }: MainLayoutProps) {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-bold text-primary">HerPace</h1>
+            <h1 className="text-2xl font-normal text-primary font-[family-name:'Petrona'] leading-none">HerPace</h1>
 
             {/* Navigation */}
-            <nav className="flex gap-6">
+            <nav className="flex items-center gap-6">
               <Link
                 to="/dashboard"
                 className={cn(
@@ -39,7 +39,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     : 'text-muted-foreground'
                 )}
               >
-                Dashboard
+                Training Hub
               </Link>
               <Link
                 to="/calendar"
