@@ -19,14 +19,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Heart, Trophy, Calendar, Timer, Goal, Check } from 'lucide-react'
+import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Heart, Calendar, Timer, Goal, Check } from 'lucide-react'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange } from '@/utils/cyclePhases'
 import { Badge } from '@/components/ui/badge'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TrainingStage } from '@/types/api'
 import { CyclePhase } from '@/types/api'
+import { TRAINING_STAGES } from '@/lib/trainingStages'
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -54,6 +56,36 @@ export function Dashboard() {
 
   // Month view navigation state
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
+
+  // Live countdown state
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number } | null>(null)
+
+  // Update countdown every minute
+  useEffect(() => {
+    if (!planSummary?.raceDate) return
+
+    const calculateCountdown = () => {
+      const now = new Date()
+      const raceDate = new Date(planSummary.raceDate)
+      const diff = raceDate.getTime() - now.getTime()
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0 })
+        return
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+      setCountdown({ days, hours, minutes })
+    }
+
+    calculateCountdown()
+    const interval = setInterval(calculateCountdown, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [planSummary?.raceDate])
 
   useEffect(() => {
     loadDashboardData()
@@ -405,7 +437,7 @@ export function Dashboard() {
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <span className="text-[20px] font-normal font-[family-name:'Petrona'] min-w-[200px] text-center">
+              <span className="text-[24px] font-normal font-[family-name:'Petrona'] min-w-[200px] text-center">
                 {activeView === 'week' ? (
                   <>
                     {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -476,25 +508,28 @@ export function Dashboard() {
           <div className="flex gap-4 mb-[48px]">
             {/* Race and Goal Container */}
             <div className="w-1/2 p-4 bg-background rounded-lg border border-border">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-muted-foreground" />
-                  <span className="font-medium">{planSummary.raceName}</span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="space-y-4">
+                <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {planSummary.raceName}</h3>
+                <div className="flex items-center gap-4 text-sm text-[#696863] font-normal">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(planSummary.raceDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                   </div>
+                  <div className="h-4 border-l border-border" />
                   <div className="flex items-center gap-2">
                     <Timer className="w-4 h-4" />
-                    <span>{planSummary.daysUntilRace} days</span>
+                    <span>
+                      {countdown
+                        ? `${countdown.days}d ${countdown.hours}h ${countdown.minutes}m until race day`
+                        : `${planSummary.daysUntilRace} days until race day`
+                      }
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <div className="flex items-center gap-2">
-                    <Goal className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Goal: Finish strong</span>
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 text-sm text-[#696863] font-normal">
+                    <Goal className="w-4 h-4" />
+                    <span>Goal: Finish strong</span>
                   </div>
                   <Badge className="rounded-md text-sm font-normal bg-success/10 text-success border-success/20 hover:bg-success/20 gap-1">
                     <Check className="w-4 h-4" />
@@ -507,10 +542,11 @@ export function Dashboard() {
             {/* Week Summary Container */}
             {weekSummary && (
               <div className="w-1/2 p-4 bg-background rounded-lg border border-border">
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training Summary</h3>
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Week {weekSummary.weekNumber} of {weekSummary.totalWeeksInPlan}</span>
-                    <span className="text-sm text-muted-foreground">{weekSummary.completionPercentage}%</span>
+                    <span className="text-sm font-normal font-[family-name:'Manrope']">Week {weekSummary.weekNumber} of {weekSummary.totalWeeksInPlan}</span>
+                    <span className="text-sm text-[#696863] font-normal">{weekSummary.completionPercentage}%</span>
                   </div>
 
                   {/* Segmented Progress Bar with Stages */}
@@ -557,28 +593,52 @@ export function Dashboard() {
                   </div>
 
                   {/* Stage labels */}
-                  <div className="flex">
+                  <div className="flex mt-4">
                     {[
                       { stage: TrainingStage.Base, label: 'Base', width: 25 },
                       { stage: TrainingStage.Build, label: 'Build', width: 35 },
                       { stage: TrainingStage.Peak, label: 'Peak', width: 25 },
                       { stage: TrainingStage.Taper, label: 'Taper', width: 15 }
-                    ].map((segment) => (
-                      <div
-                        key={segment.stage}
-                        className="text-center text-xs text-muted-foreground"
-                        style={{ width: `${segment.width}%` }}
-                      >
-                        {segment.label}
-                      </div>
-                    ))}
+                    ].map((segment) => {
+                      const stageInfo = TRAINING_STAGES[segment.stage]
+                      return (
+                        <div
+                          key={segment.stage}
+                          className="text-center"
+                          style={{ width: `${segment.width}%` }}
+                        >
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="text-sm text-[#696863] font-normal hover:text-[#3d3826] transition-colors cursor-pointer underline decoration-[#c5c2b8]">
+                                {segment.label}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 bg-[#fcf9f3] border-[#ebe8e2]" align="center">
+                              <div className="space-y-2">
+                                <div>
+                                  <h4 className="text-sm font-semibold text-[#3d3826]">
+                                    {stageInfo.name} — {stageInfo.tagline}
+                                  </h4>
+                                  <p className="text-xs text-[#85837d] mt-1 leading-relaxed">{stageInfo.description}</p>
+                                </div>
+                                <div className="border-t border-[#ebe8e2] pt-2 space-y-1.5">
+                                  <p className="text-xs text-[#696863]"><span className="font-medium">Focus:</span> {stageInfo.focus}</p>
+                                  <p className="text-xs text-[#696863]"><span className="font-medium">What to expect:</span> {stageInfo.whatToExpect}</p>
+                                  <p className="text-xs text-[#696863]"><span className="font-medium">Tip:</span> {stageInfo.tip}</p>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )
+                    })}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t border-border">
+                  <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
                     <span>{weekSummary.totalSessions} Sessions</span>
-                    <span>•</span>
+                    <div className="h-4 border-l border-border" />
                     <span>{weekSummary.totalMiles} {distanceUnit}</span>
-                    <span>•</span>
+                    <div className="h-4 border-l border-border" />
                     <div className="flex items-center gap-2">
                       {weekSummary.intensityBreakdown.low > 0 && (
                         <span className="flex items-center gap-1">
@@ -611,6 +671,9 @@ export function Dashboard() {
               </div>
             )}
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-border mb-[48px]" />
 
           {activeView === 'week' && (
             <WeekView

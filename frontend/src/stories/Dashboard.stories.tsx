@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
@@ -10,9 +10,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { SegmentedControl } from '@/components/ui/segmented-control'
+import { TRAINING_STAGES } from '@/lib/trainingStages'
 import { cn } from '@/lib/utils'
-import { Loader2, LayoutGrid, List, Goal, Check, ChevronLeft, ChevronRight, Heart, Trophy, Calendar, Timer } from 'lucide-react'
+import { Loader2, LayoutGrid, List, Goal, Check, ChevronLeft, ChevronRight, Heart, Calendar, Timer } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases'
@@ -240,6 +242,36 @@ function MockDashboard({
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()))
 
+  // Live countdown state
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number } | null>(null)
+
+  // Update countdown every minute
+  useEffect(() => {
+    if (!plan?.raceDate) return
+
+    const calculateCountdown = () => {
+      const now = new Date()
+      const raceDate = new Date(plan.raceDate)
+      const diff = raceDate.getTime() - now.getTime()
+
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0 })
+        return
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+      setCountdown({ days, hours, minutes })
+    }
+
+    calculateCountdown()
+    const interval = setInterval(calculateCountdown, 60000)
+
+    return () => clearInterval(interval)
+  }, [plan?.raceDate])
+
   const weekSessions = useMemo(() => {
     if (!plan) return []
     return plan.sessions.filter(session => {
@@ -430,7 +462,7 @@ function MockDashboard({
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <span className="text-[20px] font-normal font-[family-name:'Petrona'] min-w-[200px] text-center">
+              <span className="text-[24px] font-normal font-[family-name:'Petrona'] min-w-[200px] text-center">
                 {activeView === 'week' ? (
                   <>
                     {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -501,25 +533,28 @@ function MockDashboard({
           <div className="flex gap-4 mb-[48px]">
             {/* Race and Goal Container */}
             <div className="w-1/2 p-4 bg-background rounded-lg border border-border">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-muted-foreground" />
-                  <span className="font-medium">{plan.raceName}</span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="space-y-4">
+                <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {plan.raceName}</h3>
+                <div className="flex items-center gap-4 text-sm text-[#696863] font-normal">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(plan.raceDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                   </div>
+                  <div className="h-4 border-l border-border" />
                   <div className="flex items-center gap-2">
                     <Timer className="w-4 h-4" />
-                    <span>{planSummary?.daysUntilRace || Math.ceil((new Date(plan.raceDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days</span>
+                    <span>
+                      {countdown
+                        ? `${countdown.days}d ${countdown.hours}h ${countdown.minutes}m until race day`
+                        : `${planSummary?.daysUntilRace || Math.ceil((new Date(plan.raceDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days until race day`
+                      }
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <div className="flex items-center gap-2">
-                    <Goal className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Goal: {goalTime}</span>
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 text-sm text-[#696863] font-normal">
+                    <Goal className="w-4 h-4" />
+                    <span>Goal: {goalTime}</span>
                   </div>
                   <Badge className="rounded-md text-sm font-normal bg-success/10 text-success border-success/20 hover:bg-success/20 gap-1">
                     <Check className="w-4 h-4" />
@@ -532,10 +567,11 @@ function MockDashboard({
             {/* Week Summary Container */}
             {weekSummary && (
               <div className="w-1/2 p-4 bg-background rounded-lg border border-border">
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training Summary</h3>
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Week {weekSummary.weekNumber} of {weekSummary.totalWeeksInPlan}</span>
-                    <span className="text-sm text-muted-foreground">{weekSummary.completionPercentage}%</span>
+                    <span className="text-sm font-normal font-[family-name:'Manrope']">Week {weekSummary.weekNumber} of {weekSummary.totalWeeksInPlan}</span>
+                    <span className="text-sm text-[#696863] font-normal">{weekSummary.completionPercentage}%</span>
                   </div>
 
                   {/* Segmented Progress Bar with Stages */}
@@ -582,28 +618,52 @@ function MockDashboard({
                   </div>
 
                   {/* Stage labels */}
-                  <div className="flex">
+                  <div className="flex mt-4">
                     {[
                       { stage: TrainingStage.Base, label: 'Base', width: 25 },
                       { stage: TrainingStage.Build, label: 'Build', width: 35 },
                       { stage: TrainingStage.Peak, label: 'Peak', width: 25 },
                       { stage: TrainingStage.Taper, label: 'Taper', width: 15 }
-                    ].map((segment) => (
-                      <div
-                        key={segment.stage}
-                        className="text-center text-xs text-muted-foreground"
-                        style={{ width: `${segment.width}%` }}
-                      >
-                        {segment.label}
-                      </div>
-                    ))}
+                    ].map((segment) => {
+                      const stageInfo = TRAINING_STAGES[segment.stage]
+                      return (
+                        <div
+                          key={segment.stage}
+                          className="text-center"
+                          style={{ width: `${segment.width}%` }}
+                        >
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="text-sm text-[#696863] font-normal hover:text-[#3d3826] transition-colors cursor-pointer underline decoration-[#c5c2b8]">
+                                {segment.label}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 bg-[#fcf9f3] border-[#ebe8e2]" align="center">
+                              <div className="space-y-2">
+                                <div>
+                                  <h4 className="text-sm font-semibold text-[#3d3826]">
+                                    {stageInfo.name} — {stageInfo.tagline}
+                                  </h4>
+                                  <p className="text-xs text-[#85837d] mt-1 leading-relaxed">{stageInfo.description}</p>
+                                </div>
+                                <div className="border-t border-[#ebe8e2] pt-2 space-y-1.5">
+                                  <p className="text-xs text-[#696863]"><span className="font-medium">Focus:</span> {stageInfo.focus}</p>
+                                  <p className="text-xs text-[#696863]"><span className="font-medium">What to expect:</span> {stageInfo.whatToExpect}</p>
+                                  <p className="text-xs text-[#696863]"><span className="font-medium">Tip:</span> {stageInfo.tip}</p>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )
+                    })}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t border-border">
+                  <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
                     <span>{weekSummary.totalSessions} Sessions</span>
-                    <span>•</span>
+                    <div className="h-4 border-l border-border" />
                     <span>{weekSummary.totalMiles} {distanceUnit}</span>
-                    <span>•</span>
+                    <div className="h-4 border-l border-border" />
                     <div className="flex items-center gap-2">
                       {weekSummary.intensityBreakdown.low > 0 && (
                         <span className="flex items-center gap-1">
@@ -636,6 +696,9 @@ function MockDashboard({
               </div>
             )}
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-border mb-[48px]" />
 
           {activeView === 'week' && (
             <WeekView
