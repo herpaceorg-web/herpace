@@ -68,7 +68,10 @@ export interface IntensityBreakdown {
  */
 export interface WeekSummary {
   totalSessions: number
+  completedSessions: number
+  skippedSessions: number
   totalMiles: number
+  completedMiles: number
   trainingStage: TrainingStage | undefined
   weekNumber: number
   totalWeeksInPlan: number
@@ -101,16 +104,22 @@ export function calculateWeekSummary(
     isDateInWeek(new Date(s.scheduledDate), weekStart)
   )
 
-  // Calculate total sessions
+  // Calculate total sessions and completion stats
   const totalSessions = weekSessions.length
+  const completedSessions = weekSessions.filter(s => s.completedAt).length
+  const skippedSessions = weekSessions.filter(s => s.isSkipped).length
 
-  // Calculate total miles
+  // Calculate total miles and completed miles
   let totalMiles = 0
+  let completedMiles = 0
   weekSessions.forEach(session => {
     if (session.distance) {
       // Distance from API is in km, convert if needed
       const distanceInMiles = distanceUnit === 'km' ? session.distance * 0.621371 : session.distance
       totalMiles += distanceInMiles
+      if (session.completedAt) {
+        completedMiles += distanceInMiles
+      }
     }
   })
 
@@ -151,7 +160,10 @@ export function calculateWeekSummary(
 
   return {
     totalSessions,
+    completedSessions,
+    skippedSessions,
     totalMiles: Math.round(totalMiles * 10) / 10, // Round to 1 decimal
+    completedMiles: Math.round(completedMiles * 10) / 10, // Round to 1 decimal
     trainingStage,
     weekNumber,
     totalWeeksInPlan,

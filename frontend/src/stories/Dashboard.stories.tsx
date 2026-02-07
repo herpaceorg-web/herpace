@@ -10,11 +10,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PunchCard, PunchCardDay } from '@/components/ui/punch-card'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
 import { cn } from '@/lib/utils'
-import { Loader2, LayoutGrid, List, Goal, Check, ChevronLeft, ChevronRight, Heart, Calendar, Timer } from 'lucide-react'
+import { Loader2, LayoutGrid, List, Goal, Check, ChevronLeft, ChevronRight, Heart, Calendar, Timer, TrendingUp, TrendingDown } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases'
@@ -65,6 +66,11 @@ const generateMockSessions = (startDate: Date, weeks: number = 16): SessionSumma
                     week < 10 ? TrainingStage.Build :
                     week < 14 ? TrainingStage.Peak : TrainingStage.Taper
 
+      // Mark past sessions as completed (first 2 weeks + some of current week)
+      const now = new Date()
+      const isPast = sessionDate < now
+      const isCompleted = isPast && schedule.workout.type !== WorkoutType.Rest
+
       sessions.push({
         id: `session-${sessionId++}`,
         sessionName: schedule.workout.name,
@@ -80,6 +86,7 @@ const generateMockSessions = (startDate: Date, weeks: number = 16): SessionSumma
         cyclePhase: CyclePhase.Follicular,
         trainingStage: stage,
         isSkipped: false,
+        completedAt: isCompleted ? sessionDate.toISOString() : undefined,
       })
     }
   }
@@ -317,6 +324,57 @@ function MockDashboard({
       new Date(plan.endDate)
     )
   }, [weekSessions, weekStart, plan, distanceUnit])
+
+  // Create punch card data for the week
+  const punchCardDays = useMemo((): PunchCardDay[] => {
+    const days: PunchCardDay[] = []
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart)
+      date.setDate(weekStart.getDate() + i)
+      const dayNumber = date.getDate()
+
+      // Find session for this day
+      const session = weekSessions.find(s => {
+        const sessionDate = new Date(s.scheduledDate)
+        return sessionDate.getDate() === dayNumber &&
+               sessionDate.getMonth() === date.getMonth() &&
+               sessionDate.getFullYear() === date.getFullYear()
+      })
+
+      days.push({
+        dayNumber,
+        hasSession: !!session,
+        isCompleted: !!session?.completedAt,
+        isSkipped: session?.isSkipped ?? false,
+        isRest: !session || session.workoutType === WorkoutType.Rest
+      })
+    }
+    return days
+  }, [weekStart, weekSessions])
+
+  // Calculate last week's mileage for comparison
+  const lastWeekMileage = useMemo(() => {
+    if (!plan) return null
+    const lastWeekStart = new Date(weekStart)
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+
+    const lastWeekSessions = plan.sessions.filter(session => {
+      const sessionDate = new Date(session.scheduledDate)
+      const lastWeekEnd = new Date(lastWeekStart)
+      lastWeekEnd.setDate(lastWeekEnd.getDate() + 6)
+      return sessionDate >= lastWeekStart && sessionDate <= lastWeekEnd
+    })
+
+    let totalMiles = 0
+    lastWeekSessions.forEach(session => {
+      if (session.distance) {
+        const miles = distanceUnit === 'km' ? session.distance * 0.621371 : session.distance
+        totalMiles += miles
+      }
+    })
+
+    return Math.round(totalMiles * 10) / 10
+  }, [plan, weekStart, distanceUnit])
 
   // Get all months in the plan (for Plan view)
   const planMonths = useMemo(() => {
@@ -708,9 +766,39 @@ function MockDashboard({
                   </div>
 
                   <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
-                    <span>{weekSummary.totalSessions} Sessions</span>
+                    <div className="flex items-center gap-2">
+                      <PunchCard days={punchCardDays} />
+                      <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
+                    </div>
                     <div className="h-4 border-l border-border" />
-                    <span>{weekSummary.totalMiles} {distanceUnit}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{weekSummary.totalMiles} {distanceUnit}</span>
+                      {lastWeekMileage !== null && lastWeekMileage > 0 && (
+                        (() => {
+                          const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
+                          const absChange = Math.abs(Math.round(change))
+                          if (change > 0) {
+                            return (
+                              <span className="flex items-center gap-1 text-success">
+                                <TrendingUp className="w-4 h-4" />
+                                <span className="text-xs">{absChange}%</span>
+                              </span>
+                            )
+                          } else if (change < 0) {
+                            return (
+                              <span className="flex items-center gap-1 text-destructive">
+                                <TrendingDown className="w-4 h-4" />
+                                <span className="text-xs">{absChange}%</span>
+                              </span>
+                            )
+                          }
+                          return null
+                        })()
+                      )}
+                      {lastWeekMileage !== null && (
+                        <span className="text-xs text-muted-foreground">vs {lastWeekMileage} {distanceUnit} last week</span>
+                      )}
+                    </div>
                     <div className="h-4 border-l border-border" />
                     <div className="flex items-center gap-2">
                       {weekSummary.intensityBreakdown.low > 0 && (
