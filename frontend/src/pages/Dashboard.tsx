@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto, PlanDetailResponse } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto, PlanDetailResponse, SessionSummary } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
 import { WeekView } from '@/components/calendar/WeekView'
+import type { CalendarView, DisplayMode } from '@/components/calendar/WeekView'
+import { MonthViewInline } from '@/components/calendar/MonthViewInline'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,8 +20,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Loader2, Sparkles, LayoutGrid, List } from 'lucide-react'
+import { SegmentedControl } from '@/components/ui/segmented-control'
+import { cn } from '@/lib/utils'
 import { getWeekStart } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange } from '@/utils/cyclePhases'
 import { CyclePhase } from '@/types/api'
@@ -37,9 +40,20 @@ export function Dashboard() {
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
   const prevRecalculationState = useRef<boolean>(false)
 
-  // NEW: WeekView preview state
-  const [showWeekViewPreview, setShowWeekViewPreview] = useState(false)
+  // WeekView state
   const [plan, setPlan] = useState<PlanDetailResponse | null>(null)
+
+  // View mode state
+  const [activeView, setActiveView] = useState<CalendarView>('week')
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('calendar')
+
+  // Selected session state
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [selectedSession, setSelectedSession] = useState<SessionDetailDto | null>(null)
+  const selectedSessionRef = useRef<HTMLDivElement>(null)
+
+  // Month view navigation state
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
 
   useEffect(() => {
     loadDashboardData()
@@ -250,24 +264,76 @@ export function Dashboard() {
     })
   }, [plan, weekStart])
 
+  // Update cycle phases to cover month range when in month view
   const displayedCyclePhases = useMemo(() => {
     if (!cyclePosition) return new Map<string, CyclePhase>()
 
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 6)
+    let rangeStart: Date, rangeEnd: Date
+    if (activeView === 'month') {
+      rangeStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+      rangeEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+    } else {
+      rangeStart = weekStart
+      rangeEnd = new Date(weekStart)
+      rangeEnd.setDate(rangeEnd.getDate() + 6)
+    }
 
     return generateCyclePhasesForRange(
-      weekStart,
-      weekEnd,
+      rangeStart,
+      rangeEnd,
       new Date(cyclePosition.lastPeriodStart),
       cyclePosition.cycleLength
     )
-  }, [cyclePosition, weekStart])
+  }, [cyclePosition, weekStart, activeView, currentMonth])
 
-  // Placeholder handler for WeekView day clicks
-  const handleDayClick = useCallback(() => {
-    // In Phase 2, clicking a day doesn't do anything special
-    // This will be enhanced in Phase 3
+  // Handle day click - show session details
+  const handleDayClick = useCallback(async (_date: Date, session?: SessionSummary) => {
+    // Toggle: if clicking same session, deselect
+    if (session && selectedSessionId === session.id) {
+      setSelectedSessionId(null)
+      setSelectedSession(null)
+      return
+    }
+
+    if (!session) {
+      setSelectedSessionId(null)
+      setSelectedSession(null)
+      return
+    }
+
+    setSelectedSessionId(session.id)
+
+    // Try to find full details in upcomingSessions first
+    const existingDetails = upcomingSessions.find(s => s.id === session.id)
+    if (existingDetails) {
+      setSelectedSession(existingDetails)
+    } else {
+      // Fetch full session details from API
+      try {
+        const details = await api.get<SessionDetailDto>(`/api/sessions/${session.id}`)
+        setSelectedSession(details)
+      } catch (err) {
+        console.error('Failed to load session details:', err)
+        setSelectedSession(null)
+      }
+    }
+
+    // Scroll to selected session card
+    setTimeout(() => {
+      selectedSessionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }, 100)
+  }, [selectedSessionId, upcomingSessions])
+
+  // Handle month navigation
+  const handleNavigateMonth = useCallback((direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev)
+      newMonth.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1))
+      return newMonth
+    })
   }, [])
 
   if (isLoading) {
@@ -397,38 +463,109 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* NEW: Week View Preview (Beta) */}
+      {/* Calendar View */}
       {plan && (
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setShowWeekViewPreview(!showWeekViewPreview)}
-            >
-              {showWeekViewPreview ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              {showWeekViewPreview ? 'Hide' : 'Show'} Week View
-            </Button>
-            <Badge variant="secondary" className="gap-1">
-              <FlaskConical className="h-3 w-3" />
-              Preview
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              Try our new calendar view
-            </span>
-          </div>
-          {showWeekViewPreview && (
-            <div className="border border-dashed border-border rounded-lg p-4 bg-muted/30">
-              <WeekView
-                sessions={weekSessions}
-                weekStart={weekStart}
+        <div className="space-y-4">
+          {activeView === 'week' && (
+            <WeekView
+              sessions={weekSessions}
+              weekStart={weekStart}
+              cyclePhases={displayedCyclePhases}
+              distanceUnit={distanceUnit}
+              planStartDate={new Date(plan.startDate)}
+              planEndDate={new Date(plan.endDate)}
+              planName={plan.raceName}
+              onDayClick={handleDayClick}
+              isExpanded={false}
+              onToggleExpand={() => setActiveView('month')}
+              activeView={activeView}
+              onViewChange={(view) => setActiveView(view as CalendarView)}
+              selectedSessionId={selectedSessionId ?? undefined}
+              displayMode={displayMode}
+              onDisplayModeChange={setDisplayMode}
+              showControls={true}
+            />
+          )}
+
+          {activeView === 'month' && (
+            <div className="space-y-8">
+              {/* Header with view controls for month view */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-normal text-foreground font-petrona">
+                  {plan.raceName}
+                </h2>
+
+                {/* View Controls */}
+                <div className="flex items-center gap-3">
+                  {/* Display Mode Toggle (Calendar/List) */}
+                  <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setDisplayMode('calendar')}
+                      className={cn(
+                        'p-2 rounded-md transition-all duration-300 ease-in-out',
+                        displayMode === 'calendar'
+                          ? 'bg-[#FDFBF7] shadow-sm text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      aria-label="Calendar view"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDisplayMode('list')}
+                      className={cn(
+                        'p-2 rounded-md transition-all duration-300 ease-in-out',
+                        displayMode === 'list'
+                          ? 'bg-[#FDFBF7] shadow-sm text-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                      aria-label="List view"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Week/Month/Plan Toggle */}
+                  {displayMode === 'calendar' && (
+                    <SegmentedControl
+                      options={[
+                        { value: 'week', label: 'Week' },
+                        { value: 'month', label: 'Month' },
+                        { value: 'plan', label: 'Plan' }
+                      ]}
+                      value={activeView}
+                      onValueChange={(value) => setActiveView(value as CalendarView)}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <MonthViewInline
+                currentMonth={currentMonth}
+                sessions={plan.sessions}
                 cyclePhases={displayedCyclePhases}
-                distanceUnit={distanceUnit}
+                onDayClick={handleDayClick}
+                onNavigateMonth={handleNavigateMonth}
                 planStartDate={new Date(plan.startDate)}
                 planEndDate={new Date(plan.endDate)}
-                onDayClick={handleDayClick}
-                isExpanded={false}
-                onToggleExpand={() => {}}
+              />
+            </div>
+          )}
+
+          {/* Selected Session Details */}
+          {selectedSession && (
+            <div ref={selectedSessionRef} className="mt-8 w-full lg:w-2/3 mx-auto">
+              <WorkoutSessionCard
+                session={selectedSession}
+                onSessionUpdated={() => {
+                  loadDashboardData()
+                  setSelectedSession(null)
+                  setSelectedSessionId(null)
+                }}
+                distanceUnit={distanceUnit}
+                pendingConfirmation={planSummary?.pendingConfirmation}
               />
             </div>
           )}
