@@ -1,19 +1,32 @@
 import * as React from 'react'
-import { SessionSummary, CyclePhase, WorkoutType } from '@/types/api'
+import { SessionSummary, CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { CalendarDay } from './CalendarDay'
 import { CyclePhaseLegend } from './CyclePhaseLegend'
-import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDateKey } from '@/utils/cyclePhases'
+
+// Helper function to get zone and RPE strings based on intensity level
+const getZoneAndRPE = (intensityLevel?: IntensityLevel): { zone: string; rpe: string } => {
+  switch (intensityLevel) {
+    case IntensityLevel.Low:
+      return { zone: 'Zone 1-2', rpe: 'RPE 2-4' }
+    case IntensityLevel.Moderate:
+      return { zone: 'Zone 3-4', rpe: 'RPE 5-7' }
+    case IntensityLevel.High:
+      return { zone: 'Zone 4-5', rpe: 'RPE 7-9' }
+    default:
+      return { zone: '', rpe: '' }
+  }
+}
 
 export interface MonthViewInlineProps {
   currentMonth: Date
   sessions: SessionSummary[]
   cyclePhases: Map<string, CyclePhase>
   onDayClick: (date: Date, session?: SessionSummary) => void
-  onNavigateMonth: (direction: 'prev' | 'next') => void
+  onNavigateMonth?: (direction: 'prev' | 'next') => void
   planStartDate: Date
   planEndDate: Date
+  selectedSessionId?: string
 }
 
 export function MonthViewInline({
@@ -21,9 +34,9 @@ export function MonthViewInline({
   sessions,
   cyclePhases,
   onDayClick,
-  onNavigateMonth,
-  planStartDate,
-  planEndDate
+  planStartDate: _planStartDate,
+  planEndDate: _planEndDate,
+  selectedSessionId
 }: MonthViewInlineProps) {
   // Create map of sessions by date key
   const sessionsByDate = React.useMemo(() => {
@@ -59,52 +72,11 @@ export function MonthViewInline({
     return days
   }, [currentMonth])
 
-  // Check if navigation buttons should be disabled
-  const isPrevDisabled = React.useMemo(() => {
-    return new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1) <=
-      new Date(planStartDate.getFullYear(), planStartDate.getMonth(), 1)
-  }, [currentMonth, planStartDate])
-
-  const isNextDisabled = React.useMemo(() => {
-    return new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1) >=
-      new Date(planEndDate.getFullYear(), planEndDate.getMonth(), 1)
-  }, [currentMonth, planEndDate])
-
-  const currentMonthLabel = currentMonth.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
-  })
-
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const hasCycleTracking = cyclePhases.size > 0
 
   return (
-    <div className="space-y-4 border border-border rounded-lg p-4 bg-card">
-      {/* Month navigation */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground font-petrona">
-          {currentMonthLabel}
-        </h3>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => onNavigateMonth('prev')}
-            disabled={isPrevDisabled}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => onNavigateMonth('next')}
-            disabled={isNextDisabled}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
-
+    <div className="space-y-2">
       {/* Cycle Phase Legend */}
       {hasCycleTracking && (
         <div className="flex justify-center py-2">
@@ -113,11 +85,12 @@ export function MonthViewInline({
       )}
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-3">
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-muted-foreground p-2"
+            className="text-center text-xs font-normal p-2"
+            style={{ color: '#696863' }}
           >
             {day}
           </div>
@@ -125,7 +98,7 @@ export function MonthViewInline({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2 auto-rows-fr">
+      <div className="grid grid-cols-7 gap-3 auto-rows-fr">
         {monthDays.map((date, index) => {
           if (!date) {
             return <div key={`empty-${index}`} />
@@ -134,6 +107,8 @@ export function MonthViewInline({
           const dateKey = formatDateKey(date)
           const session = sessionsByDate.get(dateKey)
           const cyclePhase = cyclePhases.get(dateKey)
+          const { zone, rpe } = getZoneAndRPE(session?.intensityLevel)
+          const isRestDay = !session || session.workoutType === WorkoutType.Rest
 
           return (
             <CalendarDay
@@ -145,7 +120,10 @@ export function MonthViewInline({
               intensityLevel={session?.intensityLevel}
               workoutType={session?.workoutType}
               cyclePhase={cyclePhase}
-              isRest={session?.workoutType === WorkoutType.Rest}
+              zone={zone}
+              rpe={rpe}
+              isRest={isRestDay}
+              isSelected={!!session && !!selectedSessionId && session.id === selectedSessionId}
               onClick={() => onDayClick(date, session)}
             />
           )

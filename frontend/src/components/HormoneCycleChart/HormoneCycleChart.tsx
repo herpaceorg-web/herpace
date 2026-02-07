@@ -307,21 +307,21 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
   };
 
   return (
-    <div className="w-full lg:w-[70%] mx-auto bg-gradient-to-b from-muted to-background border border-border p-3 rounded-2xl shadow-[1px_1px_24px_0px_rgba(69,66,58,0.04)]">
-      <div className="bg-background border border-border rounded-xl py-6 w-full">
+    <div className="w-full lg:w-[70%] mx-auto bg-gradient-to-b from-muted to-background border border-border p-3 rounded-[8px] shadow-[1px_1px_24px_0px_rgba(69,66,58,0.04)]">
+      <div className="bg-background border border-border rounded-[6px] py-6 w-full">
         <div className="flex flex-col gap-6 w-full">
           {/* Header */}
-          <div className="flex items-start justify-between px-6 w-full">
-            <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between px-6 w-full">
+            <div className="flex items-center gap-6">
               <h2 className="text-2xl font-normal leading-7 font-['Petrona'] text-foreground">
                 Today is {formatDate(new Date())}
               </h2>
-              <div className="flex gap-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
+              <div className="flex gap-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-[6px]">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Cycle Day</span>
                   <span className="font-petrona text-2xl font-normal leading-7 text-[#3D3826]">{currentDayInCycle}</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-[6px]">
                   <span className="font-manrope text-xs font-normal leading-4 text-[#696863]">Next Period in</span>
                   <span className="font-petrona text-2xl font-normal leading-7 text-[#3D3826]">{daysUntilNextPeriod} Days</span>
                 </div>
@@ -329,7 +329,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
             </div>
             <Button
               onClick={() => setIsLogPeriodOpen(true)}
-              className="flex items-center justify-center gap-2 h-10 px-6 py-2.5 bg-[#45423a] text-background text-base font-medium leading-6 rounded-lg shadow-[inset_0px_2px_3px_0px_#3d3826] hover:bg-[#45423a]/90"
+              className="flex items-center justify-center gap-2 h-10 px-6 py-2.5 bg-[#45423a] text-background text-base font-medium leading-6 rounded-[6px] shadow-[inset_0px_2px_3px_0px_#3d3826] hover:bg-[#45423a]/90"
             >
               <CalendarDays className="h-4 w-4" />
               Log Period
@@ -340,12 +340,12 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
           <div className="flex flex-col gap-2 w-full">
             <div className="relative flex gap-2 px-3 w-full">
               {/* Follicular Phase Container */}
-              <div className="relative w-1/2 border border-border rounded-lg bg-background overflow-hidden">
+              <div className="relative w-1/2 border border-border rounded-[6px] bg-background overflow-hidden">
                 {/* Follicular Phase Header */}
                 <div className="flex h-7 border-b border-border bg-background relative z-10">
                   {/* Menstruation */}
                   <div
-                    className="bg-[rgba(78,109,128,0.6)] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-lg"
+                    className="bg-[rgba(78,109,128,0.6)] px-2 py-1.5 flex items-center justify-center gap-1.5 rounded-tl-[6px]"
                     style={{ width: `${menstrualPct}%` }}
                   >
                     <Snowflake className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
@@ -365,7 +365,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
 
                   {/* Ovulation */}
                   <div
-                    className="bg-[rgba(217,119,6,0.7)] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-tr-lg"
+                    className="bg-[rgba(217,119,6,0.7)] px-2 py-1.5 flex items-center justify-center gap-1.5 border-l border-dashed border-[rgba(217,119,6,0.2)] rounded-tr-[6px]"
                     style={{ width: `${ovulationPct}%` }}
                   >
                     <Sun className="w-3.5 h-3.5 text-[#29271b] flex-shrink-0" />
@@ -378,7 +378,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
 
                 {/* Menstruation Overlay */}
                 <div
-                  className="absolute left-0 top-7 bottom-0 rounded-bl-lg"
+                  className="absolute left-0 top-7 bottom-0 rounded-bl-[6px]"
                   style={{ width: `${menstrualPct}%`, backgroundColor: "rgba(78,109,128,0.1)" }}
                 >
                   <svg className="absolute right-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
@@ -391,7 +391,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
 
                 {/* Ovulation Overlay */}
                 <div
-                  className="absolute right-0 top-7 bottom-0 rounded-br-lg"
+                  className="absolute right-0 top-7 bottom-0 rounded-br-[6px]"
                   style={{ width: `${ovulationPct}%`, backgroundColor: "rgba(227,146,25,0.1)" }}
                 >
                   <svg className="absolute left-0 top-0 h-full w-[1px]" preserveAspectRatio="none">
@@ -404,7 +404,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
               </div>
 
               {/* Luteal Phase Container */}
-              <div className="relative w-1/2 border border-border rounded-lg bg-background overflow-hidden">
+              <div className="relative w-1/2 border border-border rounded-[6px] bg-background overflow-hidden">
                 {/* Luteal Phase Header */}
                 <div className="flex h-7 border-b border-border bg-background relative z-10">
                   <div className="w-full flex items-center justify-center px-2.5 py-1.5">
@@ -430,7 +430,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
                   key={day}
                   className={cn(
                     "flex-1 flex items-center justify-center text-xs font-normal leading-4 text-[#696863] text-center",
-                    day === currentDayInCycle && "bg-card rounded-xl"
+                    day === currentDayInCycle && "bg-card rounded-[6px]"
                   )}
                 >
                   {day}
@@ -441,23 +441,23 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
             {/* Legend */}
             <div className="flex items-center justify-center gap-4 pt-4">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.estrogen }} />
-                <span className="text-xs leading-4">Estrogen</span>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.estrogen }} />
+                <span className="text-sm text-[#696863] font-normal">Estrogen</span>
               </div>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.progesterone }} />
-                <span className="text-xs leading-4">Progesterone</span>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.progesterone }} />
+                <span className="text-sm text-[#696863] font-normal">Progesterone</span>
               </div>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.fsh }} />
-                <span className="text-xs leading-4">FSH (Follicle Stimulating Hormone)</span>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.fsh }} />
+                <span className="text-sm text-[#696863] font-normal">FSH (Follicle Stimulating Hormone)</span>
               </div>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.lh }} />
-                <span className="text-xs leading-4">LH (Luteinizing Hormone)</span>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: HORMONE_COLORS.lh }} />
+                <span className="text-sm text-[#696863] font-normal">LH (Luteinizing Hormone)</span>
               </div>
             </div>
           </div>
@@ -482,7 +482,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
               className="rounded-md border"
             />
             {periodRange?.from && (
-              <div className="mt-4 p-3 bg-muted rounded-lg text-sm w-full">
+              <div className="mt-4 p-3 bg-muted rounded-[6px] text-sm w-full">
                 <strong>Selected Period:</strong>{' '}
                 {periodRange.from.toLocaleDateString()}
                 {periodRange.to && periodRange.to.getTime() !== periodRange.from.getTime() && (

@@ -52,6 +52,7 @@ export function Dashboard() {
   // Selected session state
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [selectedSession, setSelectedSession] = useState<SessionDetailDto | null>(null)
+  const [selectedSessionMonth, setSelectedSessionMonth] = useState<string | null>(null) // Format: "YYYY-MM"
   const selectedSessionRef = useRef<HTMLDivElement>(null)
 
   // Month view navigation state
@@ -264,6 +265,30 @@ export function Dashboard() {
     })
   }, [plan, weekStart])
 
+  // Get sessions for list view based on current activeView
+  const listSessions = useMemo(() => {
+    if (!plan) return []
+
+    let sessions: SessionSummary[]
+    if (activeView === 'week') {
+      sessions = weekSessions
+    } else if (activeView === 'month') {
+      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+      sessions = plan.sessions.filter(session => {
+        const sessionDate = new Date(session.scheduledDate)
+        return sessionDate >= monthStart && sessionDate <= monthEnd
+      })
+    } else {
+      // Plan view - all sessions
+      sessions = plan.sessions
+    }
+
+    // Sort by date
+    return sessions
+      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+  }, [plan, activeView, weekSessions, currentMonth])
+
   const weekSummary = useMemo(() => {
     if (!plan) return null
     return calculateWeekSummary(
@@ -276,11 +301,29 @@ export function Dashboard() {
   }, [weekSessions, weekStart, plan, distanceUnit])
 
   // Update cycle phases to cover month range when in month view
+  // Get all months in the plan (for Plan view)
+  const planMonths = useMemo(() => {
+    if (!plan) return []
+    const months: Date[] = []
+    const start = new Date(plan.startDate)
+    const end = new Date(plan.endDate)
+
+    let current = new Date(start.getFullYear(), start.getMonth(), 1)
+    while (current <= end) {
+      months.push(new Date(current))
+      current.setMonth(current.getMonth() + 1)
+    }
+    return months
+  }, [plan])
+
   const displayedCyclePhases = useMemo(() => {
     if (!cyclePosition) return new Map<string, CyclePhase>()
 
     let rangeStart: Date, rangeEnd: Date
-    if (activeView === 'month') {
+    if (activeView === 'plan' && plan) {
+      rangeStart = new Date(plan.startDate)
+      rangeEnd = new Date(plan.endDate)
+    } else if (activeView === 'month') {
       rangeStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
       rangeEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
     } else {
@@ -295,24 +338,28 @@ export function Dashboard() {
       new Date(cyclePosition.lastPeriodStart),
       cyclePosition.cycleLength
     )
-  }, [cyclePosition, weekStart, activeView, currentMonth])
+  }, [cyclePosition, weekStart, activeView, currentMonth, plan])
 
   // Handle day click - show session details
-  const handleDayClick = useCallback(async (_date: Date, session?: SessionSummary) => {
+  const handleDayClick = useCallback(async (date: Date, session?: SessionSummary) => {
     // Toggle: if clicking same session, deselect
     if (session && selectedSessionId === session.id) {
       setSelectedSessionId(null)
       setSelectedSession(null)
+      setSelectedSessionMonth(null)
       return
     }
 
     if (!session) {
       setSelectedSessionId(null)
       setSelectedSession(null)
+      setSelectedSessionMonth(null)
       return
     }
 
     setSelectedSessionId(session.id)
+    // Track which month the selected session belongs to (for Plan view)
+    setSelectedSessionMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
 
     // Try to find full details in upcomingSessions first
     const existingDetails = upcomingSessions.find(s => s.id === session.id)
@@ -418,9 +465,12 @@ export function Dashboard() {
         onPeriodLogged={handlePeriodLogged}
       />
 
+      {/* Divider */}
+      <div className="w-full lg:w-[70%] mx-auto mt-[48px] border-t border-border" />
+
       {/* Calendar View */}
       {plan && (
-        <div className="w-full lg:w-[70%] mx-auto pb-64">
+        <div className="w-full lg:w-[70%] mx-auto mt-[48px] pb-64">
           {/* Header row: Title + Date Navigation + View Controls */}
           <div className="flex items-center justify-between mb-[48px]">
             {/* Title */}
@@ -489,18 +539,16 @@ export function Dashboard() {
                 </button>
               </div>
 
-              {/* Week/Month/Plan Toggle - only show in calendar mode */}
-              {displayMode === 'calendar' && (
-                <SegmentedControl
-                  options={[
-                    { value: 'week', label: 'Week' },
-                    { value: 'month', label: 'Month' },
-                    { value: 'plan', label: 'Plan' }
-                  ]}
-                  value={activeView}
-                  onValueChange={(value) => setActiveView(value as CalendarView)}
-                />
-              )}
+              {/* Week/Month/Plan Toggle */}
+              <SegmentedControl
+                options={[
+                  { value: 'week', label: 'Week' },
+                  { value: 'month', label: 'Month' },
+                  { value: 'plan', label: 'Plan' }
+                ]}
+                value={activeView}
+                onValueChange={(value) => setActiveView(value as CalendarView)}
+              />
             </div>
           </div>
 
@@ -675,55 +723,152 @@ export function Dashboard() {
           {/* Divider */}
           <div className="border-t border-border mb-[48px]" />
 
-          {activeView === 'week' && (
-            <WeekView
-              sessions={weekSessions}
-              weekStart={weekStart}
-              cyclePhases={displayedCyclePhases}
-              distanceUnit={distanceUnit}
-              planStartDate={new Date(plan.startDate)}
-              planEndDate={new Date(plan.endDate)}
-              planName={plan.raceName}
-              onDayClick={handleDayClick}
-              isExpanded={false}
-              onToggleExpand={() => setActiveView('month')}
-              activeView={activeView}
-              onViewChange={(view) => setActiveView(view as CalendarView)}
-              selectedSessionId={selectedSessionId ?? undefined}
-              displayMode={displayMode}
-              onDisplayModeChange={setDisplayMode}
-              showControls={false}
-              showSummary={false}
-            />
+          {/* Calendar View */}
+          {displayMode === 'calendar' && (
+            <>
+              {activeView === 'week' && (
+                <WeekView
+                  sessions={weekSessions}
+                  weekStart={weekStart}
+                  cyclePhases={displayedCyclePhases}
+                  distanceUnit={distanceUnit}
+                  planStartDate={new Date(plan.startDate)}
+                  planEndDate={new Date(plan.endDate)}
+                  planName={plan.raceName}
+                  onDayClick={handleDayClick}
+                  isExpanded={false}
+                  onToggleExpand={() => setActiveView('month')}
+                  activeView={activeView}
+                  onViewChange={(view) => setActiveView(view as CalendarView)}
+                  selectedSessionId={selectedSessionId ?? undefined}
+                  displayMode={displayMode}
+                  onDisplayModeChange={setDisplayMode}
+                  showControls={false}
+                  showSummary={false}
+                />
+              )}
+
+              {activeView === 'month' && (
+                <MonthViewInline
+                  currentMonth={currentMonth}
+                  sessions={plan.sessions}
+                  cyclePhases={displayedCyclePhases}
+                  onDayClick={handleDayClick}
+                  planStartDate={new Date(plan.startDate)}
+                  planEndDate={new Date(plan.endDate)}
+                  selectedSessionId={selectedSessionId ?? undefined}
+                />
+              )}
+
+              {activeView === 'plan' && (
+                <div className="space-y-12">
+                  {planMonths.map((month, index) => {
+                    const monthKey = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`
+                    const monthLabel = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                    const isSelectedMonth = selectedSessionMonth === monthKey
+
+                    return (
+                      <div key={monthKey}>
+                        {/* Divider between months */}
+                        {index > 0 && <div className="border-t border-border mb-12" />}
+
+                        {/* Month label */}
+                        <h3 className="text-xl font-normal font-[family-name:'Petrona'] mb-4">{monthLabel}</h3>
+
+                        {/* Month grid */}
+                        <MonthViewInline
+                          currentMonth={month}
+                          sessions={plan.sessions}
+                          cyclePhases={displayedCyclePhases}
+                          onDayClick={handleDayClick}
+                          planStartDate={new Date(plan.startDate)}
+                          planEndDate={new Date(plan.endDate)}
+                          selectedSessionId={selectedSessionId ?? undefined}
+                        />
+
+                        {/* Selected Session Details - shown below this month if session is in this month */}
+                        {selectedSession && isSelectedMonth && (
+                          <div ref={selectedSessionRef} className="mt-8 w-full lg:w-2/3 mx-auto">
+                            <WorkoutSessionCard
+                              session={selectedSession}
+                              onSessionUpdated={() => {
+                                loadDashboardData()
+                                setSelectedSession(null)
+                                setSelectedSessionId(null)
+                                setSelectedSessionMonth(null)
+                              }}
+                              distanceUnit={distanceUnit}
+                              pendingConfirmation={planSummary?.pendingConfirmation}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Selected Session Details - for week and month views */}
+              {selectedSession && activeView !== 'plan' && (
+                <div ref={selectedSessionRef} className="mt-8 w-full lg:w-2/3 mx-auto">
+                  <WorkoutSessionCard
+                    session={selectedSession}
+                    onSessionUpdated={() => {
+                      loadDashboardData()
+                      setSelectedSession(null)
+                      setSelectedSessionId(null)
+                    }}
+                    distanceUnit={distanceUnit}
+                    pendingConfirmation={planSummary?.pendingConfirmation}
+                  />
+                </div>
+              )}
+            </>
           )}
 
-          {activeView === 'month' && (
-            <MonthViewInline
-              currentMonth={currentMonth}
-              sessions={plan.sessions}
-              cyclePhases={displayedCyclePhases}
-              onDayClick={handleDayClick}
-              onNavigateMonth={handleNavigateMonth}
-              planStartDate={new Date(plan.startDate)}
-              planEndDate={new Date(plan.endDate)}
-            />
-          )}
+          {/* List View */}
+          {displayMode === 'list' && (
+            <div className="space-y-6">
+              {listSessions.map((session, index) => {
+                const sessionDate = new Date(session.scheduledDate)
+                const sessionMonth = `${sessionDate.getFullYear()}-${sessionDate.getMonth()}`
+                const prevSession = index > 0 ? listSessions[index - 1] : null
+                const prevSessionDate = prevSession ? new Date(prevSession.scheduledDate) : null
+                const prevMonth = prevSessionDate ? `${prevSessionDate.getFullYear()}-${prevSessionDate.getMonth()}` : null
+                const isNewMonth = sessionMonth !== prevMonth
 
-          {/* Selected Session Details */}
-          {selectedSession && (
-            <div ref={selectedSessionRef} className="mt-8 w-full lg:w-2/3 mx-auto">
-              <WorkoutSessionCard
-                session={selectedSession}
-                onSessionUpdated={() => {
-                  loadDashboardData()
-                  setSelectedSession(null)
-                  setSelectedSessionId(null)
-                }}
-                distanceUnit={distanceUnit}
-                pendingConfirmation={planSummary?.pendingConfirmation}
-              />
+                return (
+                  <div key={session.id}>
+                    {/* Month label */}
+                    {isNewMonth && (
+                      <div className="w-full lg:w-2/3 mx-auto mb-4">
+                        {index > 0 && <div className="border-t border-border mb-6 mt-6" />}
+                        <h3 className="text-xl font-normal font-[family-name:'Petrona']">
+                          {sessionDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </h3>
+                      </div>
+                    )}
+                    <div className="w-full lg:w-2/3 mx-auto">
+                      <WorkoutSessionCard
+                        session={session as SessionDetailDto}
+                        onSessionUpdated={() => {
+                          loadDashboardData()
+                        }}
+                        distanceUnit={distanceUnit}
+                        pendingConfirmation={planSummary?.pendingConfirmation}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+              {listSessions.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  No training sessions in this time period.
+                </div>
+              )}
             </div>
           )}
+
         </div>
       )}
 
