@@ -48,6 +48,8 @@ export interface WeekViewProps {
   renderSessionCard?: (session: SessionSummary, date: Date) => React.ReactNode
   /** Whether to show the header with controls. Set to false when controls are rendered externally (e.g., in Dashboard). Defaults to true. */
   showControls?: boolean
+  /** Whether to show the week summary bar. Set to false when summary is rendered externally. Defaults to true. */
+  showSummary?: boolean
 }
 
 export function WeekView({
@@ -67,7 +69,8 @@ export function WeekView({
   displayMode = 'calendar',
   onDisplayModeChange,
   renderSessionCard,
-  showControls = true
+  showControls = true,
+  showSummary = true
 }: WeekViewProps) {
   // Calculate week summary
   const summary = React.useMemo(
@@ -96,43 +99,6 @@ export function WeekView({
     return map
   }, [sessions])
 
-  // Calculate week end date
-  const weekEnd = React.useMemo(() => {
-    const end = new Date(weekStart)
-    end.setDate(end.getDate() + 6)
-    return end
-  }, [weekStart])
-
-  // Format date range label based on active view
-  const dateRangeLabel = React.useMemo(() => {
-    if (activeView === 'plan' && planEndDate) {
-      // Show plan date range: "February 1 - May 21, 2026"
-      const startMonth = planStartDate.toLocaleDateString('en-US', { month: 'long' })
-      const startDay = planStartDate.getDate()
-      const endMonth = planEndDate.toLocaleDateString('en-US', { month: 'long' })
-      const endDay = planEndDate.getDate()
-      const year = planEndDate.getFullYear()
-      return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`
-    }
-
-    if (activeView === 'month') {
-      // Show just month name for month view: "February"
-      return weekStart.toLocaleDateString('en-US', { month: 'long' })
-    }
-
-    // Show week range for week view: "February 1 - 7, 2026"
-    const startMonth = weekStart.toLocaleDateString('en-US', { month: 'long' })
-    const startDay = weekStart.getDate()
-    const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'long' })
-    const endDay = weekEnd.getDate()
-    const year = weekEnd.getFullYear()
-
-    if (startMonth === endMonth) {
-      return `${startMonth} ${startDay} - ${endDay}, ${year}`
-    } else {
-      return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`
-    }
-  }, [weekStart, weekEnd, activeView, planStartDate, planEndDate])
 
   return (
     <div className="space-y-8">
@@ -192,6 +158,7 @@ export function WeekView({
       )}
 
       {/* Week Summary Bar */}
+      {showSummary && (
       <div className="w-2/3 mx-auto p-4 bg-background rounded-lg border border-border">
         {/* Segmented Progress Bar with Stages */}
         <div className="mb-3">
@@ -337,18 +304,12 @@ export function WeekView({
           </div>
         </div>
       </div>
+      )}
 
       {/* Content Area */}
       {displayMode === 'calendar' ? (
         /* Calendar View */
         <div className="space-y-2">
-          {/* Date Range Label */}
-          <div className="text-left">
-            <span className="text-xl font-normal text-foreground font-petrona">
-              {dateRangeLabel}
-            </span>
-          </div>
-
           {/* Cycle Phase Legend */}
           {cyclePhases.size > 0 && (
             <div className="flex justify-center py-2">
