@@ -277,12 +277,20 @@ export function checkAudioSupport(): { supported: boolean; error?: string } {
       }
     }
 
-    // AudioWorklet is required for capture and playback
-    if (!window.AudioContext || !AudioContext.prototype.audioWorklet) {
-      return {
-        supported: false,
-        error: 'Browser does not support AudioWorklet. Please update to Chrome 66+, Firefox 76+, or Safari 14.1+.'
+    // AudioWorklet is required for capture and playback.
+    // Note: Accessing AudioContext.prototype.audioWorklet can throw "Illegal invocation"
+    // in production builds where Vite/esbuild minification breaks native API `this` binding.
+    // We wrap in try-catch and only fail if the check explicitly returns false.
+    try {
+      if (!window.AudioContext || !AudioContext.prototype.audioWorklet) {
+        return {
+          supported: false,
+          error: 'Browser does not support AudioWorklet. Please update to Chrome 66+, Firefox 76+, or Safari 14.1+.'
+        }
       }
+    } catch {
+      // Minification can break native prototype property access — fall through
+      // and let actual AudioWorklet usage determine support at runtime.
     }
 
     if (!window.WebSocket) {
