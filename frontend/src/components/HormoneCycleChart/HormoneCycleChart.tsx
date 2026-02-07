@@ -330,7 +330,7 @@ export const HormoneCycleChart: React.FC<HormoneCycleChartProps> = ({ cyclePosit
   };
 
   return (
-    <div className="w-full lg:w-[70%] mx-auto bg-gradient-to-b from-muted to-background border border-border p-3 rounded-[8px] shadow-[1px_1px_24px_0px_rgba(69,66,58,0.04)]">
+    <div className="w-full lg:w-[85%] mx-auto bg-gradient-to-b from-muted to-background border border-border p-3 rounded-[8px] shadow-[1px_1px_24px_0px_rgba(69,66,58,0.04)]">
       <div className="bg-background border border-border rounded-[6px] py-6 w-full">
         <div className="flex flex-col gap-6 w-full">
           {/* Header */}

@@ -519,11 +519,11 @@ export function Dashboard() {
       />
 
       {/* Divider */}
-      <div className="w-full lg:w-[70%] mx-auto mt-[48px] border-t border-border" />
+      <div className="w-full lg:w-[85%] mx-auto mt-[48px] border-t border-border" />
 
       {/* Calendar View */}
       {plan && (
-        <div className="w-full lg:w-[70%] mx-auto mt-[48px] pb-64">
+        <div className="w-full lg:w-[85%] mx-auto mt-[48px] pb-64">
           {/* Header row: Title + Date Navigation + View Controls */}
           <div className="flex items-center justify-between mb-[48px]">
             {/* Title */}
@@ -871,7 +871,7 @@ export function Dashboard() {
 
                         {/* Selected Session Details - shown below this month if session is in this month */}
                         {selectedSession && isSelectedMonth && (
-                          <div ref={selectedSessionRef} className="mt-8 w-full lg:w-2/3 mx-auto">
+                          <div ref={selectedSessionRef} className="mt-8 w-full lg:w-[85%] mx-auto">
                             <WorkoutSessionCard
                               session={selectedSession}
                               onSessionUpdated={() => {
@@ -893,7 +893,7 @@ export function Dashboard() {
 
               {/* Selected Session Details - for week and month views */}
               {selectedSession && activeView !== 'plan' && (
-                <div ref={selectedSessionRef} className="mt-8 w-full lg:w-2/3 mx-auto">
+                <div ref={selectedSessionRef} className="mt-8 w-full lg:w-[85%] mx-auto">
                   <WorkoutSessionCard
                     session={selectedSession}
                     onSessionUpdated={() => {
@@ -924,14 +924,14 @@ export function Dashboard() {
                   <div key={session.id}>
                     {/* Month label */}
                     {isNewMonth && (
-                      <div className="w-full lg:w-2/3 mx-auto mb-4">
+                      <div className="w-full lg:w-[85%] mx-auto mb-4">
                         {index > 0 && <div className="border-t border-border mb-6 mt-6" />}
                         <h3 className="text-xl font-normal font-[family-name:'Petrona']">
                           {sessionDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </h3>
                       </div>
                     )}
-                    <div className="w-full lg:w-2/3 mx-auto">
+                    <div className="w-full lg:w-[85%] mx-auto">
                       <WorkoutSessionCard
                         session={session as SessionDetailDto}
                         onSessionUpdated={() => {
