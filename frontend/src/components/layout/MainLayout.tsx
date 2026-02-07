@@ -41,17 +41,6 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 Training Hub
               </Link>
-              <Link
-                to="/calendar"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === '/calendar'
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                )}
-              >
-                Calendar
-              </Link>
 {/* History link commented out for hackathon MVP
               <Link
                 to="/history"

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -8,7 +8,8 @@ import { Login } from '@/pages/Login'
 import { Signup } from '@/pages/Signup'
 import { Onboarding } from '@/pages/Onboarding'
 import { Dashboard } from '@/pages/Dashboard'
-import Calendar from '@/pages/Calendar'
+// Calendar page removed - functionality merged into Dashboard
+// import Calendar from '@/pages/Calendar'
 // import TrainingHistory from '@/pages/TrainingHistory'
 // import RaceDetail from '@/pages/RaceDetail'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
@@ -48,6 +49,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Calendar route removed - functionality merged into Dashboard
             <Route
               path="/calendar"
               element={
@@ -58,6 +60,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            */}
             {/* History routes commented out for hackathon MVP
             <Route
               path="/history"
@@ -83,6 +86,7 @@ function App() {
 
             {/* Redirects */}
             <Route path="/" element={<RootRedirect />} />
+            <Route path="/calendar" element={<Navigate to="/dashboard" replace />} />
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
