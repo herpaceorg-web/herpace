@@ -153,6 +153,7 @@ public class PlanGenerationService : IPlanGenerationService
             ScheduledDate = DateTime.SpecifyKind(sessionDto.ScheduledDate, DateTimeKind.Utc), // Ensure UTC for PostgreSQL
             WorkoutType = sessionDto.WorkoutType,
             WarmUp = sessionDto.WarmUp,
+            Recovery = sessionDto.Recovery,
             SessionDescription = sessionDto.SessionDescription,
             DurationMinutes = sessionDto.DurationMinutes,
             Distance = sessionDto.Distance,

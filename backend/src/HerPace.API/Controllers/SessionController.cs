@@ -460,6 +460,7 @@ public class SessionController : ControllerBase
                 ScheduledDate = todaysSessionEntity.ScheduledDate,
                 WorkoutType = todaysSessionEntity.WorkoutType,
                 WarmUp = todaysSessionEntity.WarmUp,
+                Recovery = todaysSessionEntity.Recovery,
                 SessionDescription = todaysSessionEntity.SessionDescription,
                 DurationMinutes = todaysSessionEntity.DurationMinutes,
                 Distance = todaysSessionEntity.Distance,

@@ -286,6 +286,7 @@ public class PlanAdaptationService : IPlanAdaptationService
                     existingSession.SessionName = aiSession.SessionName;
                     existingSession.WorkoutType = aiSession.WorkoutType;
                     existingSession.WarmUp = aiSession.WarmUp;
+                    existingSession.Recovery = aiSession.Recovery;
                     existingSession.SessionDescription = aiSession.SessionDescription;
                     existingSession.DurationMinutes = aiSession.DurationMinutes;
                     existingSession.Distance = aiSession.Distance;

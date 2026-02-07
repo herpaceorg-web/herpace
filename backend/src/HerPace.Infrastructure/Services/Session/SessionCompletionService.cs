@@ -216,6 +216,7 @@ public class SessionCompletionService : ISessionCompletionService
             ScheduledDate = session.ScheduledDate,
             WorkoutType = session.WorkoutType,
             WarmUp = session.WarmUp,
+            Recovery = session.Recovery,
             SessionDescription = session.SessionDescription,
             DurationMinutes = session.DurationMinutes,
             Distance = session.Distance,
