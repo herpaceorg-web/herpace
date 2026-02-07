@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { cn } from '@/lib/utils'
+import { useNavigate, Link } from 'react-router-dom'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -13,7 +12,6 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const { logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const handleLogout = () => {
     logout()
@@ -25,37 +23,9 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-8">
+          <Link to="/dashboard" className="hover:opacity-80 transition-opacity">
             <h1 className="text-2xl font-normal text-primary font-[family-name:'Petrona'] leading-none">HerPace</h1>
-
-            {/* Navigation */}
-            <nav className="flex items-center gap-6">
-              <Link
-                to="/dashboard"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === '/dashboard'
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                )}
-              >
-                Training Hub
-              </Link>
-{/* History link commented out for hackathon MVP
-              <Link
-                to="/history"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname.startsWith('/history')
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                )}
-              >
-                History
-              </Link>
-              */}
-            </nav>
-          </div>
+          </Link>
 
           {/* User menu */}
           <div className="flex items-center gap-4">
