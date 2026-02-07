@@ -858,8 +858,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         </CardContent>
       </Card>
 
-      {/* Complete Session Dialog */}
-      {isSessionMode && localSession && (
+      {/* Complete Session Dialog - only mount when open to avoid audio API initialization on page load */}
+      {isSessionMode && localSession && isCompleteDialogOpen && (
         <CompleteSessionDialog
           session={localSession}
           open={isCompleteDialogOpen}
