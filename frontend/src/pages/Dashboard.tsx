@@ -4,7 +4,6 @@ import { api } from '@/lib/api-client'
 import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto, PlanDetailResponse, SessionSummary } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
-import { LogWorkoutModal } from '@/components/session/LogWorkoutModal'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
 import { WeekView } from '@/components/calendar/WeekView'
 import type { CalendarView, DisplayMode } from '@/components/calendar/WeekView'
@@ -34,7 +33,6 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSummaryModal, setShowSummaryModal] = useState(false)
-  const [showLogWorkoutModal, setShowLogWorkoutModal] = useState(false)
 
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi')
   const [cyclePosition, setCyclePosition] = useState<CyclePositionDto | null>(null)
@@ -219,39 +217,7 @@ export function Dashboard() {
     setCyclePosition(updated)
   }, [])
 
-  // Memoize upcoming sessions rendering to prevent re-renders during polling
-  // (upcomingSessions array doesn't change during recalculation polling)
-  const upcomingSessionsContent = useMemo(() => {
-    const safeUpcomingSessions = Array.isArray(upcomingSessions) ? upcomingSessions : []
-
-    if (safeUpcomingSessions.length === 0) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground text-center">
-              No upcoming sessions found.
-            </p>
-          </CardContent>
-        </Card>
-      )
-    }
-
-    return (
-      <div className="w-full lg:w-2/3 mx-auto space-y-12">
-        {safeUpcomingSessions.map((session) => (
-          <WorkoutSessionCard
-            key={session.id}
-            session={session}
-            onSessionUpdated={loadDashboardData}
-            distanceUnit={distanceUnit}
-            pendingConfirmation={planSummary?.pendingConfirmation}
-          />
-        ))}
-      </div>
-    )
-  }, [upcomingSessions, distanceUnit, planSummary?.pendingConfirmation, loadDashboardData])
-
-  // NEW: WeekView calculations
+  // WeekView calculations
   const weekStart = useMemo(() => getWeekStart(new Date()), [])
 
   const weekSessions = useMemo(() => {
@@ -379,16 +345,6 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Race header */}
-      {planSummary && (
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg p-6">
-          <h1 className="text-3xl font-bold mb-2">{planSummary.raceName}</h1>
-          <p className="text-lg opacity-90">
-            {planSummary.daysUntilRace} days until race day
-          </p>
-        </div>
-      )}
-
       {/* Recalculation status banner */}
       {planSummary?.hasPendingRecalculation && (
         <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-900">
@@ -409,58 +365,6 @@ export function Dashboard() {
           cyclePosition={cyclePosition}
           onPeriodLogged={handlePeriodLogged}
         />
-      </div>
-
-      {/* Today's workout or pre-training message */}
-      <div>
-        <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] mb-4">Today's Session</h2>
-        {planSummary?.todaysSession ? (
-          <div className="w-full lg:w-2/3 mx-auto">
-            <WorkoutSessionCard
-              session={planSummary.todaysSession}
-              cyclePhaseTips={planSummary.cyclePhaseTips}
-              onSessionUpdated={loadDashboardData}
-              distanceUnit={distanceUnit}
-              pendingConfirmation={planSummary.pendingConfirmation}
-            />
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  No workout scheduled for today. Your training plan starts soon!
-                </p>
-
-                {planSummary?.cyclePhaseTips && (
-                  <div className="mt-4 pt-4 border-t">
-                    <h3 className="font-semibold mb-2">Current Cycle Phase Tips</h3>
-                    <div className="text-sm space-y-2">
-                      <p><strong>Phase:</strong> {planSummary.cyclePhaseTips.phase}</p>
-                      {(Array.isArray(planSummary.cyclePhaseTips.nutritionTips) ? planSummary.cyclePhaseTips.nutritionTips : []).length > 0 && (
-                        <div>
-                          <strong>Nutrition:</strong>
-                          <ul className="list-disc ml-5">
-                            {(Array.isArray(planSummary.cyclePhaseTips.nutritionTips) ? planSummary.cyclePhaseTips.nutritionTips : []).map((tip, i) => (
-                              <li key={i}>{tip}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  variant="default"
-                  onClick={() => setShowLogWorkoutModal(true)}
-                >
-                  Log a Workout
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {/* Calendar View */}
@@ -572,15 +476,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Upcoming sessions - UNCHANGED from original */}
-      <div>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-          <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona']">Upcoming Sessions</h2>
-        </div>
-
-        {upcomingSessionsContent}
-      </div>
-
       {/* Recalculation summary modal */}
       <Dialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
         <DialogContent className="sm:max-w-[500px]">
@@ -623,15 +518,6 @@ export function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Log Workout Modal */}
-      <LogWorkoutModal
-        open={showLogWorkoutModal}
-        onOpenChange={setShowLogWorkoutModal}
-        onWorkoutLogged={loadDashboardData}
-        distanceUnit={distanceUnit}
-      />
-
 
     </div>
   )

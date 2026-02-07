@@ -8,11 +8,11 @@ import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Sparkles, Heart, Ban, Check, AlertCircle } from 'lucide-react'
 import { displayDistance, rpeToIntensityLevel } from '@/lib/utils'
-import type { SessionDetailDto, CyclePhaseTipsDto, SessionCompletionResponse, TrainingStageInfoDto } from '@/types/api'
+import type { SessionDetailDto, CyclePhaseTipsDto, SessionCompletionResponse, TrainingStageInfoDto, CompleteSessionRequest } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
-// import { CompleteSessionDialog } from './CompleteSessionDialog'
+import { CompleteSessionDialog } from './CompleteSessionDialog'
 import { RecalculationConfirmationModal } from './RecalculationConfirmationModal'
 import { api } from '@/lib/api-client'
 import { useToast } from '@/contexts/ToastContext'
@@ -137,7 +137,6 @@ const getPhaseDisplayInfo = (phase: CyclePhase, menstruationDay?: number): { ite
 
 export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false)
-  void isCompleteDialogOpen // Suppress unused warning while dialog is disabled
   const [isSkipping, setIsSkipping] = useState(false)
   const [localSession, setLocalSession] = useState(props.session)
   const [showRecalculationModal, setShowRecalculationModal] = useState(false)
@@ -279,38 +278,38 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
     }
   }
 
-  // const handleComplete = async (data: CompleteSessionRequest) => {
-  //   if (!isSessionMode || !localSession) return
+  const handleComplete = async (data: CompleteSessionRequest) => {
+    if (!isSessionMode || !localSession) return
 
-  //   const response = await api.put<CompleteSessionRequest, SessionCompletionResponse>(
-  //     `/api/sessions/${localSession.id}/complete`,
-  //     data
-  //   )
+    const response = await api.put<CompleteSessionRequest, SessionCompletionResponse>(
+      `/api/sessions/${localSession.id}/complete`,
+      data
+    )
 
-  //   console.log('Session completed successfully:', response)
+    console.log('Session completed successfully:', response)
 
-  //   // Show confirmation modal if user needs to approve recalculation
-  //   if (response.pendingConfirmation) {
-  //     setShowRecalculationModal(true)
-  //   } else if (response.recalculationTriggered) {
-  //     // Only show automatic toast if recalculation was triggered WITHOUT confirmation
-  //     toast.info(
-  //       "Training Plan Adapting",
-  //       "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
-  //     )
-  //   }
+    // Show confirmation modal if user needs to approve recalculation
+    if (response.pendingConfirmation) {
+      setShowRecalculationModal(true)
+    } else if (response.recalculationTriggered) {
+      // Only show automatic toast if recalculation was triggered WITHOUT confirmation
+      toast.info(
+        "Training Plan Adapting",
+        "We're adjusting your upcoming workouts based on your recent training. This usually takes 1-2 minutes."
+      )
+    }
 
-  //   setLocalSession({
-  //     ...localSession,
-  //     isCompleted: true,
-  //     actualDistance: data.actualDistance,
-  //     actualDuration: data.actualDuration,
-  //     rpe: data.rpe,
-  //     userNotes: data.userNotes
-  //   })
+    setLocalSession({
+      ...localSession,
+      isCompleted: true,
+      actualDistance: data.actualDistance,
+      actualDuration: data.actualDuration,
+      rpe: data.rpe,
+      userNotes: data.userNotes
+    })
 
-  //   props.onSessionUpdated?.()
-  // }
+    props.onSessionUpdated?.()
+  }
 
   const handleRecalculationConfirmed = () => {
     // User confirmed - show toast and trigger parent refresh to start polling
@@ -859,8 +858,8 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
         </CardContent>
       </Card>
 
-      {/* Complete Session Dialog - temporarily disabled for debugging */}
-      {/* {isSessionMode && localSession && (
+      {/* Complete Session Dialog */}
+      {isSessionMode && localSession && (
         <CompleteSessionDialog
           session={localSession}
           open={isCompleteDialogOpen}
@@ -869,7 +868,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           distanceUnit={distanceUnit}
           startInLogMode={isRestDay}
         />
-      )} */}
+      )}
 
       {/* Recalculation Confirmation Modal */}
       {isSessionMode && (
