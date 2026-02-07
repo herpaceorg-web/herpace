@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Check } from "lucide-react"
+import { Check, Ban } from "lucide-react"
 
 export interface PunchCardDay {
   dayNumber: number
@@ -10,13 +10,59 @@ export interface PunchCardDay {
   isRest: boolean
 }
 
+export type PunchCardVariant = 'default' | 'compact'
+
 interface PunchCardProps {
   days: PunchCardDay[]
   className?: string
+  variant?: PunchCardVariant
 }
 
 const PunchCard = React.forwardRef<HTMLDivElement, PunchCardProps>(
-  ({ days, className }, ref) => {
+  ({ days, className, variant = 'default' }, ref) => {
+    const activeDays = days.filter(day => day.hasSession && !day.isRest)
+
+    const completedCount = activeDays.filter(d => d.isCompleted).length
+    const skippedCount = activeDays.filter(d => d.isSkipped).length
+    const pendingCount = activeDays.length - completedCount - skippedCount
+    const totalCount = activeDays.length
+
+    // Compact variant - summary for month/plan views
+    if (variant === 'compact') {
+      return (
+        <div
+          ref={ref}
+          className={cn(
+            "bg-muted flex items-center gap-3 px-3 py-2 rounded-lg",
+            className
+          )}
+        >
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-4 h-4 rounded-full flex items-center justify-center text-white"
+              style={{ backgroundColor: '#677344' }}
+            >
+              <Check className="w-2.5 h-2.5" />
+            </div>
+            <span className="text-sm font-medium">{completedCount}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-full bg-background border border-border flex items-center justify-center">
+              <Ban className="w-2.5 h-2.5 text-foreground" />
+            </div>
+            <span className="text-sm font-medium">{skippedCount}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-full bg-background border border-border" />
+            <span className="text-sm font-medium">{pendingCount}</span>
+          </div>
+          <div className="h-4 border-l border-border mx-1" />
+          <span className="text-sm font-normal text-muted-foreground">{completedCount}/{totalCount} sessions completed</span>
+        </div>
+      )
+    }
+
+    // Default variant - week view with individual circles
     return (
       <div
         ref={ref}
@@ -25,33 +71,30 @@ const PunchCard = React.forwardRef<HTMLDivElement, PunchCardProps>(
           className
         )}
       >
-        {days.map((day, index) => {
+        {activeDays.map((day, index) => {
           const isCompleted = day.isCompleted
-          const isPending = day.hasSession && !day.isCompleted && !day.isSkipped
+          const isPending = !day.isCompleted && !day.isSkipped
           const isSkipped = day.isSkipped
-          const isRest = day.isRest || !day.hasSession
 
           return (
             <div
               key={index}
               className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
-                isCompleted && "bg-primary text-primary-foreground",
-                isPending && "bg-background text-foreground border border-border",
-                isSkipped && "bg-destructive/10 text-destructive",
-                isRest && "text-muted-foreground/50"
+                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors flex-shrink-0",
+                isCompleted && "text-white",
+                (isPending || isSkipped) && "bg-background text-foreground border border-border"
               )}
+              style={isCompleted ? { backgroundColor: '#677344' } : undefined}
               title={
                 isCompleted ? `Day ${day.dayNumber} - Completed` :
                 isSkipped ? `Day ${day.dayNumber} - Skipped` :
-                isPending ? `Day ${day.dayNumber} - Pending` :
-                `Day ${day.dayNumber} - Rest`
+                `Day ${day.dayNumber} - Pending`
               }
             >
               {isCompleted ? (
                 <Check className="w-3 h-3" />
-              ) : isRest ? (
-                <span className="text-[10px]">–</span>
+              ) : isSkipped ? (
+                <Ban className="w-3 h-3" />
               ) : (
                 <span>{day.dayNumber}</span>
               )}

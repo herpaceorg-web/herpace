@@ -152,25 +152,6 @@ const HORMONE_COLORS = {
   lh: "#597d93",
 };
 
-const chartConfig = {
-  estrogen: {
-    label: "Estrogen",
-    theme: { light: HORMONE_COLORS.estrogen, dark: HORMONE_COLORS.estrogen },
-  },
-  progesterone: {
-    label: "Progesterone",
-    theme: { light: HORMONE_COLORS.progesterone, dark: HORMONE_COLORS.progesterone },
-  },
-  fsh: {
-    label: "FSH",
-    theme: { light: HORMONE_COLORS.fsh, dark: HORMONE_COLORS.fsh },
-  },
-  lh: {
-    label: "LH",
-    theme: { light: HORMONE_COLORS.lh, dark: HORMONE_COLORS.lh },
-  },
-};
-
 interface PhaseChartProps {
   data: HormoneData[];
   phaseType: "follicular" | "luteal";

@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange } from '@/utils/cyclePhases'
 import { Badge } from '@/components/ui/badge'
-import { PunchCard, PunchCardDay } from '@/components/ui/punch-card'
+import { PunchCard, PunchCardDay, PunchCardVariant } from '@/components/ui/punch-card'
 import { WorkoutType } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TrainingStage } from '@/types/api'
@@ -329,6 +329,33 @@ export function Dashboard() {
     return days
   }, [weekStart, weekSessions])
 
+  // Create punch card data based on active view
+  const displayPunchCardData = useMemo((): { days: PunchCardDay[], variant: PunchCardVariant } => {
+    if (activeView === 'week') {
+      return { days: punchCardDays, variant: 'default' }
+    }
+
+    // For month and plan views, use compact variant with the appropriate sessions
+    const sessions = activeView === 'month' ? (() => {
+      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
+      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+      return plan?.sessions.filter(session => {
+        const sessionDate = new Date(session.scheduledDate)
+        return sessionDate >= monthStart && sessionDate <= monthEnd
+      }) ?? []
+    })() : (plan?.sessions ?? [])
+
+    const days: PunchCardDay[] = sessions.map((session, index) => ({
+      dayNumber: index + 1,
+      hasSession: true,
+      isCompleted: !!session.completedAt,
+      isSkipped: session.isSkipped ?? false,
+      isRest: session.workoutType === WorkoutType.Rest
+    }))
+
+    return { days, variant: 'compact' }
+  }, [activeView, punchCardDays, currentMonth, plan])
+
   // Calculate last week's mileage for comparison
   const lastWeekMileage = useMemo(() => {
     if (!plan) return null
@@ -527,38 +554,40 @@ export function Dashboard() {
           {/* Header row: Title + Date Navigation + View Controls */}
           <div className="flex items-center justify-between mb-[48px]">
             {/* Title */}
-            <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona']">
+            <h2 className="text-[32px] font-normal text-foreground font-[family-name:'Petrona'] min-w-0 flex-shrink">
               {plan.raceName.includes('Marathon') ? 'Marathon' : plan.raceName.includes('Half') ? 'Half Marathon' : plan.raceName} Training Plan
             </h2>
 
-            {/* Date Navigation */}
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => activeView === 'week' ? handleNavigateWeek('prev') : handleNavigateMonth('prev')}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <span className="text-[24px] font-normal font-[family-name:'Petrona'] min-w-[200px] text-center">
-                {activeView === 'week' ? (
-                  <>
-                    {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    {' - '}
-                    {new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </>
-                ) : (
-                  currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                )}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => activeView === 'week' ? handleNavigateWeek('next') : handleNavigateMonth('next')}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
+            {/* Date Navigation - hidden in plan view since all dates are shown */}
+            {activeView !== 'plan' && (
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => activeView === 'week' ? handleNavigateWeek('prev') : handleNavigateMonth('prev')}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <span className="text-[24px] font-normal font-[family-name:'Petrona'] min-w-[200px] text-center">
+                  {activeView === 'week' ? (
+                    <>
+                      {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {' - '}
+                      {new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </>
+                  ) : (
+                    currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                  )}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => activeView === 'week' ? handleNavigateWeek('next') : handleNavigateMonth('next')}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
 
             {/* View Controls */}
             <div className="flex items-center gap-3">
@@ -737,8 +766,10 @@ export function Dashboard() {
 
                   <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
                     <div className="flex items-center gap-2">
-                      <PunchCard days={punchCardDays} />
-                      <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
+                      <PunchCard days={displayPunchCardData.days} variant={displayPunchCardData.variant} />
+                      {activeView === 'week' && (
+                        <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
+                      )}
                     </div>
                     <div className="h-4 border-l border-border" />
                     <div className="flex items-center gap-2">
