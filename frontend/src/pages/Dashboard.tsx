@@ -302,32 +302,22 @@ export function Dashboard() {
     )
   }, [weekSessions, weekStart, plan, distanceUnit])
 
-  // Create punch card data for the week
+  // Create punch card data for the week - based on actual sessions, numbered sequentially
   const punchCardDays = useMemo((): PunchCardDay[] => {
-    const days: PunchCardDay[] = []
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart)
-      date.setDate(weekStart.getDate() + i)
-      const dayNumber = date.getDate()
+    // Filter out rest days and sort by date
+    const activeSessions = weekSessions
+      .filter(s => s.workoutType !== WorkoutType.Rest)
+      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
 
-      // Find session for this day
-      const session = weekSessions.find(s => {
-        const sessionDate = new Date(s.scheduledDate)
-        return sessionDate.getDate() === dayNumber &&
-               sessionDate.getMonth() === date.getMonth() &&
-               sessionDate.getFullYear() === date.getFullYear()
-      })
-
-      days.push({
-        dayNumber,
-        hasSession: !!session,
-        isCompleted: !!session?.completedAt,
-        isSkipped: session?.isSkipped ?? false,
-        isRest: !session || session.workoutType === WorkoutType.Rest
-      })
-    }
-    return days
-  }, [weekStart, weekSessions])
+    // Number sessions sequentially (1, 2, 3, etc.)
+    return activeSessions.map((session, index) => ({
+      dayNumber: index + 1,
+      hasSession: true,
+      isCompleted: !!session.completedAt,
+      isSkipped: session.isSkipped ?? false,
+      isRest: false
+    }))
+  }, [weekSessions])
 
   // Create punch card data based on active view
   const displayPunchCardData = useMemo((): { days: PunchCardDay[], variant: PunchCardVariant } => {
@@ -773,7 +763,7 @@ export function Dashboard() {
                     </div>
                     <div className="h-4 border-l border-border" />
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{weekSummary.totalMiles} {distanceUnit}</span>
+                      <span>{weekSummary.totalMiles} {distanceUnit}</span>
                       {lastWeekMileage !== null && lastWeekMileage > 0 && (
                         (() => {
                           const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
