@@ -395,6 +395,16 @@ export interface SessionSummary {
   trainingStage?: TrainingStage
   completedAt?: string
   isSkipped: boolean
+  warmUp?: string
+  recovery?: string
+  sessionDescription?: string
+  workoutTips?: string[]
+  isCompleted: boolean
+  wasModified?: boolean
+  actualDistance?: number
+  actualDuration?: number
+  rpe?: number
+  userNotes?: string
 }
 
 export interface PlanDetailResponse {

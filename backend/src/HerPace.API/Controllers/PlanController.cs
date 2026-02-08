@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace HerPace.API.Controllers;
 
@@ -178,7 +179,17 @@ public class PlanController : ControllerBase
                     PhaseGuidance = s.PhaseGuidance,
                     TrainingStage = TrainingStageLibrary.CalculateStage(s.ScheduledDate, activePlan.StartDate, activePlan.EndDate),
                     CompletedAt = s.CompletedAt,
-                    IsSkipped = s.IsSkipped
+                    IsSkipped = s.IsSkipped,
+                    WarmUp = s.WarmUp,
+                    Recovery = s.Recovery,
+                    SessionDescription = s.SessionDescription,
+                    WorkoutTips = ParseWorkoutTips(s.WorkoutTips),
+                    IsCompleted = s.CompletedAt.HasValue && !s.IsSkipped,
+                    WasModified = s.WasModified,
+                    ActualDistance = s.ActualDistance,
+                    ActualDuration = s.ActualDuration,
+                    RPE = s.RPE,
+                    UserNotes = s.UserNotes
                 })
                 .ToList()
         };
@@ -248,7 +259,17 @@ public class PlanController : ControllerBase
                     PhaseGuidance = s.PhaseGuidance,
                     TrainingStage = TrainingStageLibrary.CalculateStage(s.ScheduledDate, plan.StartDate, plan.EndDate),
                     CompletedAt = s.CompletedAt,
-                    IsSkipped = s.IsSkipped
+                    IsSkipped = s.IsSkipped,
+                    WarmUp = s.WarmUp,
+                    Recovery = s.Recovery,
+                    SessionDescription = s.SessionDescription,
+                    WorkoutTips = ParseWorkoutTips(s.WorkoutTips),
+                    IsCompleted = s.CompletedAt.HasValue && !s.IsSkipped,
+                    WasModified = s.WasModified,
+                    ActualDistance = s.ActualDistance,
+                    ActualDuration = s.ActualDuration,
+                    RPE = s.RPE,
+                    UserNotes = s.UserNotes
                 })
                 .ToList()
         };
@@ -264,6 +285,19 @@ public class PlanController : ControllerBase
             throw new UnauthorizedAccessException("User ID not found in token");
         }
         return userId;
+    }
+
+    private static List<string> ParseWorkoutTips(string? workoutTipsJson)
+    {
+        if (string.IsNullOrEmpty(workoutTipsJson)) return new List<string>();
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(workoutTipsJson) ?? new List<string>();
+        }
+        catch (JsonException)
+        {
+            return new List<string>();
+        }
     }
 }
 
@@ -340,4 +374,16 @@ public class SessionSummary
     public TrainingStage? TrainingStage { get; set; }
     public DateTime? CompletedAt { get; set; }
     public bool IsSkipped { get; set; }
+
+    // Session content fields (needed for WorkoutSessionCard)
+    public string? WarmUp { get; set; }
+    public string? Recovery { get; set; }
+    public string? SessionDescription { get; set; }
+    public List<string> WorkoutTips { get; set; } = new();
+    public bool IsCompleted { get; set; }
+    public bool WasModified { get; set; }
+    public decimal? ActualDistance { get; set; }
+    public int? ActualDuration { get; set; }
+    public int? RPE { get; set; }
+    public string? UserNotes { get; set; }
 }
