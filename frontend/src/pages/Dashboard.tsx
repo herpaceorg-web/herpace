@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Heart, Calendar, Timer, Goal, Check, TrendingUp, TrendingDown } from 'lucide-react'
+import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Timer, Goal, Check, TrendingUp, TrendingDown } from 'lucide-react'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
@@ -798,34 +798,6 @@ export function Dashboard() {
                       )}
                       {lastWeekMileage !== null && (
                         <span className="text-xs text-muted-foreground">vs {lastWeekMileage} {distanceUnit} last week</span>
-                      )}
-                    </div>
-                    <div className="h-4 border-l border-border" />
-                    <div className="flex items-center gap-2">
-                      {weekSummary.intensityBreakdown.low > 0 && (
-                        <span className="flex items-center gap-1">
-                          {weekSummary.intensityBreakdown.low}×
-                          <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                        </span>
-                      )}
-                      {weekSummary.intensityBreakdown.moderate > 0 && (
-                        <span className="flex items-center gap-1">
-                          {weekSummary.intensityBreakdown.moderate}×
-                          <span className="flex">
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                          </span>
-                        </span>
-                      )}
-                      {weekSummary.intensityBreakdown.high > 0 && (
-                        <span className="flex items-center gap-1">
-                          {weekSummary.intensityBreakdown.high}×
-                          <span className="flex">
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                          </span>
-                        </span>
                       )}
                     </div>
                   </div>

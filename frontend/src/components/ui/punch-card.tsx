@@ -42,7 +42,7 @@ const PunchCard = React.forwardRef<HTMLDivElement, PunchCardProps>(
               className="w-4 h-4 rounded-full flex items-center justify-center text-white"
               style={{ backgroundColor: '#677344' }}
             >
-              <Check className="w-2.5 h-2.5" />
+              <Check className="w-2.5 h-2.5 text-white" />
             </div>
             <span className="text-sm font-medium">{completedCount}</span>
           </div>
@@ -92,7 +92,7 @@ const PunchCard = React.forwardRef<HTMLDivElement, PunchCardProps>(
               }
             >
               {isCompleted ? (
-                <Check className="w-3 h-3" />
+                <Check className="w-3 h-3 text-white" />
               ) : isSkipped ? (
                 <Ban className="w-3 h-3" />
               ) : (
