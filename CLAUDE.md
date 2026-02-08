@@ -165,20 +165,20 @@ Environment variables for Vite (prefixed with `VITE_`):
 ```powershell
 # Build and push using Cloud Build (recommended - avoids local Docker issues)
 cd backend
-gcloud builds submit --tag us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-api:latest .
+gcloud builds submit --tag us-central1-docker.pkg.dev/project-1a640bec-d526-495e-b87/herpace-repo/herpace-api:latest .
 
 # Deploy to Cloud Run
-gcloud run services update herpace-api --image=us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-api:latest --region=us-central1
+gcloud run services update herpace-api --image=us-central1-docker.pkg.dev/project-1a640bec-d526-495e-b87/herpace-repo/herpace-api:latest --region=us-central1
 ```
 
 **Frontend:**
 ```powershell
 # Build and push Docker image using Cloud Build
 cd frontend
-gcloud builds submit --tag us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest .
+gcloud builds submit --tag us-central1-docker.pkg.dev/project-1a640bec-d526-495e-b87/herpace-repo/herpace-frontend:latest .
 
 # Deploy to Cloud Run
-gcloud run services update herpace-frontend --image=us-central1-docker.pkg.dev/herpace-mvp-app/herpace-repo/herpace-frontend:latest --region=us-central1
+gcloud run services update herpace-frontend --image=us-central1-docker.pkg.dev/project-1a640bec-d526-495e-b87/herpace-repo/herpace-frontend:latest --region=us-central1
 
 # Note: The Dockerfile uses multi-stage build:
 # - Stage 1: Node.js build (npm run build)
@@ -186,8 +186,8 @@ gcloud run services update herpace-frontend --image=us-central1-docker.pkg.dev/h
 ```
 
 ### Production URLs
-- API: `https://herpace-api-81066941589.us-central1.run.app`
-- Frontend: `https://herpace-frontend-81066941589.us-central1.run.app`
+- API: `https://herpace-api-330702404265.us-central1.run.app`
+- Frontend: `https://herpace-frontend-330702404265.us-central1.run.app`
 
 ### Google Cloud Secrets
 Secrets are stored in Secret Manager and injected as environment variables:
