@@ -92,6 +92,7 @@ public class PlanGenerationService : IPlanGenerationService
             Distance = race.Distance,
             DistanceType = race.DistanceType,
             GoalTime = race.GoalTime,
+            RaceCompletionGoal = race.RaceCompletionGoal,
             FitnessLevel = runner.FitnessLevel,
             TypicalWeeklyMileage = runner.TypicalWeeklyMileage,
             CycleLength = runner.CycleLength,
