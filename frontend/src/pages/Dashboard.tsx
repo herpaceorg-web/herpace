@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Timer, Goal, Check, TrendingUp, TrendingDown } from 'lucide-react'
+import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Timer, Goal, Check } from 'lucide-react'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'

@@ -1,0 +1,19 @@
+# HerPace Deployment Information
+# Deployed: Sun Feb  8 10:26:42 MST 2026
+
+Project ID: project-1a640bec-d526-495e-b87
+Region: us-central1
+
+Backend URL: https://herpace-api-5rc4x5fbma-uc.a.run.app
+Frontend URL: https://herpace-frontend-5rc4x5fbma-uc.a.run.app
+
+Database Instance: project-1a640bec-d526-495e-b87:us-central1:herpace-db
+Database Name: herpacedb
+
+⚠️ MIGRATIONS PENDING - Run from Windows: .\run-migrations-from-windows.ps1
+
+Cloud Run Services:
+- Backend: herpace-api
+- Frontend: herpace-frontend
+
+Artifact Registry: us-central1-docker.pkg.dev/project-1a640bec-d526-495e-b87/herpace-repo
