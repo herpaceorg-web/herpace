@@ -113,7 +113,7 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
           ref={ref}
           onClick={onClick}
           className={cn(
-            'bg-[#fcf9f3] border border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7] rounded-lg p-3 flex flex-col',
+            'bg-card border border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7] rounded-lg p-3 flex flex-col',
             'relative overflow-visible',
             hasSession && !isRest ? 'gap-3' : '',
             'h-full w-full',

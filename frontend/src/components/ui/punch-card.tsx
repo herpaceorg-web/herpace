@@ -67,7 +67,7 @@ const PunchCard = React.forwardRef<HTMLDivElement, PunchCardProps>(
       <div
         ref={ref}
         className={cn(
-          "bg-muted flex items-center justify-center gap-6 p-2 rounded-full",
+          "bg-muted flex items-center justify-start gap-6 p-2 rounded-full",
           className
         )}
       >

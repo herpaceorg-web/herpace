@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Timer, Goal, Check } from 'lucide-react'
+import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Timer, Goal, Check, Route } from 'lucide-react'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
@@ -779,30 +779,36 @@ export function Dashboard() {
                     })}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
-                    <div className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center justify-start text-sm text-[#696863] font-normal pt-4 border-t border-border">
+                    <div className="flex items-center gap-2 shrink-0">
                       <PunchCard days={displayPunchCardData.days} variant={displayPunchCardData.variant} />
                       {activeView === 'week' && (
                         <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
                       )}
                     </div>
-                    <div className="h-4 border-l border-border" />
-                    <div className="flex items-center gap-2 flex-1">
-                      <span>
-                        {weekSummary.totalMiles} {distanceUnit} this week
-                        {lastWeekMileage !== null && lastWeekMileage > 0 && (
-                          (() => {
-                            const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
-                            const roundedChange = Math.round(change)
-                            if (roundedChange > 0) {
-                              return ` (+${roundedChange}%)`
-                            } else if (roundedChange < 0) {
-                              return ` (${roundedChange}%)`
-                            }
-                            return ' (0%)'
-                          })()
-                        )}
-                      </span>
+                    <div className="flex-1 flex justify-center">
+                      <div className="h-4 border-l border-border" />
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Route className="w-5 h-5 text-[#696863]" />
+                      <div className="flex flex-col">
+                        <span className="text-lg font-semibold text-foreground">{weekSummary.totalMiles} {distanceUnit}</span>
+                        <span className="text-sm text-[#696863] font-normal">
+                          this week
+                          {lastWeekMileage !== null && lastWeekMileage > 0 && (
+                            (() => {
+                              const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
+                              const roundedChange = Math.round(change)
+                              if (roundedChange > 0) {
+                                return ` (+${roundedChange}%)`
+                              } else if (roundedChange < 0) {
+                                return ` (${roundedChange}%)`
+                              }
+                              return ' (0%)'
+                            })()
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

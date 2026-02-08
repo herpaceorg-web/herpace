@@ -177,7 +177,7 @@ public class FallbackPlanGenerator : IAIPlanGenerator
                         ? (int)(templateSession.DurationMinutes.Value * adjustmentFactor)
                         : null,
                     Distance = templateSession.Distance.HasValue
-                        ? templateSession.Distance.Value * adjustmentFactor
+                        ? Math.Round(templateSession.Distance.Value * adjustmentFactor)
                         : null,
                     IntensityLevel = adjustedIntensity,
                     HRZones = templateSession.HRZones,

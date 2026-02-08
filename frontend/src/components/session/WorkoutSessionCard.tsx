@@ -409,7 +409,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
   return (
     <div className="w-full">
       {/* Main card */}
-      <Card className="bg-[#fcf9f3] border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7] rounded-lg">
+      <Card className="bg-card border-[#ebe8e2] shadow-[4px_4px_0px_0px_#f3f0e7] rounded-lg">
         <CardContent className="p-4">
           <div className="flex gap-4">
             {/* Date Column - vertically centered */}
@@ -668,25 +668,25 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4 pt-0">
                       <Tabs defaultValue="session" className="w-full">
-                        <TabsList className="w-full bg-[#EEEBDE] p-1 h-auto rounded-md mb-4">
+                        <TabsList className="w-full bg-[#fcf9f3] p-1 h-auto rounded-md mb-4">
                           {warmupContent && (
                             <TabsTrigger
                               value="warmup"
-                              className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-[#FDFBF7] data-[state=active]:shadow-sm"
+                              className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-muted data-[state=active]:shadow-sm"
                             >
                               Warmup
                             </TabsTrigger>
                           )}
                           <TabsTrigger
                             value="session"
-                            className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-[#FDFBF7] data-[state=active]:shadow-sm"
+                            className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-muted data-[state=active]:shadow-sm"
                           >
                             Session
                           </TabsTrigger>
                           {recoverContent && (
                             <TabsTrigger
                               value="recover"
-                              className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-[#FDFBF7] data-[state=active]:shadow-sm"
+                              className="flex-1 text-foreground text-sm font-normal rounded-md px-3 py-2 transition-all duration-300 ease-in-out data-[state=active]:bg-muted data-[state=active]:shadow-sm"
                             >
                               Recover
                             </TabsTrigger>
