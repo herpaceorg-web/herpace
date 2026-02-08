@@ -414,6 +414,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 - Race Date: {request.RaceDate:yyyy-MM-dd} ({totalDays} days from start, ~{totalWeeks} weeks)
 - Distance: {distanceTypeStr} ({request.Distance:F1} km)
 - Goal Time: {request.GoalTime ?? "Not specified - focus on completion"}
+- Personal Goals: {request.RaceCompletionGoal ?? "No specific goals provided"}
 
 **Training Plan Requirements**:
 1. Plan Duration: {request.StartDate:yyyy-MM-dd} to {request.RaceDate:yyyy-MM-dd} ({totalWeeks} weeks)
@@ -452,7 +453,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
   ""longRunDay"": ""Sunday"",
   ""daysBeforePeriodToReduceIntensity"": 3,
   ""daysAfterPeriodToReduceIntensity"": 2,
-  ""planCompletionGoal"": ""Complete {distanceTypeStr} strong and injury-free"",
+  ""planCompletionGoal"": ""{request.RaceCompletionGoal ?? $"Complete {distanceTypeStr} strong and injury-free"}"",
   ""sessions"": [
     {{
       ""sessionName"": ""Easy Recovery Run"",

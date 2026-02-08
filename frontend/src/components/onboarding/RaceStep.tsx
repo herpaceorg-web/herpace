@@ -39,7 +39,8 @@ export function RaceStep({ onComplete, onBack, defaultValues, fitnessLevel }: Ra
     distanceType: 'HalfMarathon' as const,
     distance: 21.0975,
     raceDate: eightWeeksFromNow,
-    trainingStartDate: new Date(Date.now() + 86400000) // Tomorrow
+    trainingStartDate: new Date(Date.now() + 86400000), // Tomorrow
+    raceCompletionGoal: 'Just looking to complete the race - no specific time goal'
   }
 
   const [goalType, setGoalType] = useState<'time' | 'completion'>('completion')
@@ -202,6 +203,9 @@ export function RaceStep({ onComplete, onBack, defaultValues, fitnessLevel }: Ra
             setGoalType(value)
             if (value === 'completion') {
               setValue('goalTime', undefined)
+              setValue('raceCompletionGoal', 'Just looking to complete the race - no specific time goal')
+            } else {
+              setValue('raceCompletionGoal', undefined)
             }
           }}
         >
@@ -236,31 +240,21 @@ export function RaceStep({ onComplete, onBack, defaultValues, fitnessLevel }: Ra
 
         {goalType === 'completion' && (
           <div className="space-y-2">
-            <Label className="text-sm font-normal text-foreground">Race goal description</Label>
-            <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2">
-              <p className="text-sm text-muted-foreground">
-                Just looking to complete the race - no specific time goal
-              </p>
-            </div>
+            <Label htmlFor="raceCompletionGoal" className="text-sm font-normal text-foreground">Race goal description</Label>
+            <Textarea
+              id="raceCompletionGoal"
+              {...register('raceCompletionGoal')}
+              placeholder="e.g., Have fun, don't get injured, qualify for boston"
+              disabled={isSubmitting}
+              rows={3}
+            />
+            <p className="text-xs text-[#696863]">
+              What do you hope to achieve with this race?
+            </p>
+            {errors.raceCompletionGoal && (
+              <p className="text-sm text-destructive">{errors.raceCompletionGoal.message}</p>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Race Description (Optional) */}
-      <div className="space-y-2">
-        <Label htmlFor="raceCompletionGoal" className="text-sm font-normal text-foreground">Race Description (Optional)</Label>
-        <Textarea
-          id="raceCompletionGoal"
-          {...register('raceCompletionGoal')}
-          placeholder="e.g., Have fun, don't get injured, qualify for boston"
-          disabled={isSubmitting}
-          rows={3}
-        />
-        <p className="text-xs text-[#696863]">
-          What do you hope to achieve with this race?
-        </p>
-        {errors.raceCompletionGoal && (
-          <p className="text-sm text-destructive">{errors.raceCompletionGoal.message}</p>
         )}
       </div>
 

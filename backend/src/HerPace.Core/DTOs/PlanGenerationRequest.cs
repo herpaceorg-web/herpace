@@ -20,6 +20,7 @@ public class PlanGenerationRequest
     public decimal Distance { get; set; }
     public DistanceType DistanceType { get; set; }
     public string? GoalTime { get; set; }
+    public string? RaceCompletionGoal { get; set; }
 
     // Cycle information
     public int? CycleLength { get; set; }
