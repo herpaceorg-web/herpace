@@ -473,6 +473,29 @@ export function Dashboard() {
     })
   }, [])
 
+  // Navigation boundary checks
+  const canNavigatePrev = useMemo(() => {
+    if (!plan) return false
+    const planStart = new Date(plan.startDate)
+    if (activeView === 'week') {
+      return weekStart > getWeekStart(planStart)
+    } else {
+      return currentMonth.getFullYear() > planStart.getFullYear() ||
+        (currentMonth.getFullYear() === planStart.getFullYear() && currentMonth.getMonth() > planStart.getMonth())
+    }
+  }, [plan, activeView, weekStart, currentMonth])
+
+  const canNavigateNext = useMemo(() => {
+    if (!plan) return false
+    const planEnd = new Date(plan.endDate)
+    if (activeView === 'week') {
+      return weekStart < getWeekStart(planEnd)
+    } else {
+      return currentMonth.getFullYear() < planEnd.getFullYear() ||
+        (currentMonth.getFullYear() === planEnd.getFullYear() && currentMonth.getMonth() < planEnd.getMonth())
+    }
+  }, [plan, activeView, weekStart, currentMonth])
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -554,6 +577,7 @@ export function Dashboard() {
                 <Button
                   variant="outline"
                   size="icon"
+                  disabled={!canNavigatePrev}
                   onClick={() => activeView === 'week' ? handleNavigateWeek('prev') : handleNavigateMonth('prev')}
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -572,6 +596,7 @@ export function Dashboard() {
                 <Button
                   variant="outline"
                   size="icon"
+                  disabled={!canNavigateNext}
                   onClick={() => activeView === 'week' ? handleNavigateWeek('next') : handleNavigateMonth('next')}
                 >
                   <ChevronRight className="w-5 h-5" />
