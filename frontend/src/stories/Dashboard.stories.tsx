@@ -11,11 +11,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PunchCard, PunchCardDay } from '@/components/ui/punch-card'
+import { CountdownDisplay } from '@/components/ui/countdown-display'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
 import { cn } from '@/lib/utils'
-import { Loader2, LayoutGrid, List, Goal, Check, ChevronLeft, ChevronRight, Heart, Calendar, Timer, TrendingUp, TrendingDown } from 'lucide-react'
+import { Loader2, LayoutGrid, List, Goal, Check, ChevronLeft, ChevronRight, Calendar, Timer, Route } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange, formatDateKey } from '@/utils/cyclePhases'
@@ -325,32 +326,22 @@ function MockDashboard({
     )
   }, [weekSessions, weekStart, plan, distanceUnit])
 
-  // Create punch card data for the week
+  // Create punch card data for the week - based on actual sessions, numbered sequentially
   const punchCardDays = useMemo((): PunchCardDay[] => {
-    const days: PunchCardDay[] = []
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart)
-      date.setDate(weekStart.getDate() + i)
-      const dayNumber = date.getDate()
+    // Filter out rest days and sort by date
+    const activeSessions = weekSessions
+      .filter(s => s.workoutType !== WorkoutType.Rest)
+      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
 
-      // Find session for this day
-      const session = weekSessions.find(s => {
-        const sessionDate = new Date(s.scheduledDate)
-        return sessionDate.getDate() === dayNumber &&
-               sessionDate.getMonth() === date.getMonth() &&
-               sessionDate.getFullYear() === date.getFullYear()
-      })
-
-      days.push({
-        dayNumber,
-        hasSession: !!session,
-        isCompleted: !!session?.completedAt,
-        isSkipped: session?.isSkipped ?? false,
-        isRest: !session || session.workoutType === WorkoutType.Rest
-      })
-    }
-    return days
-  }, [weekStart, weekSessions])
+    // Number sessions sequentially (1, 2, 3, etc.)
+    return activeSessions.map((session, index) => ({
+      dayNumber: index + 1,
+      hasSession: true,
+      isCompleted: !!session.completedAt,
+      isSkipped: session.isSkipped ?? false,
+      isRest: false
+    }))
+  }, [weekSessions])
 
   // Calculate last week's mileage for comparison
   const lastWeekMileage = useMemo(() => {
@@ -638,45 +629,93 @@ function MockDashboard({
           {/* Race/Goal and Summary Containers - Side by Side */}
           <div className="flex gap-4 mb-[48px]">
             {/* Race and Goal Container */}
-            <div className="w-1/2 p-4 bg-background rounded-lg border border-border">
+            <div className="w-1/2 p-6 bg-background rounded-lg border border-border">
               <div className="space-y-4">
-                <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {plan.raceName}</h3>
-                <div className="flex items-center gap-4 text-sm text-[#696863] font-normal">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {plan.raceName}</h3>
+                  <div className="flex items-center gap-2 text-sm text-[#696863] font-normal">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(plan.raceDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                   </div>
-                  <div className="h-4 border-l border-border" />
-                  <div className="flex items-center gap-2">
-                    <Timer className="w-4 h-4" />
-                    <span>
-                      {countdown
-                        ? `${countdown.days}d ${countdown.hours}h ${countdown.minutes}m until race day`
-                        : `${planSummary?.daysUntilRace || Math.ceil((new Date(plan.raceDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days until race day`
-                      }
-                    </span>
-                  </div>
                 </div>
+
+                {/* Countdown section */}
+                <div className="flex items-center gap-4">
+                  {countdown ? (
+                    <CountdownDisplay
+                      days={countdown.days}
+                      hours={countdown.hours}
+                      minutes={countdown.minutes}
+                      seconds={countdown.seconds}
+                      variant="hero"
+                      showSeconds
+                    />
+                  ) : (
+                    <CountdownDisplay
+                      days={planSummary?.daysUntilRace || Math.ceil((new Date(plan.raceDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
+                      hours={0}
+                      minutes={0}
+                      variant="hero"
+                    />
+                  )}
+                  <span className="text-sm text-[#696863] font-normal">until race day</span>
+                </div>
+
+                {/* Goal section */}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 text-sm text-[#696863] font-normal">
-                    <Goal className="w-4 h-4" />
-                    <span>Goal: {goalTime}</span>
+                  <div className="flex items-center gap-3">
+                    <Goal className="w-5 h-5 text-[#696863]" />
+                    <div className="flex flex-col">
+                      <span className="text-lg font-semibold">{goalTime}</span>
+                      <span className="text-sm text-[#696863] font-normal">8:01/mi pace</span>
+                    </div>
                   </div>
-                  <Badge className="rounded-md text-sm font-normal bg-success/10 text-success border-success/20 hover:bg-success/20 gap-1">
-                    <Check className="w-4 h-4" />
-                    On track
-                  </Badge>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="cursor-pointer">
+                        <Badge className="rounded-md text-sm font-normal bg-success/10 text-success border-success/20 hover:bg-success/20 gap-1">
+                          <Check className="w-4 h-4" />
+                          <span className="underline">On track</span>
+                        </Badge>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72" align="end">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-5 h-5 text-success" />
+                          <span className="font-medium">You're on track!</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Based on your training consistency and session completion, you're well-positioned to hit your goal.
+                        </p>
+                        <div className="space-y-2 pt-2 border-t">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Sessions completed</span>
+                            <span className="font-medium">18/21 (86%)</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Avg. effort (RPE)</span>
+                            <span className="font-medium">6.2/10</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Weekly consistency</span>
+                            <span className="font-medium text-success">Excellent</span>
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
 
             {/* Week Summary Container */}
             {weekSummary && (
-              <div className="w-1/2 p-4 bg-background rounded-lg border border-border">
+              <div className="w-1/2 p-6 bg-background rounded-lg border border-border">
                 <div className="space-y-4">
                   <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training Summary</h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal font-[family-name:'Manrope']">Week {weekSummary.weekNumber} of {weekSummary.totalWeeksInPlan}</span>
+                    <span className="text-sm text-[#696863] font-normal">Week {weekSummary.weekNumber} of {weekSummary.totalWeeksInPlan}</span>
                     <span className="text-sm text-[#696863] font-normal">{weekSummary.completionPercentage}%</span>
                   </div>
 
@@ -724,7 +763,7 @@ function MockDashboard({
                   </div>
 
                   {/* Stage labels */}
-                  <div className="flex mt-4">
+                  <div className="flex">
                     {[
                       { stage: TrainingStage.Base, label: 'Base', width: 25 },
                       { stage: TrainingStage.Build, label: 'Build', width: 35 },
@@ -765,67 +804,33 @@ function MockDashboard({
                     })}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
-                    <div className="flex items-center gap-2">
+                  {/* Punch card and mileage */}
+                  <div className="flex items-center pt-4 border-t border-border">
+                    <div className="w-2/3 flex items-center justify-center gap-3 text-sm text-[#696863] font-normal">
                       <PunchCard days={punchCardDays} />
-                      <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
+                      <span>{punchCardDays.filter(d => d.isCompleted).length}/{punchCardDays.length} sessions</span>
                     </div>
-                    <div className="h-4 border-l border-border" />
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{weekSummary.totalMiles} {distanceUnit}</span>
-                      {lastWeekMileage !== null && lastWeekMileage > 0 && (
-                        (() => {
-                          const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
-                          const absChange = Math.abs(Math.round(change))
-                          if (change > 0) {
-                            return (
-                              <span className="flex items-center gap-1 text-success">
-                                <TrendingUp className="w-4 h-4" />
-                                <span className="text-xs">{absChange}%</span>
-                              </span>
-                            )
-                          } else if (change < 0) {
-                            return (
-                              <span className="flex items-center gap-1 text-destructive">
-                                <TrendingDown className="w-4 h-4" />
-                                <span className="text-xs">{absChange}%</span>
-                              </span>
-                            )
-                          }
-                          return null
-                        })()
-                      )}
-                      {lastWeekMileage !== null && (
-                        <span className="text-xs text-muted-foreground">vs {lastWeekMileage} {distanceUnit} last week</span>
-                      )}
-                    </div>
-                    <div className="h-4 border-l border-border" />
-                    <div className="flex items-center gap-2">
-                      {weekSummary.intensityBreakdown.low > 0 && (
-                        <span className="flex items-center gap-1">
-                          {weekSummary.intensityBreakdown.low}×
-                          <Heart className="h-3 w-3 fill-destructive text-destructive" />
+                    <div className="h-10 border-l border-border" />
+                    <div className="w-1/3 flex items-center justify-center gap-3">
+                      <Route className="w-5 h-5 text-[#696863]" />
+                      <div className="flex flex-col">
+                        <span className="text-lg font-semibold">{weekSummary.totalMiles} {distanceUnit}</span>
+                        <span className="text-sm text-[#696863] font-normal">
+                          this week
+                          {lastWeekMileage !== null && lastWeekMileage > 0 && (
+                            (() => {
+                              const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
+                              const roundedChange = Math.round(change)
+                              if (roundedChange > 0) {
+                                return ` (+${roundedChange}%)`
+                              } else if (roundedChange < 0) {
+                                return ` (${roundedChange}%)`
+                              }
+                              return ' (0%)'
+                            })()
+                          )}
                         </span>
-                      )}
-                      {weekSummary.intensityBreakdown.moderate > 0 && (
-                        <span className="flex items-center gap-1">
-                          {weekSummary.intensityBreakdown.moderate}×
-                          <span className="flex">
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                          </span>
-                        </span>
-                      )}
-                      {weekSummary.intensityBreakdown.high > 0 && (
-                        <span className="flex items-center gap-1">
-                          {weekSummary.intensityBreakdown.high}×
-                          <span className="flex">
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                            <Heart className="h-3 w-3 fill-destructive text-destructive" />
-                          </span>
-                        </span>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>

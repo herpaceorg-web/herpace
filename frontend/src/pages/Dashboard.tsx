@@ -780,40 +780,29 @@ export function Dashboard() {
                   </div>
 
                   <div className="flex items-center gap-4 text-sm text-[#696863] font-normal pt-4 border-t border-border">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-1">
                       <PunchCard days={displayPunchCardData.days} variant={displayPunchCardData.variant} />
                       {activeView === 'week' && (
                         <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
                       )}
                     </div>
                     <div className="h-4 border-l border-border" />
-                    <div className="flex items-center gap-2">
-                      <span>{weekSummary.totalMiles} {distanceUnit}</span>
-                      {lastWeekMileage !== null && lastWeekMileage > 0 && (
-                        (() => {
-                          const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
-                          const absChange = Math.abs(Math.round(change))
-                          if (change > 0) {
-                            return (
-                              <span className="flex items-center gap-1 text-success">
-                                <TrendingUp className="w-4 h-4" />
-                                <span className="text-xs">{absChange}%</span>
-                              </span>
-                            )
-                          } else if (change < 0) {
-                            return (
-                              <span className="flex items-center gap-1 text-destructive">
-                                <TrendingDown className="w-4 h-4" />
-                                <span className="text-xs">{absChange}%</span>
-                              </span>
-                            )
-                          }
-                          return null
-                        })()
-                      )}
-                      {lastWeekMileage !== null && (
-                        <span className="text-xs text-muted-foreground">vs {lastWeekMileage} {distanceUnit} last week</span>
-                      )}
+                    <div className="flex items-center gap-2 flex-1">
+                      <span>
+                        {weekSummary.totalMiles} {distanceUnit} this week
+                        {lastWeekMileage !== null && lastWeekMileage > 0 && (
+                          (() => {
+                            const change = ((weekSummary.totalMiles - lastWeekMileage) / lastWeekMileage) * 100
+                            const roundedChange = Math.round(change)
+                            if (roundedChange > 0) {
+                              return ` (+${roundedChange}%)`
+                            } else if (roundedChange < 0) {
+                              return ` (${roundedChange}%)`
+                            }
+                            return ' (0%)'
+                          })()
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>
