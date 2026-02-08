@@ -629,7 +629,7 @@ function MockDashboard({
           {/* Race/Goal and Summary Containers - Side by Side */}
           <div className="flex gap-4 mb-[48px]">
             {/* Race and Goal Container */}
-            <div className="w-1/2 p-6 bg-background rounded-lg border border-border">
+            <div className="w-1/2 p-6 bg-card rounded-lg border border-border shadow-sm">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {plan.raceName}</h3>
@@ -711,7 +711,7 @@ function MockDashboard({
 
             {/* Week Summary Container */}
             {weekSummary && (
-              <div className="w-1/2 p-6 bg-background rounded-lg border border-border">
+              <div className="w-1/2 p-6 bg-card rounded-lg border border-border shadow-sm">
                 <div className="space-y-4">
                   <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training Summary</h3>
                   <div className="flex items-center justify-between">

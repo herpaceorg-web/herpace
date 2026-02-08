@@ -46,6 +46,7 @@ public class CycleTrackingService : ICycleTrackingService
         }
 
         var cycleLength = runner.CycleLength.Value;
+        var today = clientDate ?? DateTime.UtcNow;
 
         // If no last period start date provided, estimate a default (assume mid-cycle)
         // This allows users to start seeing the chart immediately and refine later
@@ -57,13 +58,11 @@ public class CycleTrackingService : ICycleTrackingService
         else
         {
             // Estimate: assume user is currently mid-cycle (day cycleLength/2)
-            var today = clientDate ?? DateTime.UtcNow;
             var estimatedDaysIntoCycle = cycleLength / 2;
             lastPeriodStart = today.AddDays(-estimatedDaysIntoCycle);
             _logger.LogInformation("Estimating last period start for runner {RunnerId} as {EstimatedDate} (mid-cycle default)",
                 runnerId, lastPeriodStart);
         }
-        var today = clientDate ?? DateTime.UtcNow;
 
         // Calculate current position
         var dayInCycle = _cyclePhaseCalculator.GetDayInCycle(lastPeriodStart, today);
