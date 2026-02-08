@@ -38,15 +38,31 @@ public class CycleTrackingService : ICycleTrackingService
             return null;
         }
 
-        // Check if cycle tracking is enabled
-        if (!runner.LastPeriodStart.HasValue || !runner.CycleLength.HasValue)
+        // Check if cycle tracking is enabled (requires cycle length at minimum)
+        if (!runner.CycleLength.HasValue)
         {
-            _logger.LogInformation("Cycle tracking not enabled for runner {RunnerId}", runnerId);
+            _logger.LogInformation("Cycle tracking not enabled for runner {RunnerId} - no cycle length", runnerId);
             return null;
         }
 
-        var lastPeriodStart = runner.LastPeriodStart.Value;
         var cycleLength = runner.CycleLength.Value;
+
+        // If no last period start date provided, estimate a default (assume mid-cycle)
+        // This allows users to start seeing the chart immediately and refine later
+        DateTime lastPeriodStart;
+        if (runner.LastPeriodStart.HasValue)
+        {
+            lastPeriodStart = runner.LastPeriodStart.Value;
+        }
+        else
+        {
+            // Estimate: assume user is currently mid-cycle (day cycleLength/2)
+            var today = clientDate ?? DateTime.UtcNow;
+            var estimatedDaysIntoCycle = cycleLength / 2;
+            lastPeriodStart = today.AddDays(-estimatedDaysIntoCycle);
+            _logger.LogInformation("Estimating last period start for runner {RunnerId} as {EstimatedDate} (mid-cycle default)",
+                runnerId, lastPeriodStart);
+        }
         var today = clientDate ?? DateTime.UtcNow;
 
         // Calculate current position
