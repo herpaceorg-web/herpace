@@ -35,23 +35,23 @@ export function SessionChangeCard({ change }: SessionChangeCardProps) {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+    <div className="bg-muted rounded-lg p-3 border border-border">
       <div className="flex items-center justify-between mb-2">
-        <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{change.sessionName}</p>
-        <span className="text-xs text-gray-500 dark:text-gray-400">{dateStr}</span>
+        <p className="font-medium text-sm text-foreground">{change.sessionName}</p>
+        <span className="text-xs text-muted-foreground">{dateStr}</span>
       </div>
 
       <div className="space-y-2">
         {/* Distance change */}
         {distanceChanged && (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600 dark:text-gray-400">Distance:</span>
+            <span className="text-muted-foreground">Distance:</span>
             <div className="flex items-center gap-2">
-              <span className="text-red-600 dark:text-red-400 line-through">
+              <span className="text-[#b54a32] line-through">
                 {change.oldDistance ? `${change.oldDistance} km` : 'N/A'}
               </span>
-              <span className="text-gray-400">→</span>
-              <span className="text-green-600 dark:text-green-400 font-medium">
+              <span className="text-muted-foreground">→</span>
+              <span className="text-primary font-medium">
                 {change.newDistance ? `${change.newDistance} km` : 'N/A'}
               </span>
             </div>
@@ -61,13 +61,13 @@ export function SessionChangeCard({ change }: SessionChangeCardProps) {
         {/* Duration change */}
         {durationChanged && (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600 dark:text-gray-400">Duration:</span>
+            <span className="text-muted-foreground">Duration:</span>
             <div className="flex items-center gap-2">
-              <span className="text-red-600 dark:text-red-400 line-through">
+              <span className="text-[#b54a32] line-through">
                 {change.oldDuration ? `${change.oldDuration} min` : 'N/A'}
               </span>
-              <span className="text-gray-400">→</span>
-              <span className="text-green-600 dark:text-green-400 font-medium">
+              <span className="text-muted-foreground">→</span>
+              <span className="text-primary font-medium">
                 {change.newDuration ? `${change.newDuration} min` : 'N/A'}
               </span>
             </div>
@@ -77,13 +77,13 @@ export function SessionChangeCard({ change }: SessionChangeCardProps) {
         {/* Workout type change */}
         {typeChanged && change.oldWorkoutType !== undefined && (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600 dark:text-gray-400">Type:</span>
+            <span className="text-muted-foreground">Type:</span>
             <div className="flex items-center gap-2">
-              <span className="text-red-600 dark:text-red-400 line-through">
+              <span className="text-[#b54a32] line-through">
                 {workoutTypeLabels[change.oldWorkoutType] ?? 'Unknown'}
               </span>
-              <span className="text-gray-400">→</span>
-              <span className="text-green-600 dark:text-green-400 font-medium">
+              <span className="text-muted-foreground">→</span>
+              <span className="text-primary font-medium">
                 {workoutTypeLabels[change.newWorkoutType] ?? 'Unknown'}
               </span>
             </div>
@@ -93,13 +93,13 @@ export function SessionChangeCard({ change }: SessionChangeCardProps) {
         {/* Intensity change */}
         {intensityChanged && change.oldIntensityLevel !== undefined && (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-600 dark:text-gray-400">Intensity:</span>
+            <span className="text-muted-foreground">Intensity:</span>
             <div className="flex items-center gap-2">
-              <span className="text-red-600 dark:text-red-400 line-through">
+              <span className="text-[#b54a32] line-through">
                 {intensityLabels[change.oldIntensityLevel] ?? 'Unknown'}
               </span>
-              <span className="text-gray-400">→</span>
-              <span className="text-green-600 dark:text-green-400 font-medium">
+              <span className="text-muted-foreground">→</span>
+              <span className="text-primary font-medium">
                 {intensityLabels[change.newIntensityLevel] ?? 'Unknown'}
               </span>
             </div>

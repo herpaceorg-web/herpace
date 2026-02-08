@@ -534,6 +534,34 @@ public class SessionController : ControllerBase
             cyclePhaseTips = _cyclePhaseTipsService.GetTipsForPhase(todaysSession.CyclePhase.Value);
         }
 
+        // Get recalculation preview if pending confirmation
+        RecalculationPreviewDto? recalculationPreview = null;
+        if (activePlan.PendingRecalculationConfirmation &&
+            !string.IsNullOrEmpty(activePlan.PendingRecalculationPreviewJson))
+        {
+            try
+            {
+                var previewChanges = JsonSerializer.Deserialize<List<SessionChangeDto>>(
+                    activePlan.PendingRecalculationPreviewJson,
+                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+                if (previewChanges != null)
+                {
+                    recalculationPreview = new RecalculationPreviewDto
+                    {
+                        Summary = activePlan.PendingRecalculationSummary ?? "Based on your recent training, we recommend these adjustments.",
+                        SessionChanges = previewChanges,
+                        GeneratedAt = activePlan.PreviewGeneratedAt ?? DateTime.UtcNow,
+                        SessionsAffectedCount = previewChanges.Count(c => c.HasChanges())
+                    };
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Failed to deserialize recalculation preview for plan {PlanId}", activePlan.Id);
+            }
+        }
+
         var planSummary = new PlanSummaryDto
         {
             PlanId = activePlan.Id,
@@ -546,7 +574,8 @@ public class SessionController : ControllerBase
             RecalculationSummary = recalculationSummary,
             LatestAdaptation = latestAdaptation,
             TodaysSession = todaysSession,
-            CyclePhaseTips = cyclePhaseTips
+            CyclePhaseTips = cyclePhaseTips,
+            RecalculationPreview = recalculationPreview
         };
 
         return Ok(planSummary);

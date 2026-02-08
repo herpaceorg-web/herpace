@@ -45,6 +45,11 @@ public class TrainingPlan
     public DateTime? RecalculationConfirmationRespondedAt { get; set; } // When user responded (yes or no)
     public bool? RecalculationConfirmationAccepted { get; set; } // User's response (true = yes, false = no, null = not answered)
 
+    // Recalculation Preview Data (generated before user confirms)
+    public string? PendingRecalculationPreviewJson { get; set; } // Serialized List<SessionChangeDto> - proposed changes
+    public string? PendingRecalculationSummary { get; set; } // AI-generated summary for preview modal
+    public DateTime? PreviewGeneratedAt { get; set; } // When preview was generated
+
     // Plan Timeline
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }

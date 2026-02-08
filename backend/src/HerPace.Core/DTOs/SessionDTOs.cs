@@ -101,6 +101,18 @@ public class PlanSummaryDto
     public LatestAdaptationDto? LatestAdaptation { get; set; } // Latest adaptation details with before/after changes
     public SessionDetailDto? TodaysSession { get; set; } // Today's session (null if no session today)
     public CyclePhaseTipsDto? CyclePhaseTips { get; set; } // Wellness tips for today's cycle phase
+    public RecalculationPreviewDto? RecalculationPreview { get; set; } // Preview of proposed changes (when PendingConfirmation is true)
+}
+
+/// <summary>
+/// Preview of proposed recalculation changes shown before user confirms.
+/// </summary>
+public class RecalculationPreviewDto
+{
+    public string Summary { get; set; } = string.Empty; // AI-generated summary of proposed changes
+    public List<SessionChangeDto> SessionChanges { get; set; } = new(); // List of proposed session changes
+    public DateTime GeneratedAt { get; set; } // When the preview was generated
+    public int SessionsAffectedCount { get; set; } // Number of sessions that will actually change
 }
 
 /// <summary>

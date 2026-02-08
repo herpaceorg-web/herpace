@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Route, Timer, Activity, MoreVertical, Calendar, Snowflake, Sun, Leaf, Sprout, Sparkles, Heart, Ban, Check, AlertCircle } from 'lucide-react'
 import { displayDistance, rpeToIntensityLevel } from '@/lib/utils'
-import type { SessionDetailDto, CyclePhaseTipsDto, SessionCompletionResponse, TrainingStageInfoDto, CompleteSessionRequest } from '@/types/api'
+import type { SessionDetailDto, CyclePhaseTipsDto, SessionCompletionResponse, TrainingStageInfoDto, CompleteSessionRequest, RecalculationPreviewDto } from '@/types/api'
 import { CyclePhase, WorkoutType, IntensityLevel } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
@@ -35,6 +35,7 @@ export interface WorkoutSessionCardProps {
   cyclePhaseTips?: CyclePhaseTipsDto
   onSessionUpdated?: () => void
   pendingConfirmation?: boolean
+  recalculationPreview?: RecalculationPreviewDto
 
   // Legacy props (for Storybook)
   sessionName?: string
@@ -877,6 +878,7 @@ export function WorkoutSessionCard(props: WorkoutSessionCardProps) {
           onOpenChange={setShowRecalculationModal}
           onConfirmed={handleRecalculationConfirmed}
           onDeclined={handleRecalculationDeclined}
+          preview={props.recalculationPreview}
         />
       )}
     </div>

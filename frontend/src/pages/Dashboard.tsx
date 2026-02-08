@@ -895,6 +895,7 @@ export function Dashboard() {
                               }}
                               distanceUnit={distanceUnit}
                               pendingConfirmation={planSummary?.pendingConfirmation}
+                              recalculationPreview={planSummary?.recalculationPreview}
                             />
                           </div>
                         )}
@@ -916,6 +917,7 @@ export function Dashboard() {
                     }}
                     distanceUnit={distanceUnit}
                     pendingConfirmation={planSummary?.pendingConfirmation}
+                    recalculationPreview={planSummary?.recalculationPreview}
                   />
                 </div>
               )}
@@ -952,6 +954,7 @@ export function Dashboard() {
                         }}
                         distanceUnit={distanceUnit}
                         pendingConfirmation={planSummary?.pendingConfirmation}
+                        recalculationPreview={planSummary?.recalculationPreview}
                       />
                     </div>
                   </div>

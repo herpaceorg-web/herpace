@@ -176,6 +176,14 @@ export interface PlanSummaryDto {
   latestAdaptation?: LatestAdaptationDto
   todaysSession?: SessionDetailDto
   cyclePhaseTips?: CyclePhaseTipsDto
+  recalculationPreview?: RecalculationPreviewDto // Preview of proposed changes
+}
+
+export interface RecalculationPreviewDto {
+  summary: string
+  sessionChanges: SessionChangeDto[]
+  generatedAt: string
+  sessionsAffectedCount: number
 }
 
 export interface LatestAdaptationDto {

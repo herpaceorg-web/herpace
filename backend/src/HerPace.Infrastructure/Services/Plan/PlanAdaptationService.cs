@@ -132,20 +132,147 @@ public class PlanAdaptationService : IPlanAdaptationService
             }
         }
 
-        // Set pending confirmation state instead of immediately enqueuing job
-        plan.PendingRecalculationConfirmation = true;
-        plan.RecalculationConfirmationRequestedAt = DateTime.UtcNow;
-        plan.RecalculationConfirmationRespondedAt = null;
-        plan.RecalculationConfirmationAccepted = null;
-        plan.UpdatedAt = DateTime.UtcNow;
+        // Generate preview of proposed changes (run AI now, apply later if confirmed)
+        _logger.LogInformation("Generating recalculation preview for plan {PlanId}", trainingPlanId);
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            var today = DateTime.UtcNow.Date;
 
-        _logger.LogInformation(
-            "Recalculation confirmation requested for plan {PlanId}. User must confirm to proceed.",
-            trainingPlanId);
+            // Get next 7 future sessions
+            var futureSessions = plan.Sessions
+                .Where(s => s.ScheduledDate > today)
+                .OrderBy(s => s.ScheduledDate)
+                .Take(7)
+                .ToList();
 
-        return true;
+            if (!futureSessions.Any())
+            {
+                _logger.LogWarning("No future sessions to preview for plan {PlanId}", trainingPlanId);
+                return false;
+            }
+
+            // Build historical context
+            var recentContext = recentSessions.Select(s => new Core.DTOs.CompletedSessionContext
+            {
+                ScheduledDate = s.ScheduledDate,
+                WorkoutType = s.WorkoutType,
+                PlannedDuration = s.DurationMinutes,
+                PlannedDistance = s.Distance,
+                IsSkipped = s.IsSkipped,
+                SkipReason = s.SkipReason,
+                ActualDuration = s.ActualDuration,
+                ActualDistance = s.ActualDistance,
+                RPE = s.RPE,
+                UserNotes = s.UserNotes,
+                WasModified = s.WasModified
+            }).ToList();
+
+            // Recalculate cycle phases for future dates
+            Dictionary<DateTime, CyclePhase>? updatedCyclePhases = null;
+            if (plan.Runner.LastPeriodStart.HasValue && plan.Runner.CycleLength.HasValue)
+            {
+                updatedCyclePhases = new Dictionary<DateTime, CyclePhase>();
+                var startDate = futureSessions.First().ScheduledDate;
+                var endDate = futureSessions.Last().ScheduledDate;
+
+                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                {
+                    var phase = _cyclePhaseCalculator.CalculateCurrentPhase(
+                        plan.Runner.LastPeriodStart.Value,
+                        plan.Runner.CycleLength.Value,
+                        date);
+                    updatedCyclePhases[date] = phase;
+                }
+            }
+
+            // Build recalculation request
+            var recalcRequest = new Core.DTOs.PlanRecalculationRequest
+            {
+                TrainingPlanId = plan.Id,
+                PlanName = plan.PlanName,
+                RaceName = plan.Race.RaceName,
+                RaceDate = plan.Race.RaceDate,
+                Distance = plan.Race.Distance,
+                DistanceType = plan.Race.DistanceType,
+                GoalTime = plan.Race.GoalTime,
+                FitnessLevel = plan.Runner.FitnessLevel,
+                TypicalWeeklyMileage = plan.Runner.TypicalWeeklyMileage,
+                CycleLength = plan.Runner.CycleLength,
+                LastPeriodStart = plan.Runner.LastPeriodStart,
+                TypicalCycleRegularity = plan.Runner.TypicalCycleRegularity,
+                RecalculationStartDate = futureSessions.First().ScheduledDate,
+                RecalculationEndDate = futureSessions.Last().ScheduledDate,
+                SessionsToRecalculate = futureSessions.Count,
+                RecentSessions = recentContext,
+                UpdatedCyclePhases = updatedCyclePhases
+            };
+
+            // Call AI generator to get proposed changes
+            _logger.LogInformation("Calling AI generator for preview");
+            var recalculatedPlan = await _aiPlanGenerator.RecalculatePlanAsync(recalcRequest);
+
+            // Build preview changes (before/after comparison)
+            var previewChanges = futureSessions.Select(s =>
+            {
+                var aiSession = recalculatedPlan.Sessions
+                    .FirstOrDefault(ai => ai.ScheduledDate.Date == s.ScheduledDate.Date);
+
+                return new SessionChangeDto
+                {
+                    SessionId = s.Id,
+                    ScheduledDate = s.ScheduledDate,
+                    SessionName = aiSession?.SessionName ?? s.SessionName,
+                    OldDistance = s.Distance,
+                    OldDuration = s.DurationMinutes,
+                    OldWorkoutType = s.WorkoutType,
+                    OldIntensityLevel = s.IntensityLevel,
+                    NewDistance = aiSession?.Distance ?? s.Distance,
+                    NewDuration = aiSession?.DurationMinutes ?? s.DurationMinutes,
+                    NewWorkoutType = aiSession?.WorkoutType ?? s.WorkoutType,
+                    NewIntensityLevel = aiSession?.IntensityLevel ?? s.IntensityLevel
+                };
+            }).ToList();
+
+            // Generate AI summary for preview
+            string previewSummary;
+            try
+            {
+                previewSummary = await _aiPlanGenerator.GenerateRecalculationSummaryAsync(recalcRequest, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error generating preview summary, using default");
+                previewSummary = "Based on your recent training, we recommend adjusting your upcoming sessions.";
+            }
+
+            // Store preview data
+            var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            plan.PendingRecalculationPreviewJson = JsonSerializer.Serialize(previewChanges, jsonOptions);
+            plan.PendingRecalculationSummary = previewSummary;
+            plan.PreviewGeneratedAt = DateTime.UtcNow;
+            plan.PendingRecalculationConfirmation = true;
+            plan.RecalculationConfirmationRequestedAt = DateTime.UtcNow;
+            plan.RecalculationConfirmationRespondedAt = null;
+            plan.RecalculationConfirmationAccepted = null;
+            plan.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Preview generated for plan {PlanId}. {Count} sessions in preview, {AffectedCount} with changes.",
+                trainingPlanId,
+                previewChanges.Count,
+                previewChanges.Count(c => c.HasChanges()));
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating preview for plan {PlanId}", trainingPlanId);
+            // Don't set pending confirmation if preview generation failed
+            return false;
+        }
     }
 
     public async Task RecalculatePlanAsync(Guid trainingPlanId)
@@ -404,6 +531,7 @@ public class PlanAdaptationService : IPlanAdaptationService
         _logger.LogInformation("User confirming recalculation for plan {PlanId}", trainingPlanId);
 
         var plan = await _context.TrainingPlans
+            .Include(tp => tp.Sessions)
             .FirstOrDefaultAsync(tp => tp.Id == trainingPlanId);
 
         if (plan == null || plan.Status != PlanStatus.Active || !plan.PendingRecalculationConfirmation)
@@ -412,49 +540,99 @@ public class PlanAdaptationService : IPlanAdaptationService
             return false;
         }
 
-        // Check if recalculation already in progress
-        if (!string.IsNullOrEmpty(plan.LastRecalculationJobId))
+        // Check if we have a stored preview
+        if (string.IsNullOrEmpty(plan.PendingRecalculationPreviewJson))
         {
-            try
-            {
-                var jobState = JobStorage.Current
-                    .GetConnection()
-                    .GetStateData(plan.LastRecalculationJobId);
-
-                if (jobState?.Name == "Processing" || jobState?.Name == "Enqueued")
-                {
-                    _logger.LogInformation(
-                        "Recalculation already in progress for plan {PlanId} (Job {JobId})",
-                        trainingPlanId,
-                        plan.LastRecalculationJobId);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error checking job state for {JobId}", plan.LastRecalculationJobId);
-            }
+            _logger.LogWarning("Plan {PlanId} has pending confirmation but no preview data", trainingPlanId);
+            // Fall back to enqueuing a job
+            var jobId = BackgroundJob.Enqueue<IPlanAdaptationService>(
+                service => service.RecalculatePlanAsync(trainingPlanId));
+            plan.LastRecalculationJobId = jobId;
+            plan.LastRecalculationRequestedAt = DateTime.UtcNow;
+            plan.PendingRecalculationConfirmation = false;
+            plan.RecalculationConfirmationRespondedAt = DateTime.UtcNow;
+            plan.RecalculationConfirmationAccepted = true;
+            plan.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
-        // Enqueue recalculation job
-        var jobId = BackgroundJob.Enqueue<IPlanAdaptationService>(
-            service => service.RecalculatePlanAsync(trainingPlanId));
+        try
+        {
+            // Deserialize stored preview
+            var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var previewChanges = JsonSerializer.Deserialize<List<SessionChangeDto>>(
+                plan.PendingRecalculationPreviewJson, jsonOptions);
 
-        plan.LastRecalculationJobId = jobId;
-        plan.LastRecalculationRequestedAt = DateTime.UtcNow;
-        plan.PendingRecalculationConfirmation = false;
-        plan.RecalculationConfirmationRespondedAt = DateTime.UtcNow;
-        plan.RecalculationConfirmationAccepted = true;
-        plan.UpdatedAt = DateTime.UtcNow;
+            if (previewChanges == null || !previewChanges.Any())
+            {
+                _logger.LogWarning("Preview changes could not be deserialized for plan {PlanId}", trainingPlanId);
+                return false;
+            }
 
-        await _context.SaveChangesAsync();
+            // Apply changes to sessions
+            foreach (var change in previewChanges)
+            {
+                var session = plan.Sessions.FirstOrDefault(s => s.Id == change.SessionId);
+                if (session != null)
+                {
+                    session.Distance = change.NewDistance;
+                    session.DurationMinutes = change.NewDuration;
+                    session.WorkoutType = change.NewWorkoutType;
+                    session.IntensityLevel = change.NewIntensityLevel;
+                    session.SessionName = change.SessionName;
+                    session.UpdatedAt = DateTime.UtcNow;
 
-        _logger.LogInformation(
-            "Recalculation job {JobId} enqueued for plan {PlanId} after user confirmation",
-            jobId,
-            trainingPlanId);
+                    _logger.LogDebug(
+                        "Applied preview change to session {SessionId} on {Date}",
+                        session.Id,
+                        session.ScheduledDate);
+                }
+            }
 
-        return true;
+            // Create history entry
+            var historyEntry = new PlanAdaptationHistory
+            {
+                Id = Guid.NewGuid(),
+                TrainingPlanId = plan.Id,
+                AdaptedAt = DateTime.UtcNow,
+                ViewedAt = null,
+                Summary = plan.PendingRecalculationSummary ?? "Your training plan has been adjusted based on your recent performance.",
+                SessionsAffectedCount = previewChanges.Count(c => c.HasChanges()),
+                TriggerReason = "Training pattern deviation detected",
+                ChangesJson = plan.PendingRecalculationPreviewJson
+            };
+            _context.PlanAdaptationHistory.Add(historyEntry);
+
+            // Update plan state
+            plan.LastRecalculationSummary = plan.PendingRecalculationSummary;
+            plan.RecalculationSummaryViewedAt = null;
+            plan.LastRecalculatedAt = DateTime.UtcNow;
+            plan.LastRecalculationJobId = null;
+            plan.PendingRecalculationConfirmation = false;
+            plan.RecalculationConfirmationRespondedAt = DateTime.UtcNow;
+            plan.RecalculationConfirmationAccepted = true;
+
+            // Clear preview data
+            plan.PendingRecalculationPreviewJson = null;
+            plan.PendingRecalculationSummary = null;
+            plan.PreviewGeneratedAt = null;
+            plan.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Applied stored preview for plan {PlanId}. {Count} sessions updated.",
+                trainingPlanId,
+                previewChanges.Count(c => c.HasChanges()));
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error applying preview for plan {PlanId}", trainingPlanId);
+            return false;
+        }
     }
 
     public async Task<bool> DeclineRecalculationAsync(Guid trainingPlanId)
@@ -470,16 +648,19 @@ public class PlanAdaptationService : IPlanAdaptationService
             return false;
         }
 
-        // Clear pending confirmation state
+        // Clear pending confirmation state and preview data
         plan.PendingRecalculationConfirmation = false;
         plan.RecalculationConfirmationRespondedAt = DateTime.UtcNow;
         plan.RecalculationConfirmationAccepted = false;
+        plan.PendingRecalculationPreviewJson = null;
+        plan.PendingRecalculationSummary = null;
+        plan.PreviewGeneratedAt = null;
         plan.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
         _logger.LogInformation(
-            "Recalculation declined by user for plan {PlanId}",
+            "Recalculation declined by user for plan {PlanId}. Preview data cleared.",
             trainingPlanId);
 
         return true;
