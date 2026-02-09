@@ -139,8 +139,8 @@ public class GeminiPlanGenerator : IAIPlanGenerator
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 PropertyNameCaseInsensitive = true,
                 Converters = {
-                    new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true),
-                    new FlexibleIntensityLevelConverter()
+                    new FlexibleIntensityLevelConverter(),
+                    new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true)
                 }
             });
 
@@ -259,8 +259,8 @@ public class GeminiPlanGenerator : IAIPlanGenerator
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 PropertyNameCaseInsensitive = true,
                 Converters = {
-                    new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true),
-                    new FlexibleIntensityLevelConverter()
+                    new FlexibleIntensityLevelConverter(),
+                    new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true)
                 }
             });
 
