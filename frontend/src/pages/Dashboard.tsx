@@ -357,10 +357,11 @@ export function Dashboard() {
 
     // Number sessions sequentially (1, 2, 3, etc.)
     // Use isCompleted and isSkipped from the session directly (API fields)
+    // Skipped sessions should NOT be marked as completed
     return activeSessions.map((session, index) => ({
       dayNumber: index + 1,
       hasSession: true,
-      isCompleted: session.isCompleted || !!session.completedAt,
+      isCompleted: !session.isSkipped && (session.isCompleted || !!session.completedAt),
       isSkipped: session.isSkipped,
       isRest: false
     }))
@@ -385,7 +386,7 @@ export function Dashboard() {
     const days: PunchCardDay[] = sessions.map((session, index) => ({
       dayNumber: index + 1,
       hasSession: true,
-      isCompleted: session.isCompleted || !!session.completedAt,
+      isCompleted: !session.isSkipped && (session.isCompleted || !!session.completedAt),
       isSkipped: session.isSkipped,
       isRest: session.workoutType === WorkoutType.Rest
     }))

@@ -21,7 +21,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b">
+      <header className="sticky top-0 z-50 border-b bg-background">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link to="/dashboard" className="hover:opacity-80 transition-opacity">
             <h1 className="text-2xl font-normal text-primary font-[family-name:'Petrona'] leading-none">HerPace</h1>
