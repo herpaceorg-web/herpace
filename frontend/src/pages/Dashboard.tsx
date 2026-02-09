@@ -741,12 +741,18 @@ export function Dashboard() {
                   <div className="flex items-center gap-3">
                     <Goal className="w-5 h-5 text-[#696863]" />
                     <div className="flex flex-col">
-                      <span className="text-lg font-semibold">
-                        {race?.goalTime || race?.raceCompletionGoal || plan?.planCompletionGoal || 'Finish strong'}
-                      </span>
-                      {race?.goalTime && race?.distance && (
+                      {race?.goalTime ? (
+                        <>
+                          <span className="text-lg font-semibold">{race.goalTime}</span>
+                          {race.distance && (
+                            <span className="text-sm text-[#696863] font-normal">
+                              {calculatePace(race.goalTime, race.distance, distanceUnit)} pace
+                            </span>
+                          )}
+                        </>
+                      ) : (
                         <span className="text-sm text-[#696863] font-normal">
-                          {calculatePace(race.goalTime, race.distance, distanceUnit)} pace
+                          {race?.raceCompletionGoal || plan?.planCompletionGoal || 'Finish strong'}
                         </span>
                       )}
                     </div>
@@ -885,7 +891,7 @@ export function Dashboard() {
                     <div className="flex items-center gap-2 shrink-0">
                       <PunchCard days={displayPunchCardData.days} variant={displayPunchCardData.variant} />
                       {activeView === 'week' && (
-                        <span>{weekSummary.completedSessions}/{weekSummary.totalSessions} sessions</span>
+                        <span>{punchCardDays.filter(d => d.isCompleted).length}/{punchCardDays.length} sessions</span>
                       )}
                     </div>
                     <div className="flex-1 flex justify-center">
