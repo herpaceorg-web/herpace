@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using HerPace.Core.DTOs;
 using HerPace.Core.Enums;
 using HerPace.Core.Interfaces;
@@ -133,6 +134,10 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
             jsonText = jsonText.Trim();
 
+            // Sanitize JSON: fix leading zeros in numeric values (e.g., 01 -> 1, 00 -> 0)
+            // JSON spec doesn't allow leading zeros except for the number 0 itself
+            jsonText = SanitizeJsonNumbers(jsonText);
+
             // Parse the training plan JSON from response
             var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
             {
@@ -252,6 +257,9 @@ public class GeminiPlanGenerator : IAIPlanGenerator
             }
 
             jsonText = jsonText.Trim();
+
+            // Sanitize JSON: fix leading zeros in numeric values
+            jsonText = SanitizeJsonNumbers(jsonText);
 
             // Parse the recalculated sessions JSON
             var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
@@ -696,5 +704,33 @@ Write a supportive, empowering 3-4 sentence summary explaining the plan adjustme
 ""Your training has been a bit sporadic with {skippedCount} skipped sessions. I've simplified the plan with more easy runs and flexible timing. {upcomingPhase} You'll feel energy returning - perfect for getting back on track. Progress isn't linear!""
 
 Now generate the summary (ONLY the summary text, no extra formatting):";
+    }
+
+    /// <summary>
+    /// Sanitizes JSON by removing leading zeros from numeric values.
+    /// Gemini sometimes returns invalid JSON with numbers like 01, 02, 00 which violate JSON spec.
+    /// This regex finds patterns like ": 01" or ": 00" and converts them to ": 1" and ": 0".
+    /// </summary>
+    private static string SanitizeJsonNumbers(string json)
+    {
+        // Match numeric values with leading zeros: ": 0[0-9]" followed by delimiter (comma, newline, brace, etc.)
+        // Examples: ": 01," -> ": 1,", ": 00\n" -> ": 0\n", ": 02}" -> ": 2}"
+        var pattern = @":\s*0(\d+)([,\s\}])";
+        var sanitized = Regex.Replace(json, pattern, match =>
+        {
+            var numberWithoutLeadingZero = match.Groups[1].Value;
+            var delimiter = match.Groups[2].Value;
+
+            // If the number is all zeros (e.g., "00" -> "0"), use "0"
+            if (long.TryParse(numberWithoutLeadingZero, out var num))
+            {
+                return $": {num}{delimiter}";
+            }
+
+            // Fallback: just remove the leading zero
+            return $": {numberWithoutLeadingZero}{delimiter}";
+        });
+
+        return sanitized;
     }
 }
