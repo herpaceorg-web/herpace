@@ -356,11 +356,12 @@ export function Dashboard() {
       .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
 
     // Number sessions sequentially (1, 2, 3, etc.)
+    // Use isCompleted and isSkipped from the session directly (API fields)
     return activeSessions.map((session, index) => ({
       dayNumber: index + 1,
       hasSession: true,
-      isCompleted: !!session.completedAt,
-      isSkipped: session.isSkipped ?? false,
+      isCompleted: session.isCompleted || !!session.completedAt,
+      isSkipped: session.isSkipped,
       isRest: false
     }))
   }, [weekSessions])
@@ -384,8 +385,8 @@ export function Dashboard() {
     const days: PunchCardDay[] = sessions.map((session, index) => ({
       dayNumber: index + 1,
       hasSession: true,
-      isCompleted: !!session.completedAt,
-      isSkipped: session.isSkipped ?? false,
+      isCompleted: session.isCompleted || !!session.completedAt,
+      isSkipped: session.isSkipped,
       isRest: session.workoutType === WorkoutType.Rest
     }))
 
@@ -737,10 +738,10 @@ export function Dashboard() {
                 </div>
 
                 {/* Goal section */}
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-3">
-                    <Goal className="w-5 h-5 text-[#696863]" />
-                    <div className="flex flex-col">
+                <div className="flex items-start justify-between gap-4 pt-4 border-t border-border">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <Goal className="w-5 h-5 text-[#696863] flex-shrink-0 mt-0.5" />
+                    <div className="flex flex-col min-w-0">
                       {race?.goalTime ? (
                         <>
                           <span className="text-lg font-semibold">{race.goalTime}</span>
@@ -751,7 +752,7 @@ export function Dashboard() {
                           )}
                         </>
                       ) : (
-                        <span className="text-sm text-[#696863] font-normal">
+                        <span className="text-sm text-[#696863] font-normal break-words">
                           {race?.raceCompletionGoal || plan?.planCompletionGoal || 'Finish strong'}
                         </span>
                       )}
