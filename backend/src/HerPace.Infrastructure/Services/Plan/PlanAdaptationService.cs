@@ -56,13 +56,12 @@ public class PlanAdaptationService : IPlanAdaptationService
             .Take(7)
             .ToList();
 
-        // Need at least 3 sessions to establish a pattern
-        if (recentSessions.Count < 3)
+        // Need at least 1 session to check for deviation (lowered from 3 for demo)
+        if (recentSessions.Count < 1)
         {
             _logger.LogInformation(
-                "Plan {PlanId}: Only {Count} sessions logged, need at least 3 for pattern detection",
-                trainingPlanId,
-                recentSessions.Count);
+                "Plan {PlanId}: No sessions logged yet",
+                trainingPlanId);
             return false;
         }
 
