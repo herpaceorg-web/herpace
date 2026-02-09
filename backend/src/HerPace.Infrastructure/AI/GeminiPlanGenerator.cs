@@ -138,6 +138,9 @@ public class GeminiPlanGenerator : IAIPlanGenerator
             // JSON spec doesn't allow leading zeros except for the number 0 itself
             jsonText = SanitizeJsonNumbers(jsonText);
 
+            // Auto-complete incomplete JSON (Gemini sometimes cuts off before finishing)
+            jsonText = CompleteIncompleteJson(jsonText);
+
             // Parse the training plan JSON from response
             var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
             {
@@ -260,6 +263,9 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
             // Sanitize JSON: fix leading zeros in numeric values
             jsonText = SanitizeJsonNumbers(jsonText);
+
+            // Auto-complete incomplete JSON
+            jsonText = CompleteIncompleteJson(jsonText);
 
             // Parse the recalculated sessions JSON
             var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
@@ -732,5 +738,88 @@ Now generate the summary (ONLY the summary text, no extra formatting):";
         });
 
         return sanitized;
+    }
+
+    /// <summary>
+    /// Attempts to auto-complete incomplete JSON by adding missing closing braces/brackets.
+    /// Gemini sometimes cuts off responses before properly closing all JSON structures.
+    /// </summary>
+    private static string CompleteIncompleteJson(string json)
+    {
+        var trimmed = json.TrimEnd();
+
+        // Count opening and closing braces/brackets
+        int openBraces = 0, closeBraces = 0;
+        int openBrackets = 0, closeBrackets = 0;
+        bool inString = false;
+        bool escaped = false;
+
+        foreach (char c in trimmed)
+        {
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"' && !escaped)
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString)
+            {
+                if (c == '{') openBraces++;
+                else if (c == '}') closeBraces++;
+                else if (c == '[') openBrackets++;
+                else if (c == ']') closeBrackets++;
+            }
+        }
+
+        // If incomplete, try to complete it
+        var result = new StringBuilder(trimmed);
+
+        // If the last character is a comma, newline, or space after a value, we might need to close the current object
+        var lastNonWhitespace = trimmed.TrimEnd();
+        if (lastNonWhitespace.Length > 0)
+        {
+            var lastChar = lastNonWhitespace[lastNonWhitespace.Length - 1];
+            // If we end with a value (digit, quote, or closing brace), add missing closures
+            if (char.IsDigit(lastChar) || lastChar == '"' || lastChar == '}')
+            {
+                // Close current session object if needed
+                if (openBraces > closeBraces)
+                {
+                    result.AppendLine();
+                    result.Append("    }"); // Close session object
+                    closeBraces++;
+                }
+            }
+        }
+
+        // Close remaining sessions array
+        while (openBrackets > closeBrackets)
+        {
+            result.AppendLine();
+            result.Append("  ]");
+            closeBrackets++;
+        }
+
+        // Close remaining root object
+        while (openBraces > closeBraces)
+        {
+            result.AppendLine();
+            result.Append("}");
+            closeBraces++;
+        }
+
+        return result.ToString();
     }
 }
