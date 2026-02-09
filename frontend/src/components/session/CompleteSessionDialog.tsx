@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/ui/number-input'
 import { Label } from '@/components/ui/label'
 import { Mic, Loader2, CheckCircle } from 'lucide-react'
 import { WorkoutType, type SessionDetailDto, type CompleteSessionRequest } from '@/types/api'
@@ -31,11 +31,11 @@ export function CompleteSessionDialog({
   startInLogMode = false
 }: CompleteSessionDialogProps) {
   const [inputMode, setInputMode] = useState<InputMode>('initial')
-  const [actualDistance, setActualDistance] = useState(
-    session.distance != null ? displayDistance(session.distance, distanceUnit).toString() : ''
+  const [actualDistance, setActualDistance] = useState<number>(
+    session.distance != null ? displayDistance(session.distance, distanceUnit) : 0
   )
-  const [actualDuration, setActualDuration] = useState(session.durationMinutes?.toString() || '')
-  const [rpe, setRpe] = useState('')
+  const [actualDuration, setActualDuration] = useState<number>(session.durationMinutes || 0)
+  const [rpe, setRpe] = useState<number>(0)
   const [userNotes, setUserNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoggingWorkout, setIsLoggingWorkout] = useState(startInLogMode)
@@ -136,18 +136,18 @@ export function CompleteSessionDialog({
       }
 
       const data: CompleteSessionRequest = {
-        actualDistance: actualDistance ? toKm(parseFloat(actualDistance), distanceUnit) : undefined,
-        actualDuration: actualDuration ? parseInt(actualDuration) : undefined,
-        rpe: rpe ? parseInt(rpe) : undefined,
+        actualDistance: actualDistance > 0 ? toKm(actualDistance, distanceUnit) : undefined,
+        actualDuration: actualDuration > 0 ? actualDuration : undefined,
+        rpe: rpe > 0 ? rpe : undefined,
         userNotes: userNotes || undefined
       }
 
       await onComplete(data)
 
       // Reset form
-      setActualDistance(session.distance != null ? displayDistance(session.distance, distanceUnit).toString() : '')
-      setActualDuration(session.durationMinutes?.toString() || '')
-      setRpe('')
+      setActualDistance(session.distance != null ? displayDistance(session.distance, distanceUnit) : 0)
+      setActualDuration(session.durationMinutes || 0)
+      setRpe(0)
       setUserNotes('')
       setIsLoggingWorkout(false)
 
@@ -406,9 +406,25 @@ export function CompleteSessionDialog({
                     <Mic className="w-8 h-8 text-white" />
                   </button>
                   <h4 className="text-sm font-normal text-foreground mb-1">Chat about your training session</h4>
-                  <p className="text-sm font-normal text-[#696863]">
+                  <p className="text-sm font-normal text-[#696863] mb-4">
                     Tell me how it went and I'll log the details for you
                   </p>
+
+                  {/* Example phrases */}
+                  <div className="w-full space-y-2">
+                    <p className="text-xs text-[#696863] font-normal">Try saying something like:</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <span className="text-xs bg-card px-3 py-1.5 rounded-full text-[#696863] border border-border">
+                        "I ran 3 miles in 28 minutes"
+                      </span>
+                      <span className="text-xs bg-card px-3 py-1.5 rounded-full text-[#696863] border border-border">
+                        "It felt like a 7 out of 10"
+                      </span>
+                      <span className="text-xs bg-card px-3 py-1.5 rounded-full text-[#696863] border border-border">
+                        "My legs were a bit tired today"
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -430,16 +446,17 @@ export function CompleteSessionDialog({
               <>
                 <div className="space-y-2">
                   <Label htmlFor="actualDistance" className="text-sm font-normal text-foreground">
-                    Distance ({distanceUnit})
+                    Distance
                   </Label>
-                  <Input
+                  <NumberInput
                     id="actualDistance"
-                    type="number"
-                    step="0.01"
                     value={actualDistance}
-                    onChange={(e) => setActualDistance(e.target.value)}
-                    placeholder={session.distance ? displayDistance(session.distance, distanceUnit).toString() : '5.0'}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    onChange={(value) => setActualDistance(value)}
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    suffix={distanceUnit}
+                    disabled={isSubmitting}
                   />
                   {session.distance && (
                     <p className="text-xs text-[#696863]">
@@ -450,15 +467,17 @@ export function CompleteSessionDialog({
 
                 <div className="space-y-2">
                   <Label htmlFor="actualDuration" className="text-sm font-normal text-foreground">
-                    Duration (minutes)
+                    Duration
                   </Label>
-                  <Input
+                  <NumberInput
                     id="actualDuration"
-                    type="number"
                     value={actualDuration}
-                    onChange={(e) => setActualDuration(e.target.value)}
-                    placeholder={session.durationMinutes?.toString() || '30'}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    onChange={(value) => setActualDuration(value)}
+                    min={0}
+                    max={300}
+                    step={1}
+                    suffix="min"
+                    disabled={isSubmitting}
                   />
                   {session.durationMinutes && (
                     <p className="text-xs text-[#696863]">
@@ -469,19 +488,21 @@ export function CompleteSessionDialog({
 
                 <div className="space-y-2">
                   <Label htmlFor="rpe" className="text-sm font-normal text-foreground">
-                    How did the training session feel? (RPE 1-10)
+                    How did the training session feel?
                   </Label>
-                  <Input
+                  <NumberInput
                     id="rpe"
-                    type="number"
-                    min="1"
-                    max="10"
                     value={rpe}
-                    onChange={(e) => setRpe(e.target.value)}
-                    placeholder="1 (very easy) - 10 (maximum effort)"
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required={!isRestDay || isLoggingWorkout}
+                    onChange={(value) => setRpe(value)}
+                    min={1}
+                    max={10}
+                    step={1}
+                    suffix="/10"
+                    disabled={isSubmitting}
                   />
+                  <p className="text-xs text-[#696863]">
+                    1 (very easy) - 10 (maximum effort)
+                  </p>
                 </div>
 
                 <div className="space-y-2">

@@ -63,12 +63,12 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             )}
           </div>
         </div>
-        <div className="flex h-full items-center">
+        <div className="flex h-full items-center relative z-10">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-full rounded-none border-l border-input px-2 hover:bg-accent"
+            className="h-full w-10 rounded-none border-l border-input hover:bg-accent"
             onClick={handleDecrement}
             disabled={disabled || value <= min}
             tabIndex={-1}
@@ -79,7 +79,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             type="button"
             variant="ghost"
             size="icon"
-            className="h-full rounded-none rounded-r-md border-l border-input px-2 hover:bg-accent"
+            className="h-full w-10 rounded-none rounded-r-md border-l border-input hover:bg-accent"
             onClick={handleIncrement}
             disabled={disabled || value >= max}
             tabIndex={-1}
