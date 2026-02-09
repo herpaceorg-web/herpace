@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api-client'
-import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto, PlanDetailResponse, SessionSummary } from '@/types/api'
+import type { PlanSummaryDto, SessionDetailDto, UpcomingSessionsResponse, ProfileResponse, CyclePositionDto, PlanDetailResponse, SessionSummary, RaceResponse } from '@/types/api'
 import { WorkoutSessionCard } from '@/components/session/WorkoutSessionCard'
 import { SessionChangeCard } from '@/components/session/SessionChangeCard'
 import { HormoneCycleChart } from '@/components/HormoneCycleChart'
@@ -33,6 +33,42 @@ import { TrainingStage } from '@/types/api'
 import { CyclePhase } from '@/types/api'
 import { TRAINING_STAGES } from '@/lib/trainingStages'
 
+// Helper to calculate pace from goal time and distance
+function calculatePace(goalTime: string, distance: number, distanceUnit: 'km' | 'mi'): string | null {
+  try {
+    // Parse goal time (HH:MM:SS or H:MM:SS format)
+    const parts = goalTime.split(':')
+    if (parts.length < 2) return null
+
+    let totalMinutes: number
+    if (parts.length === 3) {
+      const hours = parseInt(parts[0], 10)
+      const minutes = parseInt(parts[1], 10)
+      const seconds = parseInt(parts[2], 10)
+      totalMinutes = hours * 60 + minutes + seconds / 60
+    } else {
+      const minutes = parseInt(parts[0], 10)
+      const seconds = parseInt(parts[1], 10)
+      totalMinutes = minutes + seconds / 60
+    }
+
+    // Convert distance to the target unit
+    const distanceInUnit = distanceUnit === 'mi'
+      ? distance * 0.621371  // km to miles
+      : distance  // already in km
+
+    if (distanceInUnit <= 0) return null
+
+    const paceMinutes = totalMinutes / distanceInUnit
+    const paceWholeMinutes = Math.floor(paceMinutes)
+    const paceSeconds = Math.round((paceMinutes - paceWholeMinutes) * 60)
+
+    return `${paceWholeMinutes}:${paceSeconds.toString().padStart(2, '0')}/${distanceUnit}`
+  } catch {
+    return null
+  }
+}
+
 export function Dashboard() {
   const navigate = useNavigate()
   const [planSummary, setPlanSummary] = useState<PlanSummaryDto | null>(null)
@@ -47,6 +83,7 @@ export function Dashboard() {
 
   // WeekView state
   const [plan, setPlan] = useState<PlanDetailResponse | null>(null)
+  const [race, setRace] = useState<RaceResponse | null>(null)
 
   // View mode state
   const [activeView, setActiveView] = useState<CalendarView>('week')
@@ -192,6 +229,13 @@ export function Dashboard() {
       // NEW: Set up WeekView data if plan is available
       if (planData) {
         setPlan(planData)
+        // Fetch race details for goal time
+        try {
+          const raceData = await api.get<RaceResponse>(`/api/races/${planData.raceId}`)
+          setRace(raceData)
+        } catch (err) {
+          console.error('Failed to fetch race details:', err)
+        }
       }
 
     } catch (err: unknown) {
@@ -433,28 +477,34 @@ export function Dashboard() {
     // Track which month the selected session belongs to (for Plan view)
     setSelectedSessionMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
 
-    // Try to find full details in upcomingSessions first
-    const existingDetails = upcomingSessions.find(s => s.id === session.id)
-    if (existingDetails) {
-      setSelectedSession(existingDetails)
-    } else {
-      // Fetch full session details from API
-      try {
-        const details = await api.get<SessionDetailDto>(`/api/sessions/${session.id}`)
-        setSelectedSession(details)
-      } catch (err) {
-        console.error('Failed to load session details:', err)
-        setSelectedSession(null)
-      }
-    }
+    // Clear first to force re-render when switching sessions
+    setSelectedSession(null)
 
-    // Scroll to selected session card
-    setTimeout(() => {
-      selectedSessionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-    }, 100)
+    // Use setTimeout to ensure the clear happens before setting new session
+    setTimeout(async () => {
+      // Try to find full details in upcomingSessions first
+      const existingDetails = upcomingSessions.find(s => s.id === session.id)
+      if (existingDetails) {
+        setSelectedSession(existingDetails)
+      } else {
+        // Fetch full session details from API
+        try {
+          const details = await api.get<SessionDetailDto>(`/api/sessions/${session.id}`)
+          setSelectedSession(details)
+        } catch (err) {
+          console.error('Failed to load session details:', err)
+          setSelectedSession(null)
+        }
+      }
+
+      // Scroll to selected session card
+      setTimeout(() => {
+        selectedSessionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }, 50)
+    }, 10)
   }, [selectedSessionId, upcomingSessions])
 
   // Handle month navigation
@@ -691,7 +741,14 @@ export function Dashboard() {
                   <div className="flex items-center gap-3">
                     <Goal className="w-5 h-5 text-[#696863]" />
                     <div className="flex flex-col">
-                      <span className="text-lg font-semibold">Finish strong</span>
+                      <span className="text-lg font-semibold">
+                        {race?.goalTime || race?.raceCompletionGoal || plan?.planCompletionGoal || 'Finish strong'}
+                      </span>
+                      {race?.goalTime && race?.distance && (
+                        <span className="text-sm text-[#696863] font-normal">
+                          {calculatePace(race.goalTime, race.distance, distanceUnit)} pace
+                        </span>
+                      )}
                     </div>
                   </div>
                   <Popover>

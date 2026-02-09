@@ -18,10 +18,11 @@ import { cn } from '@/lib/utils'
 interface ProfileStepProps {
   onComplete: (data: ProfileFormValues) => void
   onNameChange?: (name: string) => void
+  onBack?: () => void
   defaultValues?: Partial<ProfileFormValues>
 }
 
-export function ProfileStep({ onComplete, onNameChange, defaultValues }: ProfileStepProps) {
+export function ProfileStep({ onComplete, onNameChange, onBack, defaultValues }: ProfileStepProps) {
   const today = new Date()
   const defaultBirthDate = new Date(
     today.getFullYear() - 30,
@@ -263,10 +264,23 @@ export function ProfileStep({ onComplete, onNameChange, defaultValues }: Profile
         </div>
       </div>
 
-      {/* Submit Button */}
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Saving...' : 'Next: Your Cycle'}
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex gap-4">
+        {onBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            disabled={isSubmitting}
+            className="flex-1"
+          >
+            Back
+          </Button>
+        )}
+        <Button type="submit" disabled={isSubmitting} className={onBack ? "flex-1" : "w-full"}>
+          {isSubmitting ? 'Saving...' : 'Next: Your Cycle'}
+        </Button>
+      </div>
     </form>
   )
 }

@@ -258,6 +258,10 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
   }
 
   // Handle back navigation
+  const handleBackFromProfile = () => {
+    navigate('/login')
+  }
+
   const handleBackFromCycle = () => {
     setError(null)
     setCurrentStep(1)
@@ -319,6 +323,7 @@ export function Onboarding({ initialStep = 1 }: OnboardingProps) {
               <ProfileStep
                 onComplete={handleProfileComplete}
                 onNameChange={setUserName}
+                onBack={handleBackFromProfile}
                 defaultValues={profileData || undefined}
               />
             )}

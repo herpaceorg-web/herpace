@@ -26,6 +26,10 @@ export const Default: Story = {
       console.log('Form submitted:', data)
       alert('Form submitted! Check console for data.')
     },
+    onBack: () => {
+      console.log('Back button clicked')
+      alert('Back button clicked!')
+    },
   },
 }
 
@@ -35,12 +39,25 @@ export const WithDefaultValues: Story = {
       console.log('Form submitted:', data)
       alert('Form submitted! Check console for data.')
     },
+    onBack: () => {
+      console.log('Back button clicked')
+      alert('Back button clicked!')
+    },
     defaultValues: {
       name: 'Jane Doe',
       dateOfBirth: new Date(1990, 5, 15), // June 15, 1990
       fitnessLevel: 'Intermediate',
       typicalWeeklyMileage: 25,
       distanceUnit: 'Miles',
+    },
+  },
+}
+
+export const WithoutBackButton: Story = {
+  args: {
+    onComplete: (data) => {
+      console.log('Form submitted:', data)
+      alert('Form submitted! Check console for data.')
     },
   },
 }
