@@ -19,13 +19,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Timer, Goal, Check, Route } from 'lucide-react'
+import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Goal, Check, Route } from 'lucide-react'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
 import { generateCyclePhasesForRange } from '@/utils/cyclePhases'
 import { Badge } from '@/components/ui/badge'
 import { PunchCard, PunchCardDay, PunchCardVariant } from '@/components/ui/punch-card'
+import { CountdownDisplay } from '@/components/ui/countdown-display'
 import { WorkoutType } from '@/types/api'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { TrainingStage } from '@/types/api'
@@ -61,9 +62,9 @@ export function Dashboard() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
 
   // Live countdown state
-  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number } | null>(null)
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null)
 
-  // Update countdown every minute
+  // Update countdown every second
   useEffect(() => {
     if (!planSummary?.raceDate) return
 
@@ -73,19 +74,20 @@ export function Dashboard() {
       const diff = raceDate.getTime() - now.getTime()
 
       if (diff <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0 })
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 })
         return
       }
 
       const days = Math.floor(diff / (1000 * 60 * 60 * 24))
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
 
-      setCountdown({ days, hours, minutes })
+      setCountdown({ days, hours, minutes, seconds })
     }
 
     calculateCountdown()
-    const interval = setInterval(calculateCountdown, 60000) // Update every minute
+    const interval = setInterval(calculateCountdown, 1000) // Update every second
 
     return () => clearInterval(interval)
   }, [planSummary?.raceDate])
@@ -652,34 +654,77 @@ export function Dashboard() {
           {/* Race/Goal and Summary Containers - Side by Side */}
           <div className="flex gap-4 mb-[48px]">
             {/* Race and Goal Container */}
-            <div className="w-1/2 p-4 bg-card rounded-lg border border-border shadow-sm">
+            <div className="w-1/2 p-6 bg-card rounded-lg border border-border shadow-sm">
               <div className="space-y-4">
-                <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {planSummary.raceName}</h3>
-                <div className="flex items-center gap-4 text-sm text-[#696863] font-normal">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[24px] font-normal font-[family-name:'Petrona']">Training For: {planSummary.raceName}</h3>
+                  <div className="flex items-center gap-2 text-sm text-[#696863] font-normal">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(planSummary.raceDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                   </div>
-                  <div className="h-4 border-l border-border" />
-                  <div className="flex items-center gap-2">
-                    <Timer className="w-4 h-4" />
-                    <span>
-                      {countdown
-                        ? `${countdown.days}d ${countdown.hours}h ${countdown.minutes}m until race day`
-                        : `${planSummary.daysUntilRace} days until race day`
-                      }
-                    </span>
-                  </div>
                 </div>
+
+                {/* Countdown section */}
+                <div className="flex items-center gap-4">
+                  {countdown ? (
+                    <CountdownDisplay
+                      days={countdown.days}
+                      hours={countdown.hours}
+                      minutes={countdown.minutes}
+                      seconds={countdown.seconds}
+                      variant="hero"
+                      showSeconds
+                    />
+                  ) : (
+                    <CountdownDisplay
+                      days={planSummary.daysUntilRace}
+                      hours={0}
+                      minutes={0}
+                      variant="hero"
+                    />
+                  )}
+                  <span className="text-sm text-[#696863] font-normal">until race day</span>
+                </div>
+
+                {/* Goal section */}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 text-sm text-[#696863] font-normal">
-                    <Goal className="w-4 h-4" />
-                    <span>Goal: Finish strong</span>
+                  <div className="flex items-center gap-3">
+                    <Goal className="w-5 h-5 text-[#696863]" />
+                    <div className="flex flex-col">
+                      <span className="text-lg font-semibold">Finish strong</span>
+                    </div>
                   </div>
-                  <Badge className="rounded-md text-sm font-normal bg-success/10 text-success border-success/20 hover:bg-success/20 gap-1">
-                    <Check className="w-4 h-4" />
-                    On track
-                  </Badge>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="cursor-pointer">
+                        <Badge className="rounded-md text-sm font-normal bg-success/10 text-success border-success/20 hover:bg-success/20 gap-1">
+                          <Check className="w-4 h-4" />
+                          <span className="underline">On track</span>
+                        </Badge>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72" align="end">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-5 h-5 text-success" />
+                          <span className="font-medium">You're on track!</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Based on your training consistency and session completion, you're well-positioned to hit your goal.
+                        </p>
+                        <div className="space-y-2 pt-2 border-t">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Sessions completed</span>
+                            <span className="font-medium">{weekSummary ? `${weekSummary.completedSessions}/${weekSummary.totalSessions}` : '--'}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Weekly consistency</span>
+                            <span className="font-medium text-success">Excellent</span>
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>

@@ -137,7 +137,11 @@ public class GeminiPlanGenerator : IAIPlanGenerator
             var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                PropertyNameCaseInsensitive = true,
+                Converters = {
+                    new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true),
+                    new FlexibleIntensityLevelConverter()
+                }
             });
 
             if (plan == null)
@@ -253,7 +257,11 @@ public class GeminiPlanGenerator : IAIPlanGenerator
             var plan = JsonSerializer.Deserialize<GeneratedPlanDto>(jsonText, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                PropertyNameCaseInsensitive = true,
+                Converters = {
+                    new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true),
+                    new FlexibleIntensityLevelConverter()
+                }
             });
 
             if (plan == null)

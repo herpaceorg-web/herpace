@@ -1,6 +1,48 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using HerPace.Core.Enums;
 
 namespace HerPace.Infrastructure.AI;
+
+/// <summary>
+/// Flexible converter for IntensityLevel that handles numeric values and common string variations.
+/// </summary>
+public class FlexibleIntensityLevelConverter : JsonConverter<IntensityLevel>
+{
+    public override IntensityLevel Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            var value = reader.GetInt32();
+            return value switch
+            {
+                0 => IntensityLevel.Low,
+                1 => IntensityLevel.Moderate,
+                2 => IntensityLevel.High,
+                _ => IntensityLevel.Moderate // Default fallback
+            };
+        }
+
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var value = reader.GetString()?.ToLowerInvariant() ?? "";
+            return value switch
+            {
+                "low" or "easy" or "light" or "0" => IntensityLevel.Low,
+                "moderate" or "medium" or "normal" or "1" => IntensityLevel.Moderate,
+                "high" or "hard" or "intense" or "2" => IntensityLevel.High,
+                _ => IntensityLevel.Moderate // Default fallback
+            };
+        }
+
+        return IntensityLevel.Moderate; // Default fallback
+    }
+
+    public override void Write(Utf8JsonWriter writer, IntensityLevel value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString());
+    }
+}
 
 /// <summary>
 /// Request/Response models for Gemini API.

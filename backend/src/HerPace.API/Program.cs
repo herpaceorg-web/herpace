@@ -157,7 +157,10 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "https://localhost:5001",
             "http://localhost:5000",
-            "https://herpace-frontend-81066941589.us-central1.run.app", // Cloud Run frontend URL
+            "http://localhost:5163",
+            "http://localhost:5164",
+            "https://herpace-frontend-330702404265.us-central1.run.app", // Cloud Run frontend URL
+            "https://herpace-frontend-81066941589.us-central1.run.app", // Legacy Cloud Run frontend URL
             "https://herpace-frontend-p7ysuzeitq-uc.a.run.app", // Alternative Cloud Run URL format
             "https://herpace-frontend-5rc4x5fbma-uc.a.run.app" // New Cloud Run frontend URL
         )
@@ -169,33 +172,34 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Apply database migrations on startup (all environments)
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<HerPaceDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        logger.LogInformation("Ensuring database is created and applying migrations...");
+
+        // This will create the database if it doesn't exist and apply all migrations
+        dbContext.Database.Migrate();
+
+        logger.LogInformation("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+        throw;
+    }
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    using (var scope = app.Services.CreateScope())
-    {
-        try
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<HerPaceDbContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            logger.LogInformation("Ensuring database is created and applying migrations...");
-
-            // This will create the database if it doesn't exist and apply all migrations
-            dbContext.Database.Migrate();
-
-            logger.LogInformation("Database migrations applied successfully.");
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "An error occurred while migrating the database.");
-            throw;
-        }
-    }
 }
 
 app.UseHttpsRedirection();
