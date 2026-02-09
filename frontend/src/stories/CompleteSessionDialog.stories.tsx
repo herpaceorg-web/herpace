@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { CompleteSessionDialog } from '@/components/session/CompleteSessionDialog'
 import { Button } from '@/components/ui/button'
 import { NumberInput } from '@/components/ui/number-input'
 import { Mic, Loader2, CheckCircle } from 'lucide-react'
+import { WorkoutType } from '@/types/api'
 
 const meta = {
   title: 'Components/Session/CompleteSessionDialog',
@@ -15,6 +17,43 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+// Interactive story that uses the actual component
+export const Interactive: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+
+    const mockSession = {
+      id: 'session-1',
+      sessionName: '30 Minute Easy Run',
+      workoutType: WorkoutType.Easy,
+      distance: 5.0, // 5km
+      durationMinutes: 30,
+      description: 'A comfortable easy run to build base fitness',
+      sessionDate: new Date().toISOString(),
+      dayOfWeek: 1,
+      weekNumber: 1,
+      isCompleted: false,
+      isSkipped: false,
+    }
+
+    return (
+      <div>
+        <Button onClick={() => setOpen(true)}>Open Dialog</Button>
+        <CompleteSessionDialog
+          session={mockSession as any}
+          open={open}
+          onOpenChange={setOpen}
+          onComplete={async (data) => {
+            console.log('Completed:', data)
+            alert('Session completed! Check console for data.')
+          }}
+          distanceUnit="mi"
+        />
+      </div>
+    )
+  },
+}
 
 // Design mockup showing integrated voice feature - matches current implementation
 export const AllStates = {
