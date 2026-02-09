@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Goal, Check, Route } from 'lucide-react'
+import { Loader2, Sparkles, LayoutGrid, List, ChevronLeft, ChevronRight, Calendar, Goal, Check, Route, Target, Eye, Lightbulb } from 'lucide-react'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { getWeekStart, calculateWeekSummary } from '@/utils/weekUtils'
@@ -884,18 +884,25 @@ export function Dashboard() {
                                 {segment.label}
                               </button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-72 bg-[#fcf9f3] border-[#ebe8e2]" align="center">
-                              <div className="space-y-2">
+                            <PopoverContent className="w-80 bg-[#fcf9f3] border-[#ebe8e2] p-4" align="center">
+                              <div className="space-y-3">
                                 <div>
-                                  <h4 className="text-sm font-semibold text-[#3d3826]">
-                                    {stageInfo.name} — {stageInfo.tagline}
-                                  </h4>
-                                  <p className="text-xs text-[#85837d] mt-1 leading-relaxed">{stageInfo.description}</p>
+                                  <h4 className="font-petrona text-lg font-normal text-foreground">{stageInfo.name}</h4>
+                                  <p className="text-sm font-normal text-[#696863] mt-0.5">{stageInfo.tagline}</p>
                                 </div>
-                                <div className="border-t border-[#ebe8e2] pt-2 space-y-1.5">
-                                  <p className="text-xs text-[#696863]"><span className="font-medium">Focus:</span> {stageInfo.focus}</p>
-                                  <p className="text-xs text-[#696863]"><span className="font-medium">What to expect:</span> {stageInfo.whatToExpect}</p>
-                                  <p className="text-xs text-[#696863]"><span className="font-medium">Tip:</span> {stageInfo.tip}</p>
+                                <div className="space-y-2.5">
+                                  <div className="flex gap-2">
+                                    <Target className="w-4 h-4 text-[#696863] flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm font-normal text-[#696863] leading-relaxed">{stageInfo.focus}</p>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Eye className="w-4 h-4 text-[#696863] flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm font-normal text-[#696863] leading-relaxed">{stageInfo.whatToExpect}</p>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Lightbulb className="w-4 h-4 text-[#696863] flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm font-normal text-[#696863] leading-relaxed">{stageInfo.tip}</p>
+                                  </div>
                                 </div>
                               </div>
                             </PopoverContent>
