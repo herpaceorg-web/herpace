@@ -511,6 +511,11 @@ export function Dashboard() {
 
   // Handle month navigation
   const handleNavigateMonth = useCallback((direction: 'prev' | 'next') => {
+    // Clear selected session when changing months
+    setSelectedSession(null)
+    setSelectedSessionId(null)
+    setSelectedSessionMonth(null)
+
     setCurrentMonth(prev => {
       const newMonth = new Date(prev)
       newMonth.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1))
@@ -520,6 +525,11 @@ export function Dashboard() {
 
   // Handle week navigation
   const handleNavigateWeek = useCallback((direction: 'prev' | 'next') => {
+    // Clear selected session when changing weeks
+    setSelectedSession(null)
+    setSelectedSessionId(null)
+    setSelectedSessionMonth(null)
+
     setWeekStart(prev => {
       const newWeek = new Date(prev)
       newWeek.setDate(prev.getDate() + (direction === 'next' ? 7 : -7))
@@ -698,7 +708,13 @@ export function Dashboard() {
                   { value: 'plan', label: 'Plan' }
                 ]}
                 value={activeView}
-                onValueChange={(value) => setActiveView(value as CalendarView)}
+                onValueChange={(value) => {
+                  // Clear selected session when switching views
+                  setSelectedSession(null)
+                  setSelectedSessionId(null)
+                  setSelectedSessionMonth(null)
+                  setActiveView(value as CalendarView)
+                }}
               />
             </div>
           </div>
@@ -841,8 +857,8 @@ export function Dashboard() {
                     {[25, 60, 85].map((position) => (
                       <div
                         key={position}
-                        className="absolute w-0.5 bg-foreground"
-                        style={{ left: `${position}%`, top: '-4px', height: 'calc(100% + 8px)' }}
+                        className="absolute bg-foreground rounded-full"
+                        style={{ left: `${position}%`, top: '-4px', height: 'calc(100% + 8px)', width: '1px', transform: 'translateX(-50%)' }}
                       />
                     ))}
                   </div>
@@ -943,9 +959,19 @@ export function Dashboard() {
                   planName={plan.raceName}
                   onDayClick={handleDayClick}
                   isExpanded={false}
-                  onToggleExpand={() => setActiveView('month')}
+                  onToggleExpand={() => {
+                    setSelectedSession(null)
+                    setSelectedSessionId(null)
+                    setSelectedSessionMonth(null)
+                    setActiveView('month')
+                  }}
                   activeView={activeView}
-                  onViewChange={(view) => setActiveView(view as CalendarView)}
+                  onViewChange={(view) => {
+                    setSelectedSession(null)
+                    setSelectedSessionId(null)
+                    setSelectedSessionMonth(null)
+                    setActiveView(view as CalendarView)
+                  }}
                   selectedSessionId={selectedSessionId ?? undefined}
                   displayMode={displayMode}
                   onDisplayModeChange={setDisplayMode}
