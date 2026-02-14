@@ -471,7 +471,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 - sessionDescription: Detailed workout description (e.g., ""8x400m @ 5K pace with 90s recovery"")
 - hrZones: Heart rate zones if applicable (e.g., ""Zone 2-3"", ""Zone 4-5"")
 - durationMinutes: Estimated workout duration (null for Rest days)
-- distance: Planned distance in km as a WHOLE NUMBER only, no decimals (null for Rest days)
+- distance: Planned distance in km, chosen so it converts cleanly to half-mile increments. Use these preferred values: 0.8 (0.5mi), 1.6 (1mi), 2.4 (1.5mi), 3.2 (2mi), 4.0 (2.5mi), 4.8 (3mi), 5.6 (3.5mi), 6.4 (4mi), 8.0 (5mi), 9.7 (6mi), 11.3 (7mi), 12.9 (8mi), 14.5 (9mi), 16.1 (10mi). (null for Rest days)
 - cyclePhase: The menstrual cycle phase for this date (Menstrual, Follicular, Ovulatory, Luteal)
 - phaseGuidance: Brief cycle-specific tip (e.g., ""Follicular phase - great day for speed work!"")
 
@@ -492,7 +492,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
       ""recovery"": ""5 min easy walk cool-down, static stretches (quads, hamstrings, calves), rehydrate and refuel within 30 min"",
       ""sessionDescription"": ""Relaxed pace, focus on form and recovery"",
       ""durationMinutes"": 30,
-      ""distance"": 5,
+      ""distance"": 4.8,
       ""intensityLevel"": 0,
       ""hrZones"": ""Zone 2"",
       ""cyclePhase"": 1,
@@ -510,7 +510,7 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 - Return ONLY valid JSON (no markdown code fences, no explanatory text)
 - Include ALL sessions from {request.StartDate:yyyy-MM-dd} to {request.RaceDate:yyyy-MM-dd}
 - Use numeric enum values (0, 1, 2, 3) for workoutType, intensityLevel, and cyclePhase
-- All distance values MUST be whole numbers (integers) with no decimal points
+- All distance values MUST be from the preferred km values listed above (half-mile increments)
 - Align workouts with cycle phases when provided
 - Include proper taper in final 2 weeks
 - Generate complete, detailed, actionable training plan";
@@ -586,7 +586,7 @@ Based on the pattern above, adjust the next {request.SessionsToRecalculate} sess
       ""recovery"": ""5 min easy walk cool-down, static stretches (quads, hamstrings, calves), rehydrate and refuel within 30 min"",
       ""sessionDescription"": ""Adjusted based on recent performance"",
       ""durationMinutes"": 30,
-      ""distance"": 5,
+      ""distance"": 4.8,
       ""intensityLevel"": 0,
       ""hrZones"": ""Zone 2"",
       ""cyclePhase"": 1,
@@ -600,11 +600,14 @@ Based on the pattern above, adjust the next {request.SessionsToRecalculate} sess
 - intensityLevel: Low=0, Moderate=1, High=2
 - cyclePhase: Menstrual=0, Follicular=1, Ovulatory=2, Luteal=3
 
+**Preferred km distance values** (convert cleanly to half-mile increments):
+0.8 (0.5mi), 1.6 (1mi), 2.4 (1.5mi), 3.2 (2mi), 4.0 (2.5mi), 4.8 (3mi), 5.6 (3.5mi), 6.4 (4mi), 8.0 (5mi), 9.7 (6mi), 11.3 (7mi), 12.9 (8mi), 14.5 (9mi), 16.1 (10mi)
+
 **CRITICAL**:
 - Return ONLY valid JSON (no markdown code fences)
 - Generate EXACTLY {request.SessionsToRecalculate} sessions
 - Sessions must cover dates {request.RecalculationStartDate:yyyy-MM-dd} to {request.RecalculationEndDate:yyyy-MM-dd}
-- All distance values MUST be whole numbers (integers) with no decimal points
+- All distance values MUST be from the preferred km values listed above (half-mile increments)
 - Adapt workouts based on recent performance patterns
 - Keep runner progressing toward {request.RaceDate:yyyy-MM-dd} race goal
 - Align with updated cycle phases";

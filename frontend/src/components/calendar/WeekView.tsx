@@ -338,6 +338,7 @@ export function WeekView({
                   dayNumber={date.getDate()}
                   sessionName={session?.sessionName}
                   distance={session?.distance}
+                  distanceUnit={distanceUnit}
                   durationMinutes={session?.durationMinutes}
                   intensityLevel={session?.intensityLevel}
                   workoutType={session?.workoutType}

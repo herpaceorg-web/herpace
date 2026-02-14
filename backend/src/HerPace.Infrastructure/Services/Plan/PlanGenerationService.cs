@@ -157,7 +157,7 @@ public class PlanGenerationService : IPlanGenerationService
             Recovery = sessionDto.Recovery,
             SessionDescription = sessionDto.SessionDescription,
             DurationMinutes = sessionDto.DurationMinutes,
-            Distance = sessionDto.Distance,
+            Distance = RoundToHalfMileKm(sessionDto.Distance),
             IntensityLevel = sessionDto.IntensityLevel,
             HRZones = sessionDto.HRZones,
             CyclePhase = sessionDto.CyclePhase,
@@ -275,5 +275,17 @@ public class PlanGenerationService : IPlanGenerationService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Archived {Count} active plans for runner {RunnerId}", activePlans.Count, runnerId);
+    }
+
+    /// <summary>
+    /// Rounds a km distance so it converts to the nearest 0.5-mile increment.
+    /// E.g., 5.0 km → 4.8 km (3.0 mi), 3.0 km → 3.2 km (2.0 mi).
+    /// </summary>
+    private static decimal? RoundToHalfMileKm(decimal? distanceKm)
+    {
+        if (!distanceKm.HasValue) return null;
+        const decimal kmPerHalfMile = 0.80467m;
+        var halfMiles = Math.Round(distanceKm.Value / kmPerHalfMile);
+        return Math.Round(halfMiles * kmPerHalfMile, 1);
     }
 }

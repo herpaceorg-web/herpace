@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { cn, displayDistance } from '@/lib/utils';
 import { WorkoutType, IntensityLevel, CyclePhase } from '@/types/api';
 import { Route, Timer, Heart, Activity, Sprout, Sun, Leaf, Snowflake } from 'lucide-react';
 
@@ -7,6 +7,7 @@ export interface CalendarDayProps {
   dayNumber: number;
   sessionName?: string;
   distance?: number;
+  distanceUnit?: 'km' | 'mi';
   durationMinutes?: number;
   intensityLevel?: IntensityLevel;
   workoutType?: WorkoutType;
@@ -25,6 +26,7 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
       dayNumber,
       sessionName,
       distance,
+      distanceUnit = 'mi',
       durationMinutes,
       intensityLevel,
       cyclePhase,
@@ -146,7 +148,7 @@ export const CalendarDay = React.forwardRef<HTMLDivElement, CalendarDayProps>(
                 <div className="bg-[#FDFBF7] border border-[#ebe8e2] rounded-md px-1.5 py-0.5 flex items-center gap-1.5">
                   <Route className="h-3.5 w-3.5 text-[#696863]" />
                   <span className="text-xs text-[#696863] font-normal">
-                    {distance} Mi
+                    {displayDistance(distance, distanceUnit)} {distanceUnit}
                   </span>
                 </div>
               )}

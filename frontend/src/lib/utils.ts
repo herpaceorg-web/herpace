@@ -17,9 +17,10 @@ export function miToKm(mi: number): number {
   return mi / KM_TO_MI
 }
 
-/** Convert a km value from the API for display in the user's preferred unit */
+/** Convert a km value from the API for display in the user's preferred unit, rounded to nearest 0.5 */
 export function displayDistance(km: number, unit: 'km' | 'mi'): number {
-  return parseFloat((unit === 'mi' ? kmToMi(km) : km).toFixed(2))
+  const value = unit === 'mi' ? kmToMi(km) : km
+  return Math.round(value * 2) / 2
 }
 
 /** Convert a value the user entered (in their preferred unit) back to km for the API */
