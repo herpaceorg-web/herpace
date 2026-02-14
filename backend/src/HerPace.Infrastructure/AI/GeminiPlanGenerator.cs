@@ -566,6 +566,9 @@ Based on the pattern above, adjust the next {request.SessionsToRecalculate} sess
 5. **Maintain progressive overload** toward race goal while respecting current fitness reality
 6. **Re-align with cycle phases** for optimal hormonal support
 
+**Imported Fitness Tracker Data** (actual runs from connected devices):
+{BuildImportedActivitySummary(request.RecentImportedActivities)}
+
 **Updated Cycle Phases** (for recalculation period):
 {(request.UpdatedCyclePhases != null && request.UpdatedCyclePhases.Any()
     ? string.Join("\n", request.UpdatedCyclePhases.Select(kvp => $"- {kvp.Key:yyyy-MM-dd}: {kvp.Value}"))
@@ -642,6 +645,61 @@ Based on the pattern above, adjust the next {request.SessionsToRecalculate} sess
                     summary.AppendLine($"  Notes: {session.UserNotes}");
                 }
             }
+        }
+
+        return summary.ToString();
+    }
+
+    private static string BuildImportedActivitySummary(List<ImportedActivityContext> activities)
+    {
+        if (activities == null || !activities.Any())
+        {
+            return "No fitness tracker data available (user has no connected services or no recent activities)";
+        }
+
+        var summary = new StringBuilder();
+        var matchedCount = activities.Count(a => a.IsMatchedToSession);
+        var unmatchedCount = activities.Count - matchedCount;
+
+        summary.AppendLine($"Total recent activities: {activities.Count} ({matchedCount} matched to planned sessions, {unmatchedCount} additional runs)");
+
+        // Weekly volume from tracker data
+        var weeklyGroups = activities
+            .Where(a => a.DistanceMeters.HasValue)
+            .GroupBy(a => System.Globalization.CultureInfo.InvariantCulture.Calendar
+                .GetWeekOfYear(a.ActivityDate, System.Globalization.CalendarWeekRule.FirstDay, DayOfWeek.Monday))
+            .OrderBy(g => g.Key);
+
+        foreach (var week in weeklyGroups)
+        {
+            var totalKm = week.Sum(a => a.DistanceMeters ?? 0) / 1000.0;
+            var avgPace = week.Where(a => a.AveragePaceSecondsPerKm.HasValue)
+                .Select(a => a.AveragePaceSecondsPerKm!.Value)
+                .DefaultIfEmpty(0)
+                .Average();
+            var avgHR = week.Where(a => a.AverageHeartRate.HasValue)
+                .Select(a => a.AverageHeartRate!.Value)
+                .DefaultIfEmpty(0)
+                .Average();
+
+            var paceStr = avgPace > 0 ? $", avg pace {avgPace / 60:F0}:{avgPace % 60:00}/km" : "";
+            var hrStr = avgHR > 0 ? $", avg HR {avgHR:F0} bpm" : "";
+
+            summary.AppendLine($"- Week {week.Key}: {totalKm:F1} km over {week.Count()} runs{paceStr}{hrStr}");
+        }
+
+        // Highlight unmatched activities (extra runs outside the plan)
+        var unmatched = activities.Where(a => !a.IsMatchedToSession).ToList();
+        if (unmatched.Any())
+        {
+            summary.AppendLine($"\nExtra runs outside the plan ({unmatched.Count} total):");
+            foreach (var activity in unmatched.Take(5))
+            {
+                var distKm = activity.DistanceMeters.HasValue ? $"{activity.DistanceMeters.Value / 1000.0:F1} km" : "unknown distance";
+                var durMin = activity.DurationSeconds.HasValue ? $"{activity.DurationSeconds.Value / 60} min" : "unknown duration";
+                summary.AppendLine($"  - {activity.ActivityDate:yyyy-MM-dd}: {activity.ActivityType} — {distKm}, {durMin} ({activity.Platform})");
+            }
+            summary.AppendLine("Consider these extra runs when adjusting plan volume — the runner may be doing more than the plan prescribes.");
         }
 
         return summary.ToString();

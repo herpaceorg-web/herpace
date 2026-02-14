@@ -2,12 +2,14 @@ using System.Text;
 using Hangfire;
 using Hangfire.PostgreSql;
 using HerPace.API.Middleware;
+using HerPace.Core.Configuration;
 using HerPace.Core.Entities;
 using HerPace.Core.Interfaces;
 using HerPace.Infrastructure.AI;
 using HerPace.Infrastructure.Data;
 using HerPace.Infrastructure.Services;
 using HerPace.Infrastructure.Services.Cycle;
+using HerPace.Infrastructure.Services.Providers;
 using HerPace.Infrastructure.Services.Plan;
 using HerPace.Infrastructure.Services.Voice;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +28,13 @@ var connectionString = useCloudSql
 if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("Database connection string is not configured.");
+}
+
+// Configure token encryption key for ConnectedService OAuth tokens (AES-256)
+var tokenEncryptionKey = builder.Configuration["Encryption:TokenEncryptionKey"];
+if (!string.IsNullOrEmpty(tokenEncryptionKey))
+{
+    HerPaceDbContext.TokenEncryptionKey = System.Text.Encoding.UTF8.GetBytes(tokenEncryptionKey);
 }
 
 // Add Entity Framework Core with PostgreSQL
@@ -96,6 +105,26 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero // Remove default 5 minute tolerance
     };
 });
+
+// Register Fitness Tracker services
+builder.Services.Configure<FitnessTrackerOptions>(
+    builder.Configuration.GetSection(FitnessTrackerOptions.SectionName));
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<StravaProvider>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<IFitnessProvider, StravaProvider>();
+builder.Services.AddHttpClient<GarminProvider>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<IFitnessProvider, GarminProvider>();
+builder.Services.AddScoped<IFitnessTrackerService, FitnessTrackerService>();
+builder.Services.AddScoped<IActivityImportService, ActivityImportService>();
+builder.Services.AddScoped<IStravaWebhookProcessor, StravaWebhookProcessor>();
+builder.Services.AddScoped<IGarminWebhookProcessor, GarminWebhookProcessor>();
+builder.Services.AddScoped<TokenRefreshJob>();
 
 // Register application services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -222,6 +251,12 @@ if (app.Environment.IsDevelopment())
         Authorization = new[] { new HerPace.API.Infrastructure.HangfireAuthorizationFilter() }
     });
 }
+
+// Register Hangfire recurring jobs
+RecurringJob.AddOrUpdate<TokenRefreshJob>(
+    "refresh-expiring-tokens",
+    job => job.RefreshExpiringTokensAsync(),
+    "*/30 * * * *"); // Every 30 minutes
 
 // Map controllers
 app.MapControllers();

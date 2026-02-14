@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Production: only trust system CAs, no cleartext traffic -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Allow cleartext for local development (10.0.2.2 = emulator host) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+
+    <!-- Pin production API domain (Google Cloud Run) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">us-central1.run.app</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+        <pin-set expiration="2027-01-01">
+            <!-- GTS Root R1 (Google Trust Services) - used by Cloud Run -->
+            <pin digest="SHA-256">hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgfaAp63Gc=</pin>
+            <!-- GTS Root R2 (backup) -->
+            <pin digest="SHA-256">Vfd95BwDeSQo+NUYxVEEIBvvpOs/uqXEoSRMAOVo7R0=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>

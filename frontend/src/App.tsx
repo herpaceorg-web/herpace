@@ -15,6 +15,9 @@ import { Dashboard } from '@/pages/Dashboard'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
 import { NotFound } from '@/pages/NotFound'
+import { ConnectedServices } from '@/pages/ConnectedServices'
+import { ImportedActivities } from '@/pages/ImportedActivities'
+import { ImportedActivityDetail } from '@/pages/ImportedActivityDetail'
 import { RootRedirect } from '@/components/RootRedirect'
 
 function App() {
@@ -83,6 +86,36 @@ function App() {
               }
             />
             */}
+            <Route
+              path="/connected-services"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <ConnectedServices />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/activities"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <ImportedActivities />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/activities/:id"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <ImportedActivityDetail />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirects */}
             <Route path="/" element={<RootRedirect />} />

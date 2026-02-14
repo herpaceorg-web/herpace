@@ -17,10 +17,76 @@ namespace HerPace.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.23")
+                .HasAnnotation("ProductVersion", "8.0.24")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("HerPace.Core.Entities.ConnectedService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AccessToken")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("ConnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DisconnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExternalUserId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("LastSyncAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastSyncError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RefreshToken")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("RunnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Scopes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("TokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("WomensHealthDataOptIn")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunnerId", "Platform")
+                        .IsUnique();
+
+                    b.ToTable("connected_services", (string)null);
+                });
 
             modelBuilder.Entity("HerPace.Core.Entities.CycleLog", b =>
                 {
@@ -73,6 +139,91 @@ namespace HerPace.Infrastructure.Migrations
                     b.HasIndex("RunnerId");
 
                     b.ToTable("cycle_logs", (string)null);
+                });
+
+            modelBuilder.Entity("HerPace.Core.Entities.ImportedActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ActivityDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ActivityTitle")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("AverageHeartRate")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("AveragePaceSecondsPerKm")
+                        .HasColumnType("double precision");
+
+                    b.Property<int?>("Cadence")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CaloriesBurned")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("DistanceMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<double?>("ElevationGainMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("ExternalActivityId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("GpsRouteJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("ImportedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("MaxHeartRate")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MovingTimeSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RawResponseJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("RunnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TrainingSessionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrainingSessionId");
+
+                    b.HasIndex("Platform", "ExternalActivityId")
+                        .IsUnique();
+
+                    b.HasIndex("RunnerId", "ActivityDate");
+
+                    b.HasIndex("RunnerId", "Platform");
+
+                    b.ToTable("imported_activities", (string)null);
                 });
 
             modelBuilder.Entity("HerPace.Core.Entities.PlanAdaptationHistory", b =>
@@ -249,6 +400,67 @@ namespace HerPace.Infrastructure.Migrations
                     b.ToTable("runners", (string)null);
                 });
 
+            modelBuilder.Entity("HerPace.Core.Entities.SyncLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ActivitiesDuplicate")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ActivitiesFiltered")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ActivitiesFound")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ActivitiesImported")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ConnectedServiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RunnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SyncType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConnectedServiceId");
+
+                    b.HasIndex("RunnerId");
+
+                    b.HasIndex("StartedAt")
+                        .IsDescending();
+
+                    b.ToTable("sync_logs", (string)null);
+                });
+
             modelBuilder.Entity("HerPace.Core.Entities.TrainingPlan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -296,6 +508,12 @@ namespace HerPace.Infrastructure.Migrations
                     b.Property<bool>("PendingRecalculationConfirmation")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PendingRecalculationPreviewJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PendingRecalculationSummary")
+                        .HasColumnType("text");
+
                     b.Property<string>("PlanCompletionGoal")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -304,6 +522,9 @@ namespace HerPace.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("PreviewGeneratedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RaceId")
                         .HasColumnType("uuid");
@@ -650,6 +871,17 @@ namespace HerPace.Infrastructure.Migrations
                     b.ToTable("user_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("HerPace.Core.Entities.ConnectedService", b =>
+                {
+                    b.HasOne("HerPace.Core.Entities.Runner", "Runner")
+                        .WithMany()
+                        .HasForeignKey("RunnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Runner");
+                });
+
             modelBuilder.Entity("HerPace.Core.Entities.CycleLog", b =>
                 {
                     b.HasOne("HerPace.Core.Entities.TrainingPlan", "AffectedTrainingPlan")
@@ -666,6 +898,24 @@ namespace HerPace.Infrastructure.Migrations
                     b.Navigation("AffectedTrainingPlan");
 
                     b.Navigation("Runner");
+                });
+
+            modelBuilder.Entity("HerPace.Core.Entities.ImportedActivity", b =>
+                {
+                    b.HasOne("HerPace.Core.Entities.Runner", "Runner")
+                        .WithMany()
+                        .HasForeignKey("RunnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HerPace.Core.Entities.TrainingSession", "TrainingSession")
+                        .WithMany()
+                        .HasForeignKey("TrainingSessionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Runner");
+
+                    b.Navigation("TrainingSession");
                 });
 
             modelBuilder.Entity("HerPace.Core.Entities.PlanAdaptationHistory", b =>
@@ -699,6 +949,25 @@ namespace HerPace.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HerPace.Core.Entities.SyncLog", b =>
+                {
+                    b.HasOne("HerPace.Core.Entities.ConnectedService", "ConnectedService")
+                        .WithMany("SyncLogs")
+                        .HasForeignKey("ConnectedServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HerPace.Core.Entities.Runner", "Runner")
+                        .WithMany()
+                        .HasForeignKey("RunnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConnectedService");
+
+                    b.Navigation("Runner");
                 });
 
             modelBuilder.Entity("HerPace.Core.Entities.TrainingPlan", b =>
@@ -780,6 +1049,11 @@ namespace HerPace.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HerPace.Core.Entities.ConnectedService", b =>
+                {
+                    b.Navigation("SyncLogs");
                 });
 
             modelBuilder.Entity("HerPace.Core.Entities.Race", b =>

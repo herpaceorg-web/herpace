@@ -377,6 +377,142 @@ export interface LogRaceResultResponse {
   message: string
 }
 
+// Fitness Tracker Enums
+export const FitnessPlatform = {
+  Strava: 'Strava',
+  HealthConnect: 'HealthConnect',
+  Garmin: 'Garmin'
+} as const
+
+export type FitnessPlatform = typeof FitnessPlatform[keyof typeof FitnessPlatform]
+
+export const ConnectionStatus = {
+  Connected: 'Connected',
+  NotConnected: 'NotConnected',
+  Disconnected: 'Disconnected',
+  TokenExpired: 'TokenExpired',
+  Error: 'Error'
+} as const
+
+export type ConnectionStatus = typeof ConnectionStatus[keyof typeof ConnectionStatus]
+
+// Fitness Tracker DTOs
+export interface ConnectedServiceDto {
+  platform: string
+  displayName: string
+  status: string
+  externalUserId?: string
+  connectedAt?: string
+  lastSyncAt?: string
+  activitiesImported: number
+  available: boolean
+  womensHealthDataOptIn?: boolean
+}
+
+export interface ServicesListResponse {
+  services: ConnectedServiceDto[]
+}
+
+export interface OAuthInitiateResponse {
+  authorizationUrl: string
+  state: string
+}
+
+export interface ImportedActivitySummaryDto {
+  id: string
+  platform: string
+  activityDate: string
+  activityTitle?: string
+  activityType: string
+  distanceMeters?: number
+  durationSeconds?: number
+  averagePaceSecondsPerKm?: number
+  averageHeartRate?: number
+  maxHeartRate?: number
+  cadence?: number
+  elevationGainMeters?: number
+  caloriesBurned?: number
+  hasGpsRoute: boolean
+  matchedTrainingSessionId?: string
+  importedAt: string
+}
+
+export interface GpsPoint {
+  lat: number
+  lng: number
+  altitude?: number
+}
+
+export interface MatchedSessionDto {
+  id: string
+  sessionName: string
+  scheduledDate: string
+  workoutType: string
+  plannedDistance?: number
+  plannedDuration?: number
+}
+
+export interface ImportedActivityDetailDto {
+  id: string
+  platform: string
+  activityDate: string
+  activityTitle?: string
+  activityType: string
+  distanceMeters?: number
+  durationSeconds?: number
+  movingTimeSeconds?: number
+  averagePaceSecondsPerKm?: number
+  averageHeartRate?: number
+  maxHeartRate?: number
+  cadence?: number
+  elevationGainMeters?: number
+  caloriesBurned?: number
+  gpsRoute?: GpsPoint[]
+  matchedTrainingSession?: MatchedSessionDto
+  importedAt: string
+}
+
+export interface PaginatedActivitiesResponse {
+  activities: ImportedActivitySummaryDto[]
+  pagination: PaginationInfo
+}
+
+export interface PaginationInfo {
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+}
+
+export interface DisconnectResponse {
+  platform: string
+  status: string
+  dataDeleted: boolean
+  activitiesRetained: number
+}
+
+export interface SyncResponse {
+  syncId: string
+  message: string
+}
+
+export interface SyncLogDto {
+  id: string
+  platform: string
+  syncType: string
+  startedAt: string
+  completedAt?: string
+  activitiesImported: number
+  activitiesDuplicate: number
+  activitiesFiltered: number
+  success: boolean
+  errorMessage?: string
+}
+
+export interface SyncLogListResponse {
+  logs: SyncLogDto[]
+}
+
 // Plan DTOs
 export interface GeneratePlanRequest {
   raceId: string

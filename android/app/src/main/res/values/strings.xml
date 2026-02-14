@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">HerPace</string>
+
+    <!-- Common labels -->
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_network">No internet connection. Please check your network.</string>
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="confirm">Confirm</string>
+    <string name="ok">OK</string>
+    <string name="back">Back</string>
+
+    <!-- Auth -->
+    <string name="login">Log In</string>
+    <string name="signup">Sign Up</string>
+    <string name="logout">Log Out</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="welcome">Welcome to HerPace</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_races">Races</string>
+    <string name="nav_plan">Training Plan</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Cycle phases -->
+    <string name="phase_menstrual">Menstrual</string>
+    <string name="phase_follicular">Follicular</string>
+    <string name="phase_ovulatory">Ovulatory</string>
+    <string name="phase_luteal">Luteal</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="cd_loading">Loading content</string>
+    <string name="cd_error">Error occurred</string>
+    <string name="cd_back_button">Navigate back</string>
+</resources>

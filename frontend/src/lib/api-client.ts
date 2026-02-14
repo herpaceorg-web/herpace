@@ -1,6 +1,15 @@
 import axios, { AxiosError } from 'axios'
 import type { AxiosInstance } from 'axios'
 import { auth } from './auth'
+import type {
+  ServicesListResponse,
+  OAuthInitiateResponse,
+  DisconnectResponse,
+  SyncResponse,
+  PaginatedActivitiesResponse,
+  ImportedActivityDetailDto,
+  SyncLogListResponse
+} from '@/types/api'
 
 /**
  * Axios instance configured for HerPace API
@@ -75,7 +84,70 @@ export const api = {
    * DELETE request
    */
   delete: (url: string): Promise<void> =>
-    apiClient.delete(url).then(() => undefined)
+    apiClient.delete(url).then(() => undefined),
+
+  /**
+   * DELETE request with query params, returning typed response
+   */
+  deleteWithResponse: <T>(url: string): Promise<T> =>
+    apiClient.delete<T>(url).then(res => res.data)
+}
+
+// Fitness Tracker API methods
+export const fitnessTrackerApi = {
+  getConnectedServices: (): Promise<ServicesListResponse> =>
+    api.get<ServicesListResponse>('/api/fitness-tracker/services'),
+
+  connectStrava: (): Promise<OAuthInitiateResponse> =>
+    api.get<OAuthInitiateResponse>('/api/fitness-tracker/connect/strava'),
+
+  connectGarmin: (): Promise<OAuthInitiateResponse> =>
+    api.get<OAuthInitiateResponse>('/api/fitness-tracker/connect/garmin'),
+
+  updateWomensHealthOptIn: (platform: string, optIn: boolean): Promise<{ platform: string; womensHealthDataOptIn: boolean }> =>
+    api.patch<{ optIn: boolean }, { platform: string; womensHealthDataOptIn: boolean }>(
+      `/api/fitness-tracker/services/${platform}/womens-health`, { optIn }
+    ),
+
+  disconnectService: (platform: string, deleteData: boolean): Promise<DisconnectResponse> =>
+    api.deleteWithResponse<DisconnectResponse>(
+      `/api/fitness-tracker/services/${platform}?deleteData=${deleteData}`
+    ),
+
+  triggerSync: (platform: string): Promise<SyncResponse> =>
+    api.post<Record<string, never>, SyncResponse>(`/api/fitness-tracker/sync/${platform}`, {}),
+
+  getImportedActivities: (params?: {
+    platform?: string
+    from?: string
+    to?: string
+    page?: number
+    pageSize?: number
+  }): Promise<PaginatedActivitiesResponse> => {
+    const searchParams = new URLSearchParams()
+    if (params?.platform) searchParams.set('platform', params.platform)
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString())
+    const query = searchParams.toString()
+    return api.get<PaginatedActivitiesResponse>(
+      `/api/fitness-tracker/activities${query ? `?${query}` : ''}`
+    )
+  },
+
+  getActivityDetail: (id: string): Promise<ImportedActivityDetailDto> =>
+    api.get<ImportedActivityDetailDto>(`/api/fitness-tracker/activities/${id}`),
+
+  getSyncLogs: (platform?: string, limit?: number): Promise<SyncLogListResponse> => {
+    const searchParams = new URLSearchParams()
+    if (platform) searchParams.set('platform', platform)
+    if (limit) searchParams.set('limit', limit.toString())
+    const query = searchParams.toString()
+    return api.get<SyncLogListResponse>(
+      `/api/fitness-tracker/sync-log${query ? `?${query}` : ''}`
+    )
+  }
 }
 
 export default apiClient

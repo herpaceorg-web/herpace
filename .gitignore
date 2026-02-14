@@ -156,6 +156,10 @@ deploy-complete-fixed.ps1
 deploy-complete.ps1
 deploy-local-test.ps1
 deploy-update.ps1
+deployment-config.ps1
+deployment-info.txt
+validate-config.ps1
+deploy-fresh.ps1
 
 # Claude Code local settings
 .claude/settings.local.json

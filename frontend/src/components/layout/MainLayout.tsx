@@ -27,8 +27,20 @@ export function MainLayout({ children }: MainLayoutProps) {
             <h1 className="text-2xl font-normal text-primary font-[family-name:'Petrona'] leading-none">HerPace</h1>
           </Link>
 
-          {/* User menu */}
+          {/* Navigation & User menu */}
           <div className="flex items-center gap-4">
+            <Link
+              to="/activities"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Activities
+            </Link>
+            <Link
+              to="/connected-services"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Connected Services
+            </Link>
             <button
               onClick={handleLogout}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"

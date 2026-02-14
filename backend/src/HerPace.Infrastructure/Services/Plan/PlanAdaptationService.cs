@@ -185,6 +185,10 @@ public class PlanAdaptationService : IPlanAdaptationService
                 }
             }
 
+            // Fetch recent imported activities for richer context
+            var importedActivities = await GetRecentImportedActivitiesAsync(
+                plan.RunnerId, recentSessions.Any() ? recentSessions.Min(s => s.ScheduledDate) : today.AddDays(-30));
+
             // Build recalculation request
             var recalcRequest = new Core.DTOs.PlanRecalculationRequest
             {
@@ -204,6 +208,7 @@ public class PlanAdaptationService : IPlanAdaptationService
                 RecalculationEndDate = futureSessions.Last().ScheduledDate,
                 SessionsToRecalculate = futureSessions.Count,
                 RecentSessions = recentContext,
+                RecentImportedActivities = importedActivities,
                 UpdatedCyclePhases = updatedCyclePhases
             };
 
@@ -362,7 +367,11 @@ public class PlanAdaptationService : IPlanAdaptationService
                     updatedCyclePhases.Count);
             }
 
-            // Step 5: Build recalculation request
+            // Step 5: Fetch recent imported activities for richer context
+            var importedActivities = await GetRecentImportedActivitiesAsync(
+                plan.RunnerId, recentSessions.Any() ? recentSessions.Min(s => s.ScheduledDate) : today.AddDays(-30));
+
+            // Step 5b: Build recalculation request
             var recalcRequest = new Core.DTOs.PlanRecalculationRequest
             {
                 TrainingPlanId = plan.Id,
@@ -381,6 +390,7 @@ public class PlanAdaptationService : IPlanAdaptationService
                 RecalculationEndDate = futureSessions.Last().ScheduledDate,
                 SessionsToRecalculate = futureSessions.Count,
                 RecentSessions = recentContext,
+                RecentImportedActivities = importedActivities,
                 UpdatedCyclePhases = updatedCyclePhases
             };
 
@@ -663,5 +673,33 @@ public class PlanAdaptationService : IPlanAdaptationService
             trainingPlanId);
 
         return true;
+    }
+
+    /// <summary>
+    /// Fetches recent imported activities from fitness trackers for a runner.
+    /// Provides additional performance context to the AI recalculation prompt.
+    /// </summary>
+    private async Task<List<Core.DTOs.ImportedActivityContext>> GetRecentImportedActivitiesAsync(
+        Guid runnerId, DateTime since)
+    {
+        var activities = await _context.ImportedActivities
+            .Where(ia => ia.RunnerId == runnerId && ia.ActivityDate >= since)
+            .OrderByDescending(ia => ia.ActivityDate)
+            .Take(20)
+            .Select(ia => new Core.DTOs.ImportedActivityContext
+            {
+                ActivityDate = ia.ActivityDate,
+                ActivityType = ia.ActivityType,
+                Platform = ia.Platform.ToString(),
+                DistanceMeters = ia.DistanceMeters,
+                DurationSeconds = ia.DurationSeconds,
+                AveragePaceSecondsPerKm = ia.AveragePaceSecondsPerKm,
+                AverageHeartRate = ia.AverageHeartRate,
+                MaxHeartRate = ia.MaxHeartRate,
+                IsMatchedToSession = ia.TrainingSessionId.HasValue
+            })
+            .ToListAsync();
+
+        return activities;
     }
 }

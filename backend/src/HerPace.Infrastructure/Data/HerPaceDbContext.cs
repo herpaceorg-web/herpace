@@ -12,6 +12,11 @@ namespace HerPace.Infrastructure.Data;
 /// </summary>
 public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
+    /// <summary>
+    /// Encryption key for token fields. Set during application startup from configuration.
+    /// </summary>
+    public static byte[]? TokenEncryptionKey { get; set; }
+
     public HerPaceDbContext(DbContextOptions<HerPaceDbContext> options)
         : base(options)
     {
@@ -24,6 +29,9 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
     public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
     public DbSet<CycleLog> CycleLogs => Set<CycleLog>();
     public DbSet<PlanAdaptationHistory> PlanAdaptationHistory => Set<PlanAdaptationHistory>();
+    public DbSet<ConnectedService> ConnectedServices => Set<ConnectedService>();
+    public DbSet<ImportedActivity> ImportedActivities => Set<ImportedActivity>();
+    public DbSet<SyncLog> SyncLogs => Set<SyncLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -260,6 +268,131 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
             entity.HasIndex(cl => cl.RunnerId);
             entity.HasIndex(cl => cl.ActualPeriodStart);
             entity.HasIndex(cl => cl.ReportedAt);
+        });
+
+        // Configure ConnectedService entity
+        modelBuilder.Entity<ConnectedService>(entity =>
+        {
+            entity.ToTable("connected_services");
+
+            entity.HasKey(cs => cs.Id);
+
+            // One connection per platform per runner
+            entity.HasIndex(cs => new { cs.RunnerId, cs.Platform })
+                .IsUnique();
+
+            entity.Property(cs => cs.ExternalUserId)
+                .HasMaxLength(200);
+
+            entity.Property(cs => cs.AccessToken)
+                .HasMaxLength(2000);
+
+            entity.Property(cs => cs.RefreshToken)
+                .HasMaxLength(2000);
+
+            // Encrypt tokens at rest using AES-256 if encryption key is configured
+            if (TokenEncryptionKey != null)
+            {
+                var converter = new EncryptedStringConverter(TokenEncryptionKey);
+                entity.Property(cs => cs.AccessToken).HasConversion(converter);
+                entity.Property(cs => cs.RefreshToken).HasConversion(converter);
+            }
+
+            entity.Property(cs => cs.Scopes)
+                .HasMaxLength(500);
+
+            entity.Property(cs => cs.LastSyncError)
+                .HasMaxLength(2000);
+
+            entity.Property(cs => cs.Status)
+                .HasDefaultValue(ConnectionStatus.Connected);
+
+            // Relationship with Runner
+            entity.HasOne(cs => cs.Runner)
+                .WithMany()
+                .HasForeignKey(cs => cs.RunnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many relationship with SyncLog
+            entity.HasMany(cs => cs.SyncLogs)
+                .WithOne(sl => sl.ConnectedService)
+                .HasForeignKey(sl => sl.ConnectedServiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ImportedActivity entity
+        modelBuilder.Entity<ImportedActivity>(entity =>
+        {
+            entity.ToTable("imported_activities");
+
+            entity.HasKey(ia => ia.Id);
+
+            // Prevent duplicate imports from the same source
+            entity.HasIndex(ia => new { ia.Platform, ia.ExternalActivityId })
+                .IsUnique();
+
+            // Query optimization indexes
+            entity.HasIndex(ia => new { ia.RunnerId, ia.ActivityDate });
+            entity.HasIndex(ia => new { ia.RunnerId, ia.Platform });
+            entity.HasIndex(ia => ia.TrainingSessionId);
+
+            entity.Property(ia => ia.ExternalActivityId)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(ia => ia.ActivityType)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(ia => ia.ActivityTitle)
+                .HasMaxLength(500);
+
+            entity.Property(ia => ia.GpsRouteJson)
+                .HasColumnType("jsonb");
+
+            entity.Property(ia => ia.RawResponseJson)
+                .HasColumnType("jsonb");
+
+            // Relationship with Runner
+            entity.HasOne(ia => ia.Runner)
+                .WithMany()
+                .HasForeignKey(ia => ia.RunnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional relationship with TrainingSession
+            entity.HasOne(ia => ia.TrainingSession)
+                .WithMany()
+                .HasForeignKey(ia => ia.TrainingSessionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure SyncLog entity
+        modelBuilder.Entity<SyncLog>(entity =>
+        {
+            entity.ToTable("sync_logs");
+
+            entity.HasKey(sl => sl.Id);
+
+            entity.Property(sl => sl.SyncType)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(sl => sl.ErrorMessage)
+                .HasMaxLength(4000);
+
+            entity.Property(sl => sl.ErrorCode)
+                .HasMaxLength(100);
+
+            // Relationship with Runner
+            entity.HasOne(sl => sl.Runner)
+                .WithMany()
+                .HasForeignKey(sl => sl.RunnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(sl => sl.RunnerId);
+            entity.HasIndex(sl => sl.ConnectedServiceId);
+            entity.HasIndex(sl => sl.StartedAt)
+                .IsDescending();
         });
 
         // Configure Identity tables with custom names (lowercase for PostgreSQL convention)
