@@ -11,6 +11,8 @@ import com.herpace.data.remote.dto.GeneratePlanRequest
 import com.herpace.data.remote.dto.ImportedActivityDetailResponse
 import com.herpace.data.remote.dto.LoginRequest
 import com.herpace.data.remote.dto.LoginResponse
+import com.herpace.data.remote.dto.RefreshTokenRequest
+import com.herpace.data.remote.dto.RefreshTokenResponse
 import com.herpace.data.remote.dto.PaginatedActivitiesResponse
 import com.herpace.data.remote.dto.RaceResponse
 import com.herpace.data.remote.dto.RunnerProfileRequest
@@ -39,6 +41,12 @@ interface HerPaceApiService {
 
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
+
+    @POST("api/auth/refresh")
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): RefreshTokenResponse
+
+    @POST("api/auth/revoke")
+    suspend fun revokeToken(@Body request: RefreshTokenRequest)
 
     // Profile
     @GET("api/profiles/me")

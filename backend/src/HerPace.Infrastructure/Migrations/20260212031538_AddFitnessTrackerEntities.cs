@@ -11,24 +11,6 @@ namespace HerPace.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "PendingRecalculationPreviewJson",
-                table: "training_plans",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "PendingRecalculationSummary",
-                table: "training_plans",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "PreviewGeneratedAt",
-                table: "training_plans",
-                type: "timestamp with time zone",
-                nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "connected_services",
                 columns: table => new
@@ -194,18 +176,6 @@ namespace HerPace.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "connected_services");
-
-            migrationBuilder.DropColumn(
-                name: "PendingRecalculationPreviewJson",
-                table: "training_plans");
-
-            migrationBuilder.DropColumn(
-                name: "PendingRecalculationSummary",
-                table: "training_plans");
-
-            migrationBuilder.DropColumn(
-                name: "PreviewGeneratedAt",
-                table: "training_plans");
         }
     }
 }

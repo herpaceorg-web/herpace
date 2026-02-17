@@ -13,7 +13,9 @@ data class SignupRequest(
 data class SignupResponse(
     val token: String,
     val userId: String,
-    val email: String
+    val email: String,
+    val refreshToken: String = "",
+    val refreshTokenExpiresAt: String = ""
 )
 
 @Serializable
@@ -26,5 +28,22 @@ data class LoginRequest(
 data class LoginResponse(
     val token: String,
     val userId: String,
-    val email: String
+    val email: String,
+    val refreshToken: String = "",
+    val refreshTokenExpiresAt: String = ""
+)
+
+@Serializable
+data class RefreshTokenRequest(
+    val refreshToken: String
+)
+
+@Serializable
+data class RefreshTokenResponse(
+    val token: String,
+    val userId: String,
+    val email: String,
+    val refreshToken: String,
+    val refreshTokenExpiresAt: String,
+    val expiresAt: String
 )

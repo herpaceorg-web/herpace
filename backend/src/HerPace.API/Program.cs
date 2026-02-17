@@ -253,7 +253,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Register Hangfire recurring jobs
-RecurringJob.AddOrUpdate<TokenRefreshJob>(
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobManager.AddOrUpdate<TokenRefreshJob>(
     "refresh-expiring-tokens",
     job => job.RefreshExpiringTokensAsync(),
     "*/30 * * * *"); // Every 30 minutes

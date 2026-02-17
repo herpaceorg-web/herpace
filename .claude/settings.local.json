@@ -82,7 +82,12 @@
       "Bash(gcloud projects list:*)",
       "Bash(git pull:*)",
       "Bash(npm run build-storybook:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebSearch",
+      "WebFetch(domain:developers.strava.com)",
+      "WebFetch(domain:www.strava.com)",
+      "Bash(ls:*)",
+      "Bash(git log:*)"
     ]
   }
 }

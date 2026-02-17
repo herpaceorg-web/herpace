@@ -1,6 +1,7 @@
 package com.herpace.data.voice
 
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
@@ -28,6 +29,7 @@ class AudioPlaybackManager {
     private val isPlaying = AtomicBoolean(false)
     private var audioManager: AudioManager? = null
     private var audioFocusGranted = false
+    private var audioFocusRequest: AudioFocusRequest? = null
 
     fun initialize(audioManager: AudioManager): Boolean {
         this.audioManager = audioManager
@@ -74,8 +76,14 @@ class AudioPlaybackManager {
 
     fun requestAudioFocus(): Boolean {
         val am = audioManager ?: return false
-        val result = am.requestAudioFocus(
-            { focusChange ->
+        val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+            )
+            .setOnAudioFocusChangeListener { focusChange ->
                 when (focusChange) {
                     AudioManager.AUDIOFOCUS_LOSS,
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
@@ -88,14 +96,10 @@ class AudioPlaybackManager {
                         audioTrack?.setVolume(1.0f)
                     }
                 }
-            },
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANT)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .build(),
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE,
-            0
-        )
+            }
+            .build()
+        audioFocusRequest = focusRequest
+        val result = am.requestAudioFocus(focusRequest)
         audioFocusGranted = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         return audioFocusGranted
     }
@@ -164,8 +168,9 @@ class AudioPlaybackManager {
         audioTrack = null
 
         if (audioFocusGranted) {
-            audioManager?.abandonAudioFocus(null)
+            audioFocusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
             audioFocusGranted = false
+            audioFocusRequest = null
         }
         audioManager = null
         Log.d(TAG, "AudioPlayback released")

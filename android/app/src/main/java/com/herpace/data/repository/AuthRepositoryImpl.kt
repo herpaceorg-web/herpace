@@ -6,6 +6,7 @@ import com.herpace.data.remote.ApiResult
 import com.herpace.data.remote.HerPaceApiService
 import com.herpace.data.remote.dto.LoginRequest
 import com.herpace.data.remote.dto.LoginResponse
+import com.herpace.data.remote.dto.RefreshTokenRequest
 import com.herpace.data.remote.dto.SignupRequest
 import com.herpace.data.remote.dto.SignupResponse
 import com.herpace.data.remote.safeApiCall
@@ -32,6 +33,9 @@ class AuthRepositoryImpl @Inject constructor(
         if (result is ApiResult.Success) {
             authTokenProvider.saveToken(result.data.token)
             authTokenProvider.saveUserId(result.data.userId)
+            if (result.data.refreshToken.isNotEmpty()) {
+                authTokenProvider.saveRefreshToken(result.data.refreshToken)
+            }
             userDao.insert(
                 UserEntity(
                     id = result.data.userId,
@@ -50,6 +54,9 @@ class AuthRepositoryImpl @Inject constructor(
         if (result is ApiResult.Success) {
             authTokenProvider.saveToken(result.data.token)
             authTokenProvider.saveUserId(result.data.userId)
+            if (result.data.refreshToken.isNotEmpty()) {
+                authTokenProvider.saveRefreshToken(result.data.refreshToken)
+            }
             userDao.insert(
                 UserEntity(
                     id = result.data.userId,
@@ -62,6 +69,15 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout() {
+        // Revoke refresh token server-side before clearing local state
+        val refreshToken = authTokenProvider.getRefreshToken()
+        if (refreshToken != null) {
+            try {
+                apiService.revokeToken(RefreshTokenRequest(refreshToken))
+            } catch (_: Exception) {
+                // Best-effort revocation; don't block logout on network errors
+            }
+        }
         val userId = authTokenProvider.getUserId()
         authTokenProvider.clearAuth()
         if (userId != null) {

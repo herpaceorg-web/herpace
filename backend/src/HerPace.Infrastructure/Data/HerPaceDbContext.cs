@@ -32,6 +32,7 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
     public DbSet<ConnectedService> ConnectedServices => Set<ConnectedService>();
     public DbSet<ImportedActivity> ImportedActivities => Set<ImportedActivity>();
     public DbSet<SyncLog> SyncLogs => Set<SyncLog>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -393,6 +394,33 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
             entity.HasIndex(sl => sl.ConnectedServiceId);
             entity.HasIndex(sl => sl.StartedAt)
                 .IsDescending();
+        });
+
+        // Configure RefreshToken entity
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+
+            entity.HasKey(rt => rt.Id);
+
+            entity.Property(rt => rt.TokenHash)
+                .IsRequired()
+                .HasMaxLength(128);
+
+            entity.HasIndex(rt => rt.TokenHash)
+                .IsUnique();
+
+            entity.HasIndex(rt => rt.UserId);
+
+            entity.HasIndex(rt => rt.ExpiresAt);
+
+            entity.Property(rt => rt.ReplacedByTokenHash)
+                .HasMaxLength(128);
+
+            entity.HasOne(rt => rt.User)
+                .WithMany()
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure Identity tables with custom names (lowercase for PostgreSQL convention)

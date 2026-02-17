@@ -40,10 +40,19 @@ class AuthTokenProviderImpl @Inject constructor(
         return prefs.getString(KEY_USER_ID, null)
     }
 
+    override fun getRefreshToken(): String? {
+        return prefs.getString(KEY_REFRESH_TOKEN, null)
+    }
+
+    override fun saveRefreshToken(token: String) {
+        prefs.edit().putString(KEY_REFRESH_TOKEN, token).apply()
+    }
+
     override fun clearAuth() {
         prefs.edit()
             .remove(KEY_TOKEN)
             .remove(KEY_USER_ID)
+            .remove(KEY_REFRESH_TOKEN)
             .apply()
     }
 
@@ -55,5 +64,6 @@ class AuthTokenProviderImpl @Inject constructor(
         private const val PREFS_NAME = "herpace_secure_prefs"
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER_ID = "user_id"
+        private const val KEY_REFRESH_TOKEN = "refresh_token"
     }
 }

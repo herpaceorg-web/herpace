@@ -4,6 +4,7 @@ import com.herpace.BuildConfig
 import com.herpace.data.remote.HerPaceApiService
 import com.herpace.data.repository.AuthTokenProvider
 import com.herpace.data.repository.AuthTokenProviderImpl
+import com.herpace.util.TokenAuthenticator
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Binds
 import dagger.Module
@@ -33,8 +34,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideTokenAuthenticator(
+        authTokenProvider: AuthTokenProvider,
+        json: Json
+    ): TokenAuthenticator {
+        return TokenAuthenticator(authTokenProvider, json, BuildConfig.API_BASE_URL)
+    }
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(
-        authTokenProvider: AuthTokenProvider
+        authTokenProvider: AuthTokenProvider,
+        tokenAuthenticator: TokenAuthenticator
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .addInterceptor { chain ->
@@ -45,6 +56,7 @@ object NetworkModule {
                 }
                 chain.proceed(request.build())
             }
+            .authenticator(tokenAuthenticator)
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = if (BuildConfig.DEBUG) {

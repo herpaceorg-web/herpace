@@ -5,6 +5,8 @@ interface AuthTokenProvider {
     fun saveToken(token: String)
     fun saveUserId(userId: String)
     fun getUserId(): String?
+    fun getRefreshToken(): String?
+    fun saveRefreshToken(token: String)
     fun clearAuth()
     fun isLoggedIn(): Boolean
 }

@@ -24,9 +24,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.int
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -224,13 +227,10 @@ class GeminiWebSocketManager(
                 return
             }
 
-            // Handle setupComplete
+            // Handle setupComplete - Gemini sends this as an empty object: {"setupComplete": {}}
             if (message.containsKey("setupComplete")) {
-                val complete = message["setupComplete"]?.jsonPrimitive?.boolean ?: false
-                if (complete) {
-                    Log.d(TAG, "Setup complete received")
-                    callback?.onSetupComplete()
-                }
+                Log.d(TAG, "Setup complete received")
+                callback?.onSetupComplete()
                 return
             }
 
