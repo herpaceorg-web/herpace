@@ -412,18 +412,44 @@ public class SessionController : ControllerBase
         SessionDetailDto? todaysSession = null;
         if (todaysSessionEntity != null)
         {
-            // Parse workout tips
-            var workoutTips = new List<string>();
+            // Parse workout tips (handles both old List<string> and new List<WorkoutTipDto> formats)
+            var workoutTips = new List<WorkoutTipDto>();
             if (!string.IsNullOrEmpty(todaysSessionEntity.WorkoutTips))
             {
                 try
                 {
-                    var parsedTips = JsonSerializer.Deserialize<List<string>>(todaysSessionEntity.WorkoutTips);
-                    if (parsedTips != null) workoutTips = parsedTips;
+                    // Try new format first (List<WorkoutTipDto>)
+                    var richTips = JsonSerializer.Deserialize<List<WorkoutTipDto>>(todaysSessionEntity.WorkoutTips,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (richTips != null && richTips.Any() && !string.IsNullOrEmpty(richTips[0].Text))
+                    {
+                        workoutTips = richTips;
+                    }
+                    else
+                    {
+                        // Fall back to old format (List<string>)
+                        var plainTips = JsonSerializer.Deserialize<List<string>>(todaysSessionEntity.WorkoutTips);
+                        if (plainTips != null)
+                        {
+                            workoutTips = plainTips.Select(t => new WorkoutTipDto { Text = t }).ToList();
+                        }
+                    }
                 }
-                catch (JsonException ex)
+                catch (JsonException)
                 {
-                    _logger.LogWarning(ex, "Failed to parse WorkoutTips for session {SessionId}", todaysSessionEntity.Id);
+                    // Try old format as fallback
+                    try
+                    {
+                        var plainTips = JsonSerializer.Deserialize<List<string>>(todaysSessionEntity.WorkoutTips);
+                        if (plainTips != null)
+                        {
+                            workoutTips = plainTips.Select(t => new WorkoutTipDto { Text = t }).ToList();
+                        }
+                    }
+                    catch (JsonException ex2)
+                    {
+                        _logger.LogWarning(ex2, "Failed to parse WorkoutTips for session {SessionId}", todaysSessionEntity.Id);
+                    }
                 }
             }
 

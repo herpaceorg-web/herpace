@@ -8,7 +8,9 @@ import type {
   SyncResponse,
   PaginatedActivitiesResponse,
   ImportedActivityDetailDto,
-  SyncLogListResponse
+  SyncLogListResponse,
+  ResearchStudySummaryDto,
+  ResearchStudyDto
 } from '@/types/api'
 
 /**
@@ -148,6 +150,35 @@ export const fitnessTrackerApi = {
       `/api/fitness-tracker/sync-log${query ? `?${query}` : ''}`
     )
   }
+}
+
+// Research Library API methods
+export const researchApi = {
+  getStudies: (params?: {
+    category?: string
+    tier?: string
+    search?: string
+    phase?: string
+  }): Promise<ResearchStudySummaryDto[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.category) searchParams.set('category', params.category)
+    if (params?.tier) searchParams.set('tier', params.tier)
+    if (params?.search) searchParams.set('search', params.search)
+    if (params?.phase) searchParams.set('phase', params.phase)
+    const query = searchParams.toString()
+    return api.get<ResearchStudySummaryDto[]>(
+      `/api/research${query ? `?${query}` : ''}`
+    )
+  },
+
+  getStudy: (id: number): Promise<ResearchStudyDto> =>
+    api.get<ResearchStudyDto>(`/api/research/${id}`),
+
+  getCategories: (): Promise<string[]> =>
+    api.get<string[]>('/api/research/categories'),
+
+  getStudiesForPhase: (phase: string): Promise<ResearchStudySummaryDto[]> =>
+    api.get<ResearchStudySummaryDto[]>(`/api/research/for-phase/${phase}`)
 }
 
 export default apiClient

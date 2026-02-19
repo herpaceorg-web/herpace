@@ -91,18 +91,36 @@ public class VoiceSessionService : IVoiceSessionService
             return null;
         }
 
-        // Parse workout tips from JSON
+        // Parse workout tips from JSON (handles both old List<string> and new List<WorkoutTipDto> formats)
         var workoutTips = new List<string>();
         if (!string.IsNullOrEmpty(session.WorkoutTips))
         {
             try
             {
-                var parsed = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
-                if (parsed != null) workoutTips = parsed;
+                // Try new format first
+                var richTips = JsonSerializer.Deserialize<List<Core.DTOs.WorkoutTipDto>>(session.WorkoutTips,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (richTips != null && richTips.Any() && !string.IsNullOrEmpty(richTips[0].Text))
+                {
+                    workoutTips = richTips.Select(t => t.Text).ToList();
+                }
+                else
+                {
+                    var parsed = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
+                    if (parsed != null) workoutTips = parsed;
+                }
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
-                _logger.LogWarning(ex, "Failed to parse workout tips for session {SessionId}", sessionId);
+                try
+                {
+                    var parsed = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
+                    if (parsed != null) workoutTips = parsed;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse workout tips for session {SessionId}", sessionId);
+                }
             }
         }
 

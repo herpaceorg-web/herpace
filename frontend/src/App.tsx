@@ -18,6 +18,8 @@ import { NotFound } from '@/pages/NotFound'
 import { ConnectedServices } from '@/pages/ConnectedServices'
 import { ImportedActivities } from '@/pages/ImportedActivities'
 import { ImportedActivityDetail } from '@/pages/ImportedActivityDetail'
+import { ResearchLibrary } from '@/pages/ResearchLibrary'
+import { ResearchStudyDetail } from '@/pages/ResearchStudyDetail'
 import { RootRedirect } from '@/components/RootRedirect'
 
 function App() {
@@ -112,6 +114,27 @@ function App() {
                 <ProtectedRoute>
                   <MainLayout>
                     <ImportedActivityDetail />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/research"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <ResearchLibrary />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/research/:id"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <ResearchStudyDetail />
                   </MainLayout>
                 </ProtectedRoute>
               }

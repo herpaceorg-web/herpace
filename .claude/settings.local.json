@@ -87,7 +87,9 @@
       "WebFetch(domain:developers.strava.com)",
       "WebFetch(domain:www.strava.com)",
       "Bash(ls:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(./gradlew compileDebugKotlin:*)",
+      "Bash(node generate_sql.js:*)"
     ]
   }
 }

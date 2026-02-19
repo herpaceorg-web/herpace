@@ -23,6 +23,8 @@ import com.herpace.presentation.profile.CycleTrackingScreen
 import com.herpace.presentation.profile.NotificationSettingsScreen
 import com.herpace.presentation.profile.ProfileScreen
 import com.herpace.presentation.connectedservices.ConnectedServicesScreen
+import com.herpace.presentation.research.ResearchLibraryScreen
+import com.herpace.presentation.research.StudyDetailScreen
 import com.herpace.presentation.session.SessionDetailScreen
 import com.herpace.presentation.voicecoach.VoiceCoachScreen
 
@@ -164,6 +166,24 @@ fun NavGraph(
             arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
         ) {
             VoiceCoachScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Research Library
+        composable(Screen.ResearchLibrary.route) {
+            ResearchLibraryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToStudy = { studyId ->
+                    navController.navigate(Screen.ResearchStudyDetail.createRoute(studyId))
+                }
+            )
+        }
+        composable(
+            route = Screen.ResearchStudyDetail.route,
+            arguments = listOf(navArgument("studyId") { type = NavType.IntType })
+        ) {
+            StudyDetailScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

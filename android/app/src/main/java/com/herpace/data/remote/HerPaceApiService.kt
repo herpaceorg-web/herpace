@@ -1,5 +1,7 @@
 package com.herpace.data.remote
 
+import com.herpace.data.remote.dto.ResearchStudySummaryResponse
+import com.herpace.data.remote.dto.ResearchStudyDetailResponse
 import com.herpace.data.remote.dto.CreateRaceRequest
 import com.herpace.data.remote.dto.OAuthInitiateResponse
 import com.herpace.data.remote.dto.ActivityUploadRequest
@@ -108,6 +110,24 @@ interface HerPaceApiService {
 
     @POST("api/fitness-tracker/activities/upload")
     suspend fun uploadActivities(@Body request: ActivityUploadRequest): ActivityUploadResponse
+
+    // Research Library
+    @GET("api/research")
+    suspend fun getResearchStudies(
+        @Query("category") category: String? = null,
+        @Query("tier") tier: String? = null,
+        @Query("search") search: String? = null,
+        @Query("phase") phase: String? = null
+    ): List<ResearchStudySummaryResponse>
+
+    @GET("api/research/{id}")
+    suspend fun getResearchStudy(@Path("id") id: Int): ResearchStudyDetailResponse
+
+    @GET("api/research/categories")
+    suspend fun getResearchCategories(): List<String>
+
+    @GET("api/research/for-phase/{phase}")
+    suspend fun getResearchForPhase(@Path("phase") phase: String): List<ResearchStudySummaryResponse>
 
     // Voice Coach
     @POST("api/voice/token")

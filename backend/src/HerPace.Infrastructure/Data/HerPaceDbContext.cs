@@ -33,6 +33,8 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
     public DbSet<ImportedActivity> ImportedActivities => Set<ImportedActivity>();
     public DbSet<SyncLog> SyncLogs => Set<SyncLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ResearchStudy> ResearchStudies => Set<ResearchStudy>();
+    public DbSet<PhaseStudyMapping> PhaseStudyMappings => Set<PhaseStudyMapping>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -421,6 +423,69 @@ public class HerPaceDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid
                 .WithMany()
                 .HasForeignKey(rt => rt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ResearchStudy entity
+        modelBuilder.Entity<ResearchStudy>(entity =>
+        {
+            entity.ToTable("research_studies");
+
+            entity.HasKey(rs => rs.Id);
+
+            entity.Property(rs => rs.Id)
+                .ValueGeneratedNever(); // IDs match CSV Study_ID
+
+            entity.Property(rs => rs.ResearchTopic)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(rs => rs.Citation)
+                .IsRequired();
+
+            entity.Property(rs => rs.Doi)
+                .HasMaxLength(200);
+
+            entity.Property(rs => rs.StudyDesign)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(rs => rs.SampleSize)
+                .HasMaxLength(200);
+
+            entity.Property(rs => rs.KeyFindings)
+                .IsRequired();
+
+            entity.Property(rs => rs.EvidenceTier)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(rs => rs.TopicCategory)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.HasIndex(rs => rs.TopicCategory);
+            entity.HasIndex(rs => rs.EvidenceTier);
+            entity.HasIndex(rs => rs.PublicationYear);
+        });
+
+        // Configure PhaseStudyMapping entity
+        modelBuilder.Entity<PhaseStudyMapping>(entity =>
+        {
+            entity.ToTable("phase_study_mappings");
+
+            entity.HasKey(psm => psm.Id);
+
+            entity.Property(psm => psm.RelevanceSummary)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.HasOne(psm => psm.ResearchStudy)
+                .WithMany(rs => rs.PhaseStudyMappings)
+                .HasForeignKey(psm => psm.ResearchStudyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(psm => psm.Phase);
+            entity.HasIndex(psm => psm.ResearchStudyId);
         });
 
         // Configure Identity tables with custom names (lowercase for PostgreSQL convention)

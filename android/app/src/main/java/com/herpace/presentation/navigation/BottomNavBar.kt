@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -31,6 +32,7 @@ val bottomNavItems = listOf(
         route = Screen.TrainingPlan.route,
         navigationRoute = Screen.TrainingPlan.createRoute()
     ),
+    BottomNavItem("Research", Icons.Default.MenuBook, Screen.ResearchLibrary.route),
     BottomNavItem("Profile", Icons.Default.Person, Screen.Profile.route)
 )
 

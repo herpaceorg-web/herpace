@@ -174,21 +174,37 @@ public class SessionCompletionService : ISessionCompletionService
 
     private SessionDetailDto MapToSessionDetailDto(Core.Entities.TrainingSession session)
     {
-        // Parse workout tips from JSON
-        var workoutTips = new List<string>();
+        // Parse workout tips from JSON (handles both old List<string> and new List<WorkoutTipDto> formats)
+        var workoutTips = new List<WorkoutTipDto>();
         if (!string.IsNullOrEmpty(session.WorkoutTips))
         {
             try
             {
-                var parsedTips = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
-                if (parsedTips != null)
+                var richTips = JsonSerializer.Deserialize<List<WorkoutTipDto>>(session.WorkoutTips,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (richTips != null && richTips.Any() && !string.IsNullOrEmpty(richTips[0].Text))
                 {
-                    workoutTips = parsedTips;
+                    workoutTips = richTips;
+                }
+                else
+                {
+                    var plainTips = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
+                    if (plainTips != null)
+                        workoutTips = plainTips.Select(t => new WorkoutTipDto { Text = t }).ToList();
                 }
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
-                _logger.LogWarning(ex, "Failed to parse WorkoutTips JSON for session {SessionId}", session.Id);
+                try
+                {
+                    var plainTips = JsonSerializer.Deserialize<List<string>>(session.WorkoutTips);
+                    if (plainTips != null)
+                        workoutTips = plainTips.Select(t => new WorkoutTipDto { Text = t }).ToList();
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse WorkoutTips JSON for session {SessionId}", session.Id);
+                }
             }
         }
 

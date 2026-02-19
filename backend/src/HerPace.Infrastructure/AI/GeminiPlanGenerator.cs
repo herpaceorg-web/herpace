@@ -432,6 +432,14 @@ public class GeminiPlanGenerator : IAIPlanGenerator
 
         return $@"Create a personalized hormone-aware running training plan in JSON format for a woman runner.
 
+**Scientific Evidence for Cycle-Aware Training** (use these findings to inform your plan):
+- Early follicular phase: Women may be more vulnerable to muscle damage when estrogen is lowest; prioritize recovery (Romero-Parra et al., 2021)
+- Late follicular phase: Isometric and dynamic strength peaks; best window for strength/speed work (Niering et al., 2024)
+- Ovulatory phase: Peak motivation and competitiveness; flexibility enhanced but joint injury risk increases (Paludo et al., 2022; Elorduy-Terrado et al., 2025)
+- Luteal phase: Core temperature elevated ~0.3-0.5°C; thermoregulation impaired in heat (Giersch et al., 2020). Energy intake naturally increases ~168 kcal/day (Tucker et al., 2025). Neuromuscular fatigue and inflammatory response higher (Silva et al., 2025)
+- Caffeine is most ergogenic during the follicular phase (Grgic & Varovic, 2024)
+- Iron supplementation may improve endurance performance by 2-20% in deficient athletes (Pengelly et al., 2025)
+
 **Runner Profile**:
 - Fitness Level: {request.FitnessLevel}
 - Typical Weekly Mileage: {request.TypicalWeeklyMileage ?? 0:F1} km

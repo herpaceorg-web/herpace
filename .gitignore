@@ -194,3 +194,5 @@ fix-database-permissions.ps1
 backend/test-gemini-3.ps1
 fix-database-permissions.ps1
 run-production-migrations.ps1
+backend/src/HerPace.API/appsettings.json
+backend/src/HerPace.API/appsettings.Production.json

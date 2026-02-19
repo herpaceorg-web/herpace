@@ -513,6 +513,47 @@ export interface SyncLogListResponse {
   logs: SyncLogDto[]
 }
 
+// Research Library DTOs
+export interface StudyCitationDto {
+  id: number
+  shortCitation: string
+  doi?: string
+}
+
+export interface WorkoutTipDto {
+  text: string
+  citations: StudyCitationDto[]
+}
+
+export interface ResearchStudySummaryDto {
+  id: number
+  researchTopic: string
+  citation: string
+  publicationYear?: number
+  evidenceTier: string
+  topicCategory: string
+}
+
+export interface ResearchStudyDto {
+  id: number
+  researchTopic: string
+  citation: string
+  doi?: string
+  studyDesign: string
+  sampleSize?: string
+  publicationYear?: number
+  keyFindings: string
+  evidenceTier: string
+  topicCategory: string
+  phaseRelevance: PhaseRelevanceDto[]
+}
+
+export interface PhaseRelevanceDto {
+  phase: CyclePhase
+  phaseName: string
+  relevanceSummary: string
+}
+
 // Plan DTOs
 export interface GeneratePlanRequest {
   raceId: string
