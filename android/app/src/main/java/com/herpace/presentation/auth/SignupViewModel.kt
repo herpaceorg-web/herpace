@@ -94,7 +94,10 @@ class SignupViewModel @Inject constructor(
             valid = false
         }
 
-        if (state.confirmPassword != state.password) {
+        if (state.confirmPassword.isEmpty()) {
+            _uiState.update { it.copy(confirmPasswordError = "Please confirm your password") }
+            valid = false
+        } else if (state.confirmPassword != state.password) {
             _uiState.update { it.copy(confirmPasswordError = "Passwords do not match") }
             valid = false
         }

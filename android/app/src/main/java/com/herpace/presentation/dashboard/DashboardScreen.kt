@@ -52,6 +52,8 @@ fun DashboardScreen(
     onNavigateToTrainingPlan: () -> Unit,
     onNavigateToSessionDetail: (String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToOnboarding: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -102,11 +104,50 @@ fun DashboardScreen(
                     uiState.isLoading -> {
                         LoadingIndicator()
                     }
+                    uiState.profileNotFound -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "No Profile Found",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Let's set up your profile to get started.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+                            HerPaceButton(
+                                text = "Complete Profile",
+                                onClick = onNavigateToOnboarding
+                            )
+                        }
+                    }
                     uiState.errorMessage != null && uiState.activePlan == null -> {
-                        ErrorMessage(
-                            message = uiState.errorMessage!!,
-                            onRetry = viewModel::loadDashboard
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            ErrorMessage(
+                                message = uiState.errorMessage!!,
+                                onRetry = viewModel::loadDashboard
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            TextButton(onClick = onNavigateToLogin) {
+                                Text("Log In")
+                            }
+                        }
                     }
                     else -> {
                         DashboardContent(

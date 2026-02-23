@@ -258,7 +258,15 @@ class MainActivity : FragmentActivity() {
             startDestination = when {
                 result is ApiResult.Success && result.data != null -> Screen.Dashboard.route
                 result is ApiResult.Success && result.data == null -> Screen.Onboarding.route
-                else -> Screen.Dashboard.route
+                result is ApiResult.NetworkError -> {
+                    // Network error — try Dashboard (offline mode), user can retry
+                    Screen.Dashboard.route
+                }
+                else -> {
+                    // Auth or server error — clear token and send to login
+                    authTokenProvider.clearAuth()
+                    Screen.Login.route
+                }
             }
         }
     }

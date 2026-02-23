@@ -8,6 +8,7 @@ data class DashboardUiState(
     val activePlan: TrainingPlan? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val profileNotFound: Boolean = false,
     val showPeriodReminder: Boolean = false,
     val daysSinceLastPeriod: Int? = null,
     val lastSyncTimeMillis: Long? = null,

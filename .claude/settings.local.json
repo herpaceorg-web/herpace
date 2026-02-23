@@ -89,7 +89,8 @@
       "Bash(ls:*)",
       "Bash(git log:*)",
       "Bash(./gradlew compileDebugKotlin:*)",
-      "Bash(node generate_sql.js:*)"
+      "Bash(node generate_sql.js:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

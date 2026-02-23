@@ -48,7 +48,31 @@ class DashboardViewModel @Inject constructor(
 
     fun loadDashboard() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, profileNotFound = false) }
+
+            // Check if user has a profile first
+            when (val profileResult = profileRepository.getProfile()) {
+                is ApiResult.Success -> {
+                    if (profileResult.data == null) {
+                        _uiState.update {
+                            it.copy(isLoading = false, profileNotFound = true)
+                        }
+                        return@launch
+                    }
+                }
+                is ApiResult.Error -> {
+                    if (profileResult.code == 404) {
+                        _uiState.update {
+                            it.copy(isLoading = false, profileNotFound = true)
+                        }
+                        return@launch
+                    }
+                    // Other errors — continue to load dashboard, might work offline
+                }
+                is ApiResult.NetworkError -> {
+                    // Continue — offline mode may have cached data
+                }
+            }
 
             when (val result = getActiveTrainingPlanUseCase()) {
                 is ApiResult.Success -> {

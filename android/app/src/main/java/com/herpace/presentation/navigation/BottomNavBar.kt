@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -24,7 +25,7 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("Dashboard", Icons.Default.Home, Screen.Dashboard.route),
+    BottomNavItem("Home", Icons.Default.Home, Screen.Dashboard.route),
     BottomNavItem("Races", Icons.Default.DirectionsRun, Screen.Races.route),
     BottomNavItem(
         label = "Plan",
@@ -64,7 +65,7 @@ fun BottomNavBar(
                         contentDescription = item.label
                     )
                 },
-                label = { Text(item.label) }
+                label = { Text(item.label, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             )
         }
     }
